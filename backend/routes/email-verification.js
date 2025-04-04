@@ -1,6 +1,8 @@
 // @route   POST api/users/verify-email
 // @desc    Verify email with code
 // @access  Private
+const express = require('express');
+const router = express.Router();
 router.post('/verify-email', auth, async (req, res) => {
   const { verificationCode } = req.body;
 
@@ -102,3 +104,7 @@ router.post('/resend-email-verification', auth, async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+
+// ... your route definitions like router.post('/send-verification', ...); router.get('/verify/:token', ...) etc...
+
+module.exports = router; // This should be at the end of the file
