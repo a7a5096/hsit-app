@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction History - HSIT</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <style>
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .transactions-table th, 
+        .transactions-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .transactions-table th {
+            background-color: rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+        }
+        
+        .transactions-table tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .transaction-completed {
+            color: #28a745;
+        }
+        
+        .transaction-pending {
+            color: #ffc107;
+        }
+        
+        .transaction-failed {
+            color: #dc3545;
+        }
+        
+        .positive {
+            color: #28a745;
+        }
+        
+        .negative {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body class="page-background">
+    <div id="statusMessage" class="status-message"></div>
+    <header class="standard-header">
+        <a href="asset_center.html" class="back-btn">&larr; Back</a>
+        <h1>Transaction History</h1>
+        <div></div> <!-- Spacer -->
+    </header>
+
+    <main class="page-main">
+        <!-- Transaction history will be loaded dynamically -->
+    </main>
+
+    <script src="js/transactions.js"></script>
+</body>
+</html>
