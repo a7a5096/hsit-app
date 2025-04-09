@@ -1,10 +1,13 @@
-// @route   POST api/users/verify-email
+// @route   POST api/email-verification/verify-email
 // @desc    Verify email with code
 // @access  Private
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth'); // <-- Add this line
-// ... other requires like nodemailer, jwt, models etc.
+const auth = require('../middleware/auth');
+const User = require('../models/User');
+const CryptoAddress = require('../models/CryptoAddress');
+const { sendVerificationEmail } = require('../utils/emailService');
+
 router.post('/verify-email', auth, async (req, res) => {
   const { verificationCode } = req.body;
 
@@ -73,10 +76,10 @@ router.post('/verify-email', auth, async (req, res) => {
   }
 });
 
-// @route   POST api/users/resend-email-verification
+// @route   POST api/email-verification/resend
 // @desc    Resend email verification code
 // @access  Private
-router.post('/resend-email-verification', auth, async (req, res) => {
+router.post('/resend', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -97,7 +100,6 @@ router.post('/resend-email-verification', auth, async (req, res) => {
     await user.save();
 
     // Send verification email
-    const { sendVerificationEmail } = require('../utils/emailService');
     await sendVerificationEmail(user.email, verificationCode);
 
     res.json({ msg: 'Verification code sent successfully to your email' });
@@ -107,6 +109,9 @@ router.post('/resend-email-verification', auth, async (req, res) => {
   }
 });
 
-// ... your route definitions like router.post('/send-verification', ...); router.get('/verify/:token', ...) etc...
+// Helper function to generate verification code
+function generateVerificationCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
-module.exports = router; // This should be at the end of the file
+module.exports = router;
