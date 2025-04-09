@@ -2,7 +2,9 @@
 // @desc    Verify email with code
 // @access  Private
 const express = require('express');
-const router = express.Router(); 
+const router = express.Router();
+const auth = require('../middleware/auth'); // <-- Add this line
+// ... other requires like nodemailer, jwt, models etc.
 router.post('/verify-email', auth, async (req, res) => {
   const { verificationCode } = req.body;
 
