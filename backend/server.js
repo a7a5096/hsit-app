@@ -34,7 +34,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/crypto', require('./routes/crypto'));
 app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/invitations', require('./routes/invitations'));
-app.use('/api/email-verification', require('./routes/email-verification'));
+// app.use('/api/email-verification', require('./routes/email-verification'));
 
 // Serve static assets
 app.use(express.static(path.join(__dirname, '../')));
