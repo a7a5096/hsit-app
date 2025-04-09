@@ -28,22 +28,12 @@ connectDB();
 app.use(express.json());
 app.use(cors());
 
-// Add this code to your server.js right after the middleware section
-// and before route definitions to help identify the issue
-
 // Debug middleware to log route information
 app.use((req, res, next) => {
   console.log('Debug - Request URL:', req.url);
   console.log('Debug - Request Method:', req.method);
   console.log('Debug - Request Headers:', JSON.stringify(req.headers, null, 2));
   next();
-});
-
-// Add this error handler at the end of server.js to catch route errors
-app.use((err, req, res, next) => {
-  console.error('Error in route processing:');
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
 });
 
 // Serve static assets first to avoid route conflicts
@@ -60,9 +50,27 @@ app.use('/api/invitations', require('./routes/invitations'));
 // Create the email-verification route properly - remove it if you've moved these routes elsewhere
 // app.use('/api/email-verification', require('./routes/email-verification'));
 
-// Catch-all route to serve index.html
-app.get('*', (req, res) => {
+// Specific routes for static files
+app.get('/index.html', (req, res) => {
   res.sendFile(path.resolve(__dirname, '..', 'index.html'));
+});
+
+// Safer catch-all route that doesn't use the wildcard
+app.use((req, res, next) => {
+  if (req.method === 'GET') {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ msg: 'API endpoint not found' });
+    }
+    return res.sendFile(path.resolve(__dirname, '..', 'index.html'));
+  }
+  next();
+});
+
+// Error handler middleware - must be after all routes
+app.use((err, req, res, next) => {
+  console.error('Error in route processing:');
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
 });
 
 const PORT = process.env.PORT || 5000;
