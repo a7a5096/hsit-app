@@ -70,17 +70,21 @@ router.get('/qrcode/:currency', auth, async (req, res) => {
       fs.mkdirSync(qrDir, { recursive: true });
     }
 
-    // Generate QR code
-    const qrPath = path.join(qrDir, `${user.id}_${currency.toLowerCase()}.png`);
+    // Generate a safe filename for the QR code
+    const safeUserId = String(user.id).replace(/[^a-zA-Z0-9]/g, '');
+    const safeCurrency = currency.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
+    const fileName = `${safeUserId}_${safeCurrency}.png`;
+    const qrPath = path.join(qrDir, fileName);
+    
     const result = await generateQRCode(address, qrPath);
 
     if (!result.success) {
       return res.status(500).json({ msg: 'Failed to generate QR code' });
     }
 
-    // Return QR code path
+    // Return QR code URL path - using a proper URL format
     res.json({
-      qrPath: `/qrcodes/${user.id}_${currency.toLowerCase()}.png`,
+      qrPath: `/qrcodes/${fileName}`,
       address
     });
   } catch (err) {
