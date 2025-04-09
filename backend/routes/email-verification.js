@@ -2,7 +2,7 @@
 // @desc    Verify email with code
 // @access  Private
 const express = require('express');
-const router = express.Router();
+const router = express.Router(); 
 router.post('/verify-email', auth, async (req, res) => {
   const { verificationCode } = req.body;
 
