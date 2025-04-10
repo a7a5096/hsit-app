@@ -15,14 +15,42 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Middleware
-// Ensure CORS is configured correctly based on your needs and env variables
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',') : [];
+// This log should appear ONCE when the backend server starts in Render logs
+console.log("Initializing CORS with allowed origins:", allowedOrigins);
+
 const corsOptions = {
-  origin: process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',') : '*', // Example: handle comma-separated origins or allow all
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+    origin: function (origin, callback) {
+        // Check if the request origin is in the allowed list OR if there's no origin
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true); // Allow the request
+        } else {
+            // Log an error if the origin is not allowed. Check Render logs for this.
+            console.error(`CORS Error: Origin ${origin} not allowed. Allowed list: ${allowedOrigins}`);
+            callback(new Error('Not allowed by CORS')); // Disallow the request
+        }
+    },
+    credentials: true, // <-- MUST BE TRUE
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders: "Content-Type, Authorization, X-Requested-With, Accept",
+    optionsSuccessStatus: 200
 };
+
+// Apply CORS middleware BEFORE your API routes
 app.use(cors(corsOptions));
 
-app.use(express.json()); // Used to parse JSON bodies
+// Optional: Explicitly handle preflight requests (usually handled by above, but good for debug)
+// app.options('*', cors(corsOptions));
+
+app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+
+// --- Your API routes defined AFTER cors middleware ---
+// Example: app.use('/api/users', userRoutes);
+// --- Serve Static Files (can be before or after API routes, usually after) ---
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+// --- Catchall Handler (should be LAST) ---
+app.get('*', (req, res) => { /* ... send index.html ... */ });app.use(express.json()); // Used to parse JSON bodies
 // app.use(express.urlencoded({ extended: true })); // Uncomment if you need to parse URL-encoded bodies
 
 // Serve static files from the React app build directory
