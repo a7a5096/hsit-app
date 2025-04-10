@@ -3,16 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@testing-library/jest-dom": "^5.17.0",   // Common testing libraries
-    "@testing-library/react": "^13.4.0",     // Common testing libraries
-    "@testing-library/user-event": "^13.5.0", // Common testing libraries
-    "react": "^18.3.1",                      // React library
-    "react-dom": "^18.3.1",                  // React DOM library
-    "react-scripts": "5.0.1",                // Scripts from Create React App
-    "web-vitals": "^2.1.4",                  // For performance monitoring
-    "axios": "^1.7.2"                        // Likely needed for API calls (add other libraries you use)
-    // --- ADD ANY OTHER FRONTEND LIBRARIES YOUR APP USES HERE ---
-    // e.g., "react-router-dom": "^6.23.1", "redux": "...", etc.
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4",
+    "axios": "^1.7.2"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -38,8 +36,4 @@
       "last 1 safari version"
     ]
   }
-  // If you have specific devDependencies, add them like this:
-  // "devDependencies": {
-  //   "some-dev-tool": "^1.0.0"
-  // }
 }
