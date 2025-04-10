@@ -1,3 +1,6 @@
+// API configuration directly integrated into this file
+const API_URL = 'https://hsit-backend.onrender.com';
+
 // Script to handle deposit functionality
 document.addEventListener('DOMContentLoaded', function() {
   // Check if user is logged in
@@ -28,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Fetch user's crypto addresses
   async function fetchUserAddresses() {
     try {
-      const response = await fetch('/api/crypto/addresses', {
+      const response = await fetch('${API_BASE_URL}/api/crypto/addresses', {
         headers: {
           'x-auth-token': token
         }
@@ -53,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Generate QR code
   async function fetchQRCode(currency) {
     try {
-      const response = await fetch(`/api/crypto/qrcode/${currency}`, {
+      const response = await fetch(`${API_BASE_URL}/api/crypto/qrcode/${currency}`, {
         headers: {
           'x-auth-token': token
         }

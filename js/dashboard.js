@@ -2,7 +2,7 @@
 // No external config dependency - completely self-contained
 
 // API configuration directly integrated into this file
-const API_URL = 'https://huqwwv8anj.execute-api.us-east-1.amazonaws.com/prod';
+const API_URL = 'https://hsit-backend.onrender.com';
 
 // Script to handle dashboard functionality
 document.addEventListener('DOMContentLoaded', function() {

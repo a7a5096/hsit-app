@@ -1,3 +1,7 @@
+// API configuration directly integrated into this file
+const API_URL = 'https://hsit-backend.onrender.com';
+
+
 // Script to handle transaction history functionality
 document.addEventListener('DOMContentLoaded', function() {
   // Check if user is logged in
@@ -27,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Fetch transactions
   async function fetchTransactions() {
     try {
-      const response = await fetch('/api/transactions', {
+      const response = await fetch('${API_BASE_URL}/api/transactions', {
         headers: {
           'x-auth-token': token
         }

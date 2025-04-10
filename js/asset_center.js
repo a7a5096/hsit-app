@@ -1,3 +1,6 @@
+// API configuration directly integrated into this file
+const API_URL = 'https://hsit-backend.onrender.com';
+
 // Script to handle asset center functionality
 document.addEventListener('DOMContentLoaded', function() {
   // Check if user is logged in
@@ -35,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function fetchUserData() {
     try {
       // Fetch user data
-      const userResponse = await fetch('/api/auth', {
+      const userResponse = await fetch('${API_BASE_URL}/api/auth', {
         headers: {
           'x-auth-token': token
         }
@@ -48,14 +51,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const userData = await userResponse.json();
       
       // Fetch exchange rates
-      const ratesResponse = await fetch('/api/transactions/exchange-rates');
+      const ratesResponse = await fetch('${API_BASE_URL}/api/transactions/exchange-rates');
       const rates = await ratesResponse.json();
       
       // Update UI with user balances
       updateBalances(userData.balances, rates);
       
       // Fetch purchased bots
-      const botsResponse = await fetch('/api/bots/purchased', {
+      const botsResponse = await fetch('${API_BASE_URL}/api/bots/purchased', {
         headers: {
           'x-auth-token': token
         }
@@ -446,7 +449,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       try {
-        const response = await fetch('/api/transactions/withdraw', {
+        const response = await fetch('${API_BASE_URL}/api/transactions/withdraw', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

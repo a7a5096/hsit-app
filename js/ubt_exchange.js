@@ -1,3 +1,7 @@
+// API configuration directly integrated into this file
+const API_URL = 'https://hsit-backend.onrender.com';
+
+
 // Script to handle UBT exchange functionality
 document.addEventListener('DOMContentLoaded', function() {
   // Check if user is logged in
@@ -79,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch exchange rates
     async function fetchExchangeRates() {
       try {
-        const response = await fetch('/api/transactions/exchange-rates');
+        const response = await fetch('${API_BASE_URL}/api/transactions/exchange-rates');
         
         if (!response.ok) {
           throw new Error('Failed to fetch exchange rates');
@@ -105,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch user data
     async function fetchUserData() {
       try {
-        const response = await fetch('/api/auth', {
+        const response = await fetch('${API_BASE_URL}/api/auth', {
           headers: {
             'x-auth-token': token
           }
@@ -182,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (exchangeType === 'buy') {
           // Buy UBT with crypto
-          response = await fetch('/api/transactions/buy-ubt', {
+          response = await fetch('${API_BASE_URL}/api/transactions/buy-ubt', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -195,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         } else {
           // Sell UBT for USDT
-          response = await fetch('/api/transactions/withdraw', {
+          response = await fetch('${API_BASE_URL}/api/transactions/withdraw', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

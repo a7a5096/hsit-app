@@ -1,4 +1,56 @@
 // Script to run the backend server
+// In your backend/server.js (or equivalent)
+
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config(); // Make sure dotenv is configured early
+
+const app = express();
+
+// --- CORS Configuration ---
+const allowedOrigins = [
+    'https://your-frontend-domain.com', // Your actual frontend domain
+    'http://localhost:8000' // Or whatever port you use for local frontend dev
+    // Add any other origins you need to allow
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true, // If you need to send cookies or authorization headers
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+};
+
+app.use(cors(corsOptions));
+// --- End CORS Configuration ---
+
+
+// Middleware for parsing JSON bodies
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true })); // For form data if needed
+
+
+// --- Your API Routes ---
+// Example:
+// const authRoutes = require('./routes/authRoutes');
+// app.use('/api/auth', authRoutes); 
+// ... other routes ...
+
+
+// --- Start the server ---
+const PORT = process.env.PORT || 3000; // Render provides the PORT env var
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    // Connect to MongoDB here
+});
+
 require('dotenv').config();
 const express = require('express');
 const connectDB = require('./config/db');
