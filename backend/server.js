@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import userRoutes from './routes/users.js'; // Verify the path is correct
 
 dotenv.config();
 
@@ -46,7 +47,7 @@ app.use(express.json());
 // app.use(express.urlencoded({ extended: true }));
 
 // --- Your API routes defined AFTER cors middleware ---
-// Example: app.use('/api/users', userRoutes);
+ app.use('/api/users', userRoutes);
 // --- Serve Static Files (can be before or after API routes, usually after) ---
 app.use(express.static(path.join(__dirname, '../frontend/build')));
 // --- Catchall Handler (should be LAST) ---
