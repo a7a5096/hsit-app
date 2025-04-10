@@ -68,8 +68,6 @@ if (!fs.existsSync(qrCodeDir)) {
   fs.mkdirSync(qrCodeDir, { recursive: true });
 }
 
-// Initialize Express
-const app = express();
 
 // Connect to Database
 connectDB();
