@@ -1,25 +1,23 @@
 {
-  "name": "hsit-backend-root", // Renamed for clarity, but keep your original if preferred
+  "name": "hsit-backend-root",
   "version": "1.0.0",
   "description": "Backend for HSIT app",
-  "type": "module", // <--- ADD THIS LINE
-  "main": "backend/server.js", // Good practice to specify the main entry point
+  "type": "module",
+  "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
-    // Updated build script: Installs frontend deps and runs frontend build
     "build": "npm install --prefix frontend && npm run build --prefix frontend",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5", // Ensure your versions match your lock file or needs
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "mongoose": "^8.4.0"
-    // Add any other backend dependencies here
   },
-  "engines": { // Optional: Specify Node version used for development/deployment
-    "node": ">=18.0.0" // Example: Use Node 18 or later (ES Modules are well-supported)
+  "engines": {
+    "node": ">=18.0.0"
   },
-  "author": "", // Add author info if desired
-  "license": "ISC" // Add license info if desired
+  "author": "",
+  "license": "ISC"
 }
