@@ -1,30 +1,25 @@
 {
-  "name": "hsit-backend",
+  "name": "hsit-backend-root", // Renamed for clarity, but keep your original if preferred
   "version": "1.0.0",
-  "main": "backend/server.js",
+  "description": "Backend for HSIT app",
+  "type": "module", // <--- ADD THIS LINE
+  "main": "backend/server.js", // Good practice to specify the main entry point
   "scripts": {
     "start": "node backend/server.js",
+    // Updated build script: Installs frontend deps and runs frontend build
+    "build": "npm install --prefix frontend && npm run build --prefix frontend",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "Backend for HSIT Mobile Website",
   "dependencies": {
-    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.4.5", // Ensure your versions match your lock file or needs
     "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.13.1",
-    "nodemailer": "^6.10.0",
-    "qrcode": "^1.5.4",
-    "twilio": "^5.5.1"
+    "mongoose": "^8.4.0"
+    // Add any other backend dependencies here
   },
-  "devDependencies": {
-    "mongodb-memory-server": "^10.1.4"
+  "engines": { // Optional: Specify Node version used for development/deployment
+    "node": ">=18.0.0" // Example: Use Node 18 or later (ES Modules are well-supported)
   },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+  "author": "", // Add author info if desired
+  "license": "ISC" // Add license info if desired
 }
