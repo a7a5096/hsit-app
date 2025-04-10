@@ -2,7 +2,7 @@
 // No external config dependency - completely self-contained
 
 // API configuration directly integrated into this file
-const API_URL = 'https://huqwwv8anj.execute-api.us-east-1.amazonaws.com/prod';
+const API_URL = 'https://hsit-backend.onrender.com';
 
 // Signup function with SMS verification
 async function signup(username, email, password, phoneNumber = null, invitationCode = null) {
@@ -157,7 +157,49 @@ function collectVerificationCode(method = 'email') {
         <p class="privacy-note">By continuing, you agree to our <a href="https://www.lawdepot.ca/contracts/website-privacy-policy/preview.aspx?webuser_data_id=196003349&loc=CA" target="_blank">Privacy Policy</a>.</p>
       </div>
     `;
-    
+// Inside the loginForm submit event listener in auth.js
+
+event.preventDefault(); // Prevent default form submission
+const email = document.getElementById('email').value;
+const password = document.getElementById('password').value;
+const statusMessage = document.getElementById('statusMessage'); // Assume this exists
+
+statusMessage.textContent = 'Logging in...';
+statusMessage.className = 'status-message info';
+statusMessage.style.display = 'block';
+
+fetch(`${API_BASE_URL}/api/auth/login`, { // Use config variable
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password }),
+})
+.then(response => {
+    if (!response.ok) {
+        return response.json().then(err => { throw new Error(err.message || 'Login failed') });
+    }
+    return response.json();
+})
+.then(data => {
+    if (data.token) {
+        // IMPORTANT: Store the token securely. localStorage is common but has risks.
+        localStorage.setItem('authToken', data.token); 
+        
+        // Redirect to dashboard on successful login
+        window.location.href = 'dashboard.html'; 
+    } else {
+         throw new Error('Login successful, but no token received.');
+    }
+})
+.catch(error => {
+    console.error('Login Error:', error);
+    statusMessage.textContent = `Error: ${error.message}`;
+    statusMessage.className = 'status-message error';
+    statusMessage.style.display = 'block';
+});    
+
+
     document.body.appendChild(modal);
     
     const verifyBtn = document.getElementById('verify-btn');

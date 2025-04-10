@@ -1,3 +1,7 @@
+// API configuration directly integrated into this file
+const API_URL = 'https://hsit-backend.onrender.com';
+
+
 // Script to handle invitation system functionality
 document.addEventListener('DOMContentLoaded', function() {
   // Check if user is logged in
@@ -44,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function fetchInvitationData() {
     try {
       // Fetch invitation code
-      const codeResponse = await fetch('/api/invitations', {
+      const codeResponse = await fetch('${API_BASE_URL}/api/invitations', {
         headers: {
           'x-auth-token': token
         }
@@ -68,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       // Fetch team data
-      const teamResponse = await fetch('/api/invitations/team', {
+      const teamResponse = await fetch('${API_BASE_URL}/api/invitations/team', {
         headers: {
           'x-auth-token': token
         }
@@ -102,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!username) return;
     
     try {
-      const response = await fetch('/api/invitations/set-default', {
+      const response = await fetch('${API_BASE_URL}/api/invitations/set-default', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -129,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!customCode) return;
     
     try {
-      const response = await fetch('/api/invitations/set-custom', {
+      const response = await fetch('${API_BASE_URL}/api/invitations/set-custom', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

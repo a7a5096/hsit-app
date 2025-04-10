@@ -1,3 +1,7 @@
+// API configuration directly integrated into this file
+const API_URL = 'https://hsit-backend.onrender.com';
+
+
 // Script to handle AI products functionality
 document.addEventListener('DOMContentLoaded', function() {
   // Check if user is logged in
@@ -183,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     try {
       // Make purchase API call
-      const response = await fetch('/api/bots/purchase', {
+      const response = await fetch('${API_BASE_URL}/api/bots/purchase', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
