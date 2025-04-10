@@ -1,3 +1,7 @@
+// backend/routes/users.js
+import bcrypt from 'bcryptjs'; // <-- Node.js cannot find this package
+// ... rest of the file
+
 {
   "name": "hsit-backend-root",
   "version": "1.0.0",
