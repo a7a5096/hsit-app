@@ -54,7 +54,6 @@ app.listen(PORT, () => {
 require('dotenv').config();
 const connectDB = require('./config/db');
 const path = require('path');
-const cors = require('cors');
 const fs = require('fs');
 
 // Create public directories if they don't exist
