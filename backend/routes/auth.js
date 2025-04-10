@@ -1,96 +1,75 @@
-const express = require('express');
+// backend/routes/auth.js
+import express from 'express';
+import bcrypt from 'bcryptjs'; // Or 'bcrypt' if you use that package
+import User from '../models/User.js'; // Adjust path to your User model
+import authMiddleware from '../middleware/authMiddleware.js'; // Assuming you have auth middleware
+
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const config = require('../config/config');
-const auth = require('../middleware/auth');
-const User = require('../models/User');
 
-// @route   POST api/auth
-// @desc    Authenticate user & get token (Login)
-// @access  Public
-router.post('/', async (req, res) => {
-    const { email, password } = req.body;
+// --- Other auth routes (login, register, etc.) would be here ---
 
-    try {
-        // See if user exists
-        let user = await User.findOne({ email });
-
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials' }); // User not found
-        }
-
-        // Check password
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' }); // Password incorrect
-        }
-
-        // Return jsonwebtoken
-        // ... (JWT generation) ...
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
-    }
-});
-
-    jwt.sign(
-      payload,
-      config.JWT_SECRET,
-      { expiresIn: config.JWT_EXPIRE },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-      }
-    );
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
-});
-
-// @route   GET api/auth
-// @desc    Get authenticated user
-// @access  Private
-router.get('/', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select('-password -phoneVerificationCode -phoneVerificationExpires');
-    res.json(user);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
-});
-
-// @route   POST api/auth/change-password
-// @desc    Change user password
-// @access  Private
-router.post('/change-password', auth, async (req, res) => {
+// @route   POST /api/auth/change-password
+// @desc    Change user's password
+// @access  Private (requires user to be logged in)
+router.post('/change-password', authMiddleware, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
+  const userId = req.user.id; // Get user ID from the token payload via auth middleware
+
+  // 1. Basic Input Validation
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ msg: 'Please provide both current and new passwords' });
+  }
+
+  // 2. New Password Complexity Check (Example: minimum length)
+  if (newPassword.length < 8) { // Adjust complexity rules as needed
+    return res.status(400).json({ msg: 'New password must be at least 8 characters long' });
+  }
+
+  if (currentPassword === newPassword) {
+    return res.status(400).json({ msg: 'New password cannot be the same as the current password' });
+  }
 
   try {
-    const user = await User.findById(req.user.id);
+    // 3. Fetch user from database
+    // We refetch the user here to ensure we have the latest password hash
+    // Alternatively, if authMiddleware already populates req.user fully, you might skip this.
+    // However, refetching is safer if the password could have changed elsewhere.
+    const user = await User.findById(userId).select('+password'); // Ensure password field is selected if needed
+
     if (!user) {
+      // Should not happen if authMiddleware is correct, but good failsafe
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    // Verify current password
+    // 4. Verify current password
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      return res.status(400).json({ msg: 'Current password is incorrect' });
+      // Use a consistent error message for security (don't reveal WHICH password failed)
+      return res.status(400).json({ msg: 'Unable to update password' });
+      // Or more specific (less secure): return res.status(400).json({ msg: 'Current password is incorrect' });
     }
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
+    // 5. Hash new password
+    const salt = await bcrypt.genSalt(10); // Use appropriate salt rounds
     user.password = await bcrypt.hash(newPassword, salt);
-    await user.save();
 
-    res.json({ msg: 'Password updated successfully' });
+    // 6. Save updated user (handle potential DB errors)
+    try {
+      await user.save();
+      res.json({ msg: 'Password updated successfully' });
+    } catch (dbErr) {
+      console.error('Database error saving updated password:', dbErr);
+      res.status(500).json({ msg: 'Error saving updated password' });
+    }
+
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
+    // 7. General Error Handling
+    console.error('Error changing password:', err.message);
+    // Avoid sending detailed internal errors to the client
+    res.status(500).json({ msg: 'Server error during password update' });
   }
 });
 
-module.exports = router;
+
+// --- Make sure to export the router ---
+export default router;
