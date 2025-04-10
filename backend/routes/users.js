@@ -1,17 +1,23 @@
-const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { check, validationResult } = require('express-validator'); // Import validator
+// backend/routes/users.js
 
-const User = require('../models/User');
-const InvitationCode = require('../models/InvitationCode');
+// Use ES Module import syntax
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { check, validationResult } from 'express-validator';
+
+// Import models - add .js extension for local files in ESM
+import User from '../models/User.js';
+import InvitationCode from '../models/InvitationCode.js';
+
+const router = express.Router();
 
 // @route   POST api/users
 // @desc    Register user (Signup)
 // @access  Public (Requires valid Invitation Code)
+// --- FIX: Change route path from '/' to '/users' ---
 router.post(
-  '/',
+  '/users', // <--- FIX: Correct path
   [
     // Input validation rules
     check('name', 'Name is required').not().isEmpty(),
@@ -23,17 +29,15 @@ router.post(
     // Check validation results
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      // Return first error message for simplicity
       return res.status(400).json({ message: errors.array()[0].msg });
     }
 
+    // Destructure after validation
     const { name, email, password, invitationCode } = req.body;
 
     try {
-      // Check Invitation Code first
+      // --- Invitation Code Check ---
       const code = await InvitationCode.findOne({ code: invitationCode });
-
-      // Provide more specific error messages for invitation code issues
       if (!code) {
            return res.status(400).json({ message: 'Invalid invitation code' });
       }
@@ -44,65 +48,63 @@ router.post(
            return res.status(400).json({ message: 'Invitation code has expired' });
       }
 
-      // See if user exists *after* validating code
+      // --- User Existence Check ---
       let user = await User.findOne({ email });
       if (user) {
         return res.status(400).json({ message: 'User already exists with this email' });
       }
 
-      // Create new user instance
+      // --- Create and Save User ---
       user = new User({ name, email, password });
-
-      // Hash password
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(password, salt);
+      await user.save(); // Save the new user document
 
-      // Save user to DB
-      await user.save();
-
-      // Mark invitation code as used *after* user is successfully saved
+      // --- Mark Invitation Code Used ---
       code.isUsed = true;
-      code.usedBy = user._id; // Link the code to the user who used it
+      code.usedBy = user._id;
       await code.save();
 
-      // Return jsonwebtoken (Payload, Secret, Options)
+      // --- Generate JWT ---
       const payload = {
         user: {
-          id: user.id, // Use user.id (Mongoose virtual)
+          id: user.id,
         },
       };
 
-      // NOTE: Line 95 from the error message is inside this res.json() object below.
+      // Ensure JWT_SECRET is defined in your .env / Render environment
+      if (!process.env.JWT_SECRET) {
+          console.error('FATAL ERROR: JWT_SECRET is not defined.');
+          return res.status(500).json({ message: 'Server configuration error.' });
+      }
+
       jwt.sign(
         payload,
-        process.env.JWT_SECRET, // Ensure JWT_SECRET is set in Render Env Vars
-        { expiresIn: '5 days' }, // Token expiry
-        (err, token) => { // Callback starts here
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRE || '5 days' }, // Use env var or default
+        (err, token) => {
           if (err) {
-              // Throwing the error here might crash the server on JWT issues.
-              // It's often better to log it and send a 500 response.
               console.error('JWT Sign Error:', err);
               return res.status(500).json({ message: 'Error generating authentication token.' });
-          };
-          // Return token and user info (excluding password) upon successful signup
-          res.json({
+          }
+          // Success: Return token and user info
+          res.status(201).json({ // Send 201 Created status
             token,
             user: { id: user.id, name: user.name, email: user.email },
-           }); // Closing bracket for res.json argument
-        } // Closing bracket for jwt.sign callback
-      ); // Closing parenthesis for jwt.sign
+           });
+        }
+      );
 
     } catch (err) {
-      // This is the general error handler for the try block
-      console.error('Signup Route Error:', err.message); // Log the actual error
-      // Check if it's a duplicate key error (e.g., email already exists, though checked above)
+      console.error('Signup Route Error:', err.message);
+      // Handle potential duplicate key errors during save, although unlikely now
       if (err.code === 11000) {
-          return res.status(400).json({ message: 'Email already exists.' });
+          return res.status(400).json({ message: 'Data conflict, potentially duplicate information.' });
       }
-      // Send a generic server error message to the client
       res.status(500).send('Server error during signup');
     }
-  } // Closing bracket for the main async (req, res) route handler function
-); // Closing parenthesis for router.post
+  }
+);
 
-module.exports = router; // Ensure this line is the very last line
+// Use ES Module export syntax
+export default router;
