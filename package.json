@@ -1,37 +1,75 @@
 {
-  "name": "project",
+  "name": "hsit-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "backend/server.js",
   "scripts": {
+    "start": "node backend/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Backend for HSIT Mobile Website",
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^5.1.0",
+    "express": "^4.19.2",  
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.13.1",
     "nodemailer": "^6.10.0",
-    "qrcode": "^1.5.4",
-    "twilio": "^5.5.1"
+    "twilio": "^5.5.1" 
+    
   },
   "devDependencies": {
     "mongodb-memory-server": "^10.1.4"
-  }
-}
-
-
-{
-  "dependencies": {
-    "express": "^4.18.2",
-    "path-to-regexp": "^6.2.1"
   },
-  "resolutions": {
-    "path-to-regexp": "^6.2.1"
+  "engines": {
+    "node": ">=18.0.0" 
   }
 }
+```*   **Note:** Updated `express` to `^4.19.2`. Explicitly added `engines` block specifying Node 18+ (recommended for Render). Removed `qrcode` as it's likely frontend. If your backend *does* generate QR codes, add `"qrcode": "^1.5.4"` back. Removed `path-to-regexp` as Express 4 includes it.
+
+**Step 2: Update Frontend HTML Files**
+
+*   Remove incorrect `action` and `method` from forms.
+*   Update the Privacy Policy link (placeholder added).
+
+**File: `index.html` (Complete Replacement)**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - HSIT</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+</head>
+<body class="auth-page">
+    <div id="statusMessage" class="status-message"></div>
+    <div class="auth-container">
+        <img src="images/logo.png" alt="HSIT Logo" class="logo">
+        <h1>Welcome Back</h1>
+        <!-- Removed action and method -->
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Log In</button>
+        </form>
+        <p class="auth-switch">
+            Don't have an account? <a href="signup.html">Sign Up</a>
+        </p>
+    </div>
+    <!-- Assumes a config file or inline script sets API_BASE_URL -->
+    <script src="js/config.js"></script> 
+    <script src="js/auth.js"></script>
+</body>
+</html>
