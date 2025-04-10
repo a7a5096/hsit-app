@@ -1,129 +1,108 @@
-// Script to run the backend server
-// In your backend/server.js (or equivalent)
+// backend/server.js
 
+// --- 1. Requires ---
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config(); // Make sure dotenv is configured early
+require('dotenv').config(); // Configure dotenv ONCE, early
+const path = require('path');
+const fs = require('fs');
+const connectDB = require('./config/db'); // Assuming this file exists
 
+// --- 2. Initialization ---
 const app = express();
 
-// --- CORS Configuration ---
+// --- 3. CORS Configuration (Apply ONCE) ---
+// Update this with your actual Render frontend URL!
 const allowedOrigins = [
-    'https://your-frontend-domain.com', // Your actual frontend domain
-    'http://localhost:8000' // Or whatever port you use for local frontend dev
-    // Add any other origins you need to allow
+    process.env.CORS_ALLOWED_ORIGINS || 'https://hsit-app.onrender.com', // Use env var
+    'http://localhost:8000', // Keep for local dev if needed
+    'http://localhost:5500', // Add any other local dev ports
+    'http://127.0.0.1:5500' // Add this too for local dev sometimes
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-    return callback(null, true);
   },
-  credentials: true, // If you need to send cookies or authorization headers
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  credentials: true,
+  optionsSuccessStatus: 200
 };
 
-app.use(cors(corsOptions));
-// --- End CORS Configuration ---
+app.use(cors(corsOptions)); // Apply specific CORS options ONCE
 
+// --- 4. Middleware (Apply ONCE each) ---
+app.use(express.json()); // For parsing application/json
+app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
 
-// Middleware for parsing JSON bodies
-app.use(express.json()); 
-app.use(express.urlencoded({ extended: true })); // For form data if needed
-
-
-// --- Your API Routes ---
-// Example:
-// const authRoutes = require('./routes/authRoutes');
-// app.use('/api/auth', authRoutes); 
-// ... other routes ...
-
-
-// --- Start the server ---
-const PORT = process.env.PORT || 3000; // Render provides the PORT env var
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    // Connect to MongoDB here
-});
-
-require('dotenv').config();
-const connectDB = require('./config/db');
-const path = require('path');
-const fs = require('fs');
-
-// Create public directories if they don't exist
-const publicDir = path.join(__dirname, '../public');
-const qrCodeDir = path.join(publicDir, 'qrcodes');
-
-if (!fs.existsSync(publicDir)) {
-  fs.mkdirSync(publicDir, { recursive: true });
-}
-
-if (!fs.existsSync(qrCodeDir)) {
-  fs.mkdirSync(qrCodeDir, { recursive: true });
-}
-
-
-// Connect to Database
-connectDB();
-
-// Middleware
-app.use(express.json());
-app.use(cors());
-
-// Debug middleware to log route information
+// Optional Debug Middleware (keep if helpful)
 app.use((req, res, next) => {
-  console.log('Debug - Request URL:', req.url);
-  console.log('Debug - Request Method:', req.method);
-  console.log('Debug - Request Headers:', JSON.stringify(req.headers, null, 2));
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  // Avoid logging full headers in production unless necessary for debugging
+  // console.log('Debug - Request Headers:', JSON.stringify(req.headers, null, 2));
   next();
 });
 
-// Serve static assets first to avoid route conflicts
-app.use('/qrcodes', express.static(path.join(__dirname, '../public/qrcodes')));
-app.use(express.static(path.join(__dirname, '../public')));
+// --- 5. Static File Serving (Setup before API routes if possible) ---
+// Create public directories if they don't exist (Run this logic only once on startup)
+const publicDir = path.join(__dirname, '../public');
+const qrCodeDir = path.join(publicDir, 'qrcodes');
+if (!fs.existsSync(qrCodeDir)) {
+  fs.mkdirSync(qrCodeDir, { recursive: true });
+  console.log(`Created directory: ${qrCodeDir}`);
+} else {
+  console.log(`Directory exists: ${qrCodeDir}`);
+}
 
-// Define Routes
+// Serve static files from specific paths first
+app.use('/qrcodes', express.static(qrCodeDir));
+// If you have other top-level static assets like CSS/JS in /public
+// app.use(express.static(publicDir)); // Uncomment if needed
+
+
+// --- 6. API Routes ---
 app.use('/api/users', require('./routes/users'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/crypto', require('./routes/crypto'));
 app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/invitations', require('./routes/invitations'));
+// Add other API routes here...
 
-// Create the email-verification route properly - remove it if you've moved these routes elsewhere
-// app.use('/api/email-verification', require('./routes/email-verification'));
 
-// Specific routes for static files
-app.get('/index.html', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '..', 'index.html'));
-});
-
-// Safer catch-all route that doesn't use the wildcard
-app.use((req, res, next) => {
-  if (req.method === 'GET') {
-    if (req.path.startsWith('/api')) {
-      return res.status(404).json({ msg: 'API endpoint not found' });
+// --- 7. Frontend Serving / Catch-all (for Single Page Apps) ---
+// Serve index.html for non-API GET requests (useful for SPA routing)
+// Make sure this comes AFTER your API routes and static file serving
+app.get('*', (req, res, next) => {
+    // If the request is not for an API endpoint, serve the main HTML file
+    if (!req.path.startsWith('/api/') && req.method === 'GET') {
+        res.sendFile(path.resolve(__dirname, '..', 'index.html')); // Adjust path if frontend files are elsewhere
+    } else {
+        next(); // Pass control to the next middleware (error handler or 404)
     }
-    return res.sendFile(path.resolve(__dirname, '..', 'index.html'));
-  }
-  next();
 });
 
-// Error handler middleware - must be after all routes
+
+// --- 8. Error Handling Middleware (Must be last `app.use`) ---
 app.use((err, req, res, next) => {
-  console.error('Error in route processing:');
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+  console.error('Error:', err.stack);
+  res.status(500).json({ message: 'Internal Server Error', error: err.message });
 });
 
-const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Access the application at http://localhost:${PORT}`);
+// --- 9. Database Connection & Server Start ---
+const PORT = process.env.PORT || 5000; // Define PORT ONCE
+
+// Connect to DB and then start server
+connectDB().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running successfully on port ${PORT}`);
+        console.log(`Allowed Origins: ${allowedOrigins.join(', ')}`);
+        // console.log(`Access the application locally (if applicable) at http://localhost:${PORT}`);
+    });
+}).catch(err => {
+    console.error("Failed to connect to MongoDB", err);
+    process.exit(1); // Exit if DB connection fails
 });
