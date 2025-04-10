@@ -1,108 +1,92 @@
-// backend/server.js
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// --- 1. Requires ---
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config(); // Configure dotenv ONCE, early
-const path = require('path');
-const fs = require('fs');
-const connectDB = require('./config/db'); // Assuming this file exists
+dotenv.config();
 
-// --- 2. Initialization ---
+// --- ES Module equivalent for __dirname ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// --- End ES Module equivalent ---
+
 const app = express();
 
-// --- 3. CORS Configuration (Apply ONCE) ---
-// Update this with your actual Render frontend URL!
-const allowedOrigins = [
-    process.env.CORS_ALLOWED_ORIGINS || 'https://hsit-app.onrender.com', // Use env var
-    'http://localhost:8000', // Keep for local dev if needed
-    'http://localhost:5500', // Add any other local dev ports
-    'http://127.0.0.1:5500' // Add this too for local dev sometimes
-];
-
+// Middleware
+// Ensure CORS is configured correctly based on your needs and env variables
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  optionsSuccessStatus: 200
+  origin: process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',') : '*', // Example: handle comma-separated origins or allow all
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
+app.use(cors(corsOptions));
 
-app.use(cors(corsOptions)); // Apply specific CORS options ONCE
+app.use(express.json()); // Used to parse JSON bodies
+// app.use(express.urlencoded({ extended: true })); // Uncomment if you need to parse URL-encoded bodies
 
-// --- 4. Middleware (Apply ONCE each) ---
-app.use(express.json()); // For parsing application/json
-app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, '../frontend/build')));
 
-// Optional Debug Middleware (keep if helpful)
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  // Avoid logging full headers in production unless necessary for debugging
-  // console.log('Debug - Request Headers:', JSON.stringify(req.headers, null, 2));
-  next();
+// Basic API Route (Example)
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Backend API is working!' });
 });
 
-// --- 5. Static File Serving (Setup before API routes if possible) ---
-// Create public directories if they don't exist (Run this logic only once on startup)
-const publicDir = path.join(__dirname, '../public');
-const qrCodeDir = path.join(publicDir, 'qrcodes');
-if (!fs.existsSync(qrCodeDir)) {
-  fs.mkdirSync(qrCodeDir, { recursive: true });
-  console.log(`Created directory: ${qrCodeDir}`);
-} else {
-  console.log(`Directory exists: ${qrCodeDir}`);
+// --- Add your other API routes here ---
+// Example:
+// import itemRoutes from './routes/items.js'; // Use .js extension if importing local files in ESM
+// app.use('/api/items', itemRoutes);
+// Make sure any files you import (like './routes/items.js') ALSO use ES Module syntax (import/export)
+
+// Catchall handler: For any request that doesn't match an API route or static file,
+// send back React's index.html file. This is important for client-side routing.
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../frontend/build', 'index.html'), (err) => {
+    if (err) {
+      // Avoid sending the HTML file if there's an error finding it,
+      // maybe the frontend wasn't built correctly.
+      res.status(500).send(err);
+    }
+  });
+});
+
+
+// Connect to MongoDB
+const MONGO_URI = process.env.MONGO_URI; // Ensure this matches the key in Render Env Vars
+const PORT = process.env.PORT || 5000;
+
+if (!MONGO_URI) {
+    console.error("FATAL ERROR: MONGO_URI environment variable is not defined.");
+    process.exit(1);
 }
 
-// Serve static files from specific paths first
-app.use('/qrcodes', express.static(qrCodeDir));
-// If you have other top-level static assets like CSS/JS in /public
-// app.use(express.static(publicDir)); // Uncomment if needed
-
-
-// --- 6. API Routes ---
-app.use('/api/users', require('./routes/users'));
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/crypto', require('./routes/crypto'));
-app.use('/api/transactions', require('./routes/transactions'));
-app.use('/api/invitations', require('./routes/invitations'));
-// Add other API routes here...
-
-
-// --- 7. Frontend Serving / Catch-all (for Single Page Apps) ---
-// Serve index.html for non-API GET requests (useful for SPA routing)
-// Make sure this comes AFTER your API routes and static file serving
-app.get('*', (req, res, next) => {
-    // If the request is not for an API endpoint, serve the main HTML file
-    if (!req.path.startsWith('/api/') && req.method === 'GET') {
-        res.sendFile(path.resolve(__dirname, '..', 'index.html')); // Adjust path if frontend files are elsewhere
-    } else {
-        next(); // Pass control to the next middleware (error handler or 404)
-    }
-});
-
-
-// --- 8. Error Handling Middleware (Must be last `app.use`) ---
-app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
-  res.status(500).json({ message: 'Internal Server Error', error: err.message });
-});
-
-
-// --- 9. Database Connection & Server Start ---
-const PORT = process.env.PORT || 5000; // Define PORT ONCE
-
-// Connect to DB and then start server
-connectDB().then(() => {
+mongoose.connect(MONGO_URI)
+  .then(() => {
+    console.log('MongoDB Connected Successfully');
     app.listen(PORT, () => {
-        console.log(`Server running successfully on port ${PORT}`);
-        console.log(`Allowed Origins: ${allowedOrigins.join(', ')}`);
-        // console.log(`Access the application locally (if applicable) at http://localhost:${PORT}`);
+      console.log(`Server listening on port ${PORT}`);
     });
-}).catch(err => {
-    console.error("Failed to connect to MongoDB", err);
-    process.exit(1); // Exit if DB connection fails
+  })
+  .catch(err => {
+    console.error("MongoDB connection failed:", err.message); // Log only the error message initially for clarity
+    // console.error(err); // Uncomment for full error stack trace if needed
+    process.exit(1);
+  });
+
+// Optional: Graceful shutdown
+process.on('SIGINT', () => {
+    console.log('SIGINT signal received: closing MongoDB connection');
+    mongoose.connection.close(() => {
+        console.log('MongoDB connection closed due to app termination');
+        process.exit(0);
+    });
+});
+
+process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing MongoDB connection');
+    mongoose.connection.close(() => {
+        console.log('MongoDB connection closed due to app termination');
+        process.exit(0);
+    });
 });
