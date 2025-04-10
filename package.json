@@ -26,4 +26,4 @@
   "engines": {
     "node": ">=18.0.0"
   }
-} // <--- FILE MUST END EXACTLY HERE (optionally followed by a single newline)
+}
