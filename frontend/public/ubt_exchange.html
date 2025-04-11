@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UBT Exchange - HSIT</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <style>
+        .exchange-info {
+            margin-bottom: 20px;
+        }
+        
+        .exchange-rates {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .rate-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .rate-label {
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        
+        .rate-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .exchange-form {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .exchange-result {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4caf50;
+            margin: 10px 0;
+        }
+        
+        #max-amount {
+            font-size: 0.8em;
+            color: #aaa;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body class="page-background">
+    <div id="statusMessage" class="status-message"></div>
+    <header class="standard-header">
+        <a href="asset_center.html" class="back-btn">&larr; Back</a>
+        <h1>UBT Exchange</h1>
+        <div></div> <!-- Spacer -->
+    </header>
+
+    <main class="page-main">
+        <!-- UBT exchange content will be loaded dynamically -->
+    </main>
+
+    <script src="js/ubt_exchange.js"></script>
+</body>
+</html>
