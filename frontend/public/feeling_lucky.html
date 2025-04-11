@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feeling Lucky - HSIT</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .prize-list {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #000000;
+            border-radius: 8px;
+        }
+        
+        .prize-list h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        
+        .prize-list ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .prize-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .prize-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .lucky-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 20px 0;
+        }
+        
+        .lucky-button:hover {
+            background-color: #45a049;
+        }
+        
+        .lucky-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .result-display {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #e8f5e9;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+            display: none;
+        }
+        
+        .result-display.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="page-layout lucky-page">
+    <header class="page-header">
+        <a href="dashboard.html" class="back-button">&larr; Back</a>
+        <h1>Feeling Lucky</h1>
+        <span>&nbsp;</span> <!-- Placeholder for alignment -->
+    </header>
+
+    <main class="page-main">
+        <section class="content-card lucky-container">
+            <h2>Try Your Luck!</h2>
+            
+            <div class="prize-list">
+                <h3>Possible Prizes:</h3>
+                <ul id="possible-prizes">
+                    <li>1 UBT</li>
+                    <li>10 UBT</li>
+                    <li>20 USDT</li>
+                    <li>Better luck next time</li>
+                </ul>
+            </div>
+            
+            <div class="tries-info">
+                <p>You have <span id="remaining-tries">0</span> tries remaining today.</p>
+                <p class="note">Each bot you own gives you 1 try per day.</p>
+            </div>
+            
+            <button id="lucky-button" class="lucky-button">I'm Feeling Lucky!</button>
+            
+            <div id="result-display" class="result-display">
+                <p id="result-text">Your result will appear here...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/feeling_lucky.js"></script>
+</body>
+</html>

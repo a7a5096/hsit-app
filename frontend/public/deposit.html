@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit - TSAI</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="page-layout deposit-page">
+    <header class="page-header">
+        <a href="dashboard.html" class="back-button">&larr; Back</a>
+        <h1>Deposit Funds</h1>
+        <span>&nbsp;</span> <!-- Placeholder for alignment -->
+    </header>
+
+    <main class="page-main">
+        <section class="content-card">
+            <h2>Select Cryptocurrency</h2>
+            <div class="coin-selection">
+                <label>
+                    <input type="radio" name="crypto" value="BTC" checked> Bitcoin (BTC)
+                </label>
+                <label>
+                    <input type="radio" name="crypto" value="ETH"> Ethereum (ETH)
+                </label>
+                <label>
+                    <!-- USDT uses the same address infrastructure as ETH (ERC-20) -->
+                    <input type="radio" name="crypto" value="USDT"> Tether (USDT - ERC20)
+                </label>
+            </div>
+        </section>
+
+        <section class="content-card">
+            <h2>Your Deposit Address</h2>
+            <div class="deposit-info">
+                <p class="warning-text">
+                    ⚠️ Send only <strong id="selected-coin-name">Bitcoin (BTC)</strong> to this address.
+                    Sending any other coin may result in permanent loss.
+                </p>
+                <div class="address-box">
+                    <input type="text" id="deposit-address" value="Loading your address..." readonly>
+                    <button id="copy-button" class="btn btn-copy" disabled>Copy</button>
+                </div>
+                <div class="qr-code-placeholder" id="qr-code-area">
+                    <p>[QR Code will appear here]</p>
+                    <!-- QR code library (like qrcode.js) would target this -->
+                </div>
+                 <p class="note">Minimum deposit: <span id="min-deposit">...</span></p>
+                 <p class="note">Deposits require network confirmations and may take time to reflect.</p>
+                 <!--
+                    WARNING FOR DEVELOPER:
+                    The addresses displayed here MUST be fetched from a secure backend
+                    that has uniquely assigned an address pair (BTC, ETH) from your CSVs
+                    to this specific logged-in user during their signup.
+                    The backend manages the list of available/assigned addresses.
+                 -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Include a QR Code generation library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="js/deposit.js"></script>
+
+</body>
+</html>
