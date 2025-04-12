@@ -12,7 +12,8 @@
     <div class="auth-container">
         <img src="logo.png" alt="HSIT Logo" class="logo">
         <h1>Create Account</h1>
-        <!-- Removed action and method -->
+        
+        <!-- Step 1: Initial Signup Form -->
         <form id="signupForm">
              <div class="form-group">
                 <label for="username">Username</label>
@@ -41,17 +42,31 @@
             </div>
             <div class="form-group privacy-policy">
                 <input type="checkbox" id="privacy-policy" name="privacy-policy" required>
-                <!-- Replace # with the actual URL of your hosted privacy policy -->
                 <label for="privacy-policy">I agree to the <a href="#" target="_blank">Privacy Policy</a></label> 
             </div>
             <button type="submit" class="btn btn-primary">Sign Up</button>
         </form>
+        
+        <!-- Step 2: Verification Form (hidden initially) -->
+        <form id="verificationForm" style="display: none;">
+            <div class="form-group">
+                <label for="verification-code">Verification Code</label>
+                <input type="text" id="verification-code" name="verification-code" required>
+                <small>Enter the 6-digit code sent to your phone</small>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Verify</button>
+                <button type="button" id="resend-code" class="btn btn-secondary">Resend Code</button>
+            </div>
+        </form>
+        
         <p class="auth-switch">
             Already have an account? <a href="index.html">Log In</a>
         </p>
     </div>
-    <!-- Assumes a config file or inline script sets API_BASE_URL -->
+    
     <script src="js/config.js"></script> 
+    <script src="js/twilio-verification.js"></script>
     <script src="js/auth.js"></script>
 </body>
 </html>
