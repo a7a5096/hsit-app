@@ -113,5 +113,56 @@ function handleLogin(event) {
  */
 function showStatus(message, type) {
     var statusMessage = document.getElementById('statusMessage');
-    if</body>
+    if (statusMessage) {
+        statusMessage.textContent = message;
+        statusMessage.className = 'status-message ' + (type || 'info');
+        statusMessage.style.display = 'block';
+    } else {
+        // Fallback if status message element doesn't exist
+        alert(message);
+    }
+}
+
+/**
+ * Checks if the user is authenticated
+ */
+function isAuthenticated() {
+    return !!localStorage.getItem('auth_token');
+}
+
+/**
+ * Gets the current authentication token
+ */
+function getAuthToken() {
+    return localStorage.getItem('auth_token');
+}
+
+/**
+ * Logs the user out
+ */
+function logout() {
+    localStorage.removeItem('auth_token');
+    window.location.href = 'index.html';
+}
+
+// For protected pages, redirect if not logged in
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if this is a protected page
+    var requiresAuth = document.body.classList.contains('requires-auth');
+    
+    if (requiresAuth && !isAuthenticated()) {
+        window.location.href = 'index.html?require_login=true';
+    }
+    
+    // Setup logout button if it exists
+    var logoutButton = document.getElementById('logout-button');
+    if (logoutButton) {
+        logoutButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            logout();
+        });
+    }
+});
+</script>
+</body>
 </html>
