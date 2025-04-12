@@ -12,7 +12,7 @@
     <div class="auth-container">
         <img src="logo.png" alt="HSIT Logo" class="logo">
         <h1>Welcome Back</h1>
-        <form action="dashboard.html" method="get" id="loginForm"> <!-- Will be handled by JS -->
+        <form id="loginForm">
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" required>
@@ -27,7 +27,7 @@
             Don't have an account? <a href="signup.html">Sign Up</a>
         </p>
     </div>
-    <!-- Removed config.js reference -->
+
 <script>
 /**
  * auth.js
@@ -50,15 +50,8 @@ document.addEventListener('DOMContentLoaded', function() {
 function handleLogin(event) {
     event.preventDefault();
     
-    var statusMessage = document.getElementById('statusMessage');
     var email = document.getElementById('email').value.trim();
     var password = document.getElementById('password').value;
-    
-    // Clear previous status messages
-    if (statusMessage) {
-        statusMessage.textContent = '';
-        statusMessage.style.display = 'none';
-    }
     
     // Validate form data
     if (!email || !password) {
@@ -68,44 +61,57 @@ function handleLogin(event) {
     
     showStatus('Signing in...', 'info');
     
-    // Call login API
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', window.location.origin + '/api/auth/login', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    // Save auth token
-                    if (data.token) {
-                        localStorage.setItem('auth_token', data.token);
-                        
-                        // Redirect to dashboard
-                        showStatus('Login successful! Redirecting...', 'success');
-                        setTimeout(function() {
-                            window.location.href = 'dashboard.html';
-                        }, 1000);
-                    } else {
-                        showStatus('No authentication token received', 'error');
-                    }
-                } catch (e) {
-                    showStatus('Error parsing server response', 'error');
-                }
-            } else {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    showStatus(response.message || 'Login failed', 'error');
-                } catch (e) {
-                    showStatus('Login failed', 'error');
-                }
+    // Use fetch API for better error handling
+    fetch(window.location.origin + '/api/auth/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+    })
+    .then(function(response) {
+        // First check if we can get text from the response
+        return response.text().then(function(text) {
+            // If text is empty or not valid JSON, handle appropriately
+            if (!text) {
+                throw new Error('Empty response from server');
             }
+            
+            try {
+                // Try to parse as JSON
+                var data = JSON.parse(text);
+                return {
+                    status: response.status,
+                    data: data
+                };
+            } catch (e) {
+                // Not valid JSON
+                console.error('Server response was not valid JSON:', text);
+                throw new Error('Server returned an invalid response');
+            }
+        });
+    })
+    .then(function(result) {
+        if (result.status === 200) {
+            // Success - save token and redirect
+            if (result.data.token) {
+                localStorage.setItem('auth_token', result.data.token);
+                showStatus('Login successful! Redirecting...', 'success');
+                setTimeout(function() {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+            } else {
+                showStatus('No authentication token received', 'error');
+            }
+        } else {
+            // Handle error response
+            showStatus(result.data.message || 'Login failed', 'error');
         }
-    };
-    xhr.send(JSON.stringify({
-        email: email,
-        password: password
-    }));
+    })
+    .catch(function(error) {
+        showStatus('Error connecting to server: ' + error.message, 'error');
+        console.error('Login error:', error);
+    });
 }
 
 /**
