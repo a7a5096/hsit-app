@@ -6,24 +6,22 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Import routes
-// You'll need to add these route files - I'll add one example below
 import authRoutes from './routes/auth.js';
+import directSmsVerification from './routes/direct-sms-verification.js';
 
+// Load environment variables
 dotenv.config();
 
 // ES Module equivalent for __dirname
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(__filename); // Fixed variable name
 
 const app = express();
 
-//SMS Direct verification
-import directSmsVerification from './routes/direct-sms-verification.js';
-
-app.use('/api/auth', directSmsVerification);
 // Middleware
 // Configure CORS to allow requests from your frontend domain
 const allowedOrigins = [
+  'https://hsitapp.link',
   'https://hsit-app.onrender.com',
   'http://localhost:3000',
   'http://localhost:5000'
@@ -55,7 +53,10 @@ app.use(express.json());
 
 // API Routes
 app.use('/api/auth', authRoutes);
-// Add your other API routes here
+
+// The directSmsVerification routes are already mounted at /api/auth
+// which conflicts with authRoutes, so we need to be more specific
+app.use('/api/auth/verify', directSmsVerification);
 
 // Basic API test route
 app.get('/api/test', (req, res) => {
