@@ -239,14 +239,13 @@ function isValidEmail(email) {
 }
 
 /**
- * Validates a phone number format (basic check for + and digits)
+ * Validates a phone number format (ensures E.164 format)
  * @param {string} phone - The phone number to validate
  * @returns {boolean} - Whether the phone number is valid
  */
 function isValidPhone(phone) {
-    // Basic validation for phone with country code
-    // Format should be +[country code][number] e.g., +1234567890
-    const phoneRegex = /^\+[0-9]{6,15}$/;
+    // E.164 format validation (+ followed by digits only)
+    const phoneRegex = /^\+[1-9]\d{1,14}$/;
     return phoneRegex.test(phone);
 }
 
