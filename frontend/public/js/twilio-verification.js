@@ -1,140 +1,56 @@
-// Simple, cross-browser compatible verification handler
-var pendingUser = {};
+// At the top of your file
+var skipVerification = true; // Set this to false when you want to re-enable verification
 
-document.addEventListener('DOMContentLoaded', function() {
-    var signupForm = document.getElementById('signupForm');
-    var verificationForm = document.getElementById('verificationForm');
-    var resendButton = document.getElementById('resend-code');
-    
-    if (signupForm) {
-        signupForm.addEventListener('submit', handleSignup);
-    }
-    
-    if (verificationForm) {
-        verificationForm.addEventListener('submit', handleVerification);
-    }
-    
-    if (resendButton) {
-        resendButton.addEventListener('click', handleResend);
-    }
-});
-
+// In your handleSignup function
 function handleSignup(event) {
     event.preventDefault();
-    
-    // Clear any status messages
-    showStatus('', '');
     
     // Collect form data
     var username = document.getElementById('username').value.trim();
     var email = document.getElementById('email').value.trim();
-    var phone = document.getElementById('phone').value.trim();
     var password = document.getElementById('password').value;
     var confirmPassword = document.getElementById('confirm-password').value;
     var privacyPolicy = document.getElementById('privacy-policy').checked;
     
-    // Validate inputs
-    if (!username) {
-        return showStatus('Username is required', 'error');
+    // Validate inputs (keep basic validation)
+    if (!username || !email || !password || password !== confirmPassword || !privacyPolicy) {
+        // Handle validation errors as before
+        return;
     }
     
-    if (!email || email.indexOf('@') === -1) {
-        return showStatus('Valid email is required', 'error');
-    }
-    
-    if (!phone || !phone.startsWith('+')) {
-        return showStatus('Phone number must start with + and include country code', 'error');
-    }
-    
-    if (!password || password.length < 8) {
-        return showStatus('Password must be at least 8 characters', 'error');
-    }
-    
-    if (password !== confirmPassword) {
-        return showStatus('Passwords do not match', 'error');
-    }
-    
-    if (!privacyPolicy) {
-        return showStatus('You must agree to the Privacy Policy', 'error');
-    }
-    
-    // Store user data for verification
-    pendingUser = {
+    // Store user data
+    var userData = {
         username: username,
         email: email,
-        phone: phone,
         password: password
     };
     
-    // Send verification request
-    showStatus('Sending verification code...', 'info');
-    
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', window.location.origin + '/api/auth/verify/start', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                // Show verification form
-                document.getElementById('signupForm').style.display = 'none';
-                document.getElementById('verificationForm').style.display = 'block';
-                showStatus('Verification code sent! Please check your phone.', 'success');
-            } else {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    showStatus(response.message || 'Failed to send verification code', 'error');
-                } catch (e) {
-                    showStatus('Failed to send verification code', 'error');
-                }
-            }
-        }
-    };
-    xhr.send(JSON.stringify({ phone: phone }));
-}
-
-function handleVerification(event) {
-    event.preventDefault();
-    
-    var code = document.getElementById('verification-code').value.trim();
-    
-    if (!code) {
-        return showStatus('Please enter the verification code', 'error');
+    // Add phone if the field exists and verification is not skipped
+    var phoneInput = document.getElementById('phone');
+    if (!skipVerification && phoneInput) {
+        userData.phone = phoneInput.value.trim();
     }
     
-    showStatus('Verifying code...', 'info');
-    
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', window.location.origin + '/api/auth/verify/check', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                showStatus('Phone verified! Creating your account...', 'success');
-                completeSignup();
-            } else {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    showStatus(response.message || 'Invalid verification code', 'error');
-                } catch (e) {
-                    showStatus('Invalid verification code', 'error');
-                }
-            }
-        }
-    };
-    xhr.send(JSON.stringify({ 
-        phone: pendingUser.phone,
-        code: code
-    }));
+    if (skipVerification) {
+        // Bypass verification and create user directly
+        completeSignup(userData);
+    } else {
+        // Proceed with normal verification flow
+        // Your existing verification code here
+    }
 }
 
-function completeSignup() {
+// Add this function to directly create the user account
+function completeSignup(userData) {
+    showStatus('Creating your account...', 'info');
+    
     var xhr = new XMLHttpRequest();
     xhr.open('POST', window.location.origin + '/api/auth/signup', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
-            if (xhr.status === 201 || xhr.status === 200) {
-                showStatus('Account created successfully! Redirecting to login...', 'success');
+            if (xhr.status === 200 || xhr.status === 201) {
+                showStatus('Account created successfully! Redirecting...', 'success');
                 setTimeout(function() {
                     window.location.href = 'index.html';
                 }, 1500);
@@ -148,42 +64,5 @@ function completeSignup() {
             }
         }
     };
-    xhr.send(JSON.stringify(pendingUser));
-}
-
-function handleResend() {
-    showStatus('Resending verification code...', 'info');
-    
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', window.location.origin + '/api/auth/verify/resend', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                showStatus('New verification code sent!', 'success');
-            } else {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    showStatus(response.message || 'Failed to resend code', 'error');
-                } catch (e) {
-                    showStatus('Failed to resend verification code', 'error');
-                }
-            }
-        }
-    };
-    xhr.send(JSON.stringify({ phone: pendingUser.phone }));
-}
-
-function showStatus(message, type) {
-    var statusEl = document.getElementById('statusMessage');
-    if (!statusEl) return;
-    
-    if (!message) {
-        statusEl.style.display = 'none';
-        return;
-    }
-    
-    statusEl.textContent = message;
-    statusEl.className = 'status-message ' + (type || 'info');
-    statusEl.style.display = 'block';
+    xhr.send(JSON.stringify(userData));
 }
