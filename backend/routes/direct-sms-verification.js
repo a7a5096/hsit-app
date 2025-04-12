@@ -1,18 +1,19 @@
 /**
- * direct-sms-verification.js
+ * direct-sms-verification.js - ES Module Version
  * 
  * Alternative implementation using direct SMS instead of Twilio Verify API.
  * This can be used if you prefer to handle verification codes yourself.
  */
 
-const express = require('express');
-const router = express.Router();
-const twilio = require('twilio');
-const crypto = require('crypto');
-const { body, validationResult } = require('express-validator');
+import express from 'express';
+import twilio from 'twilio';
+import { body, validationResult } from 'express-validator';
+import dotenv from 'dotenv';
 
 // Load environment variables
-require('dotenv').config();
+dotenv.config();
+
+const router = express.Router();
 
 // Initialize Twilio client
 const twilioClient = twilio(
@@ -83,7 +84,7 @@ router.post('/verify/start', [
  * POST /api/auth/verify/check
  */
 router.post('/verify/check', [
-    body('phone').isMobilePhone().withMessage('Valid phone number is required'),
+    body('phone').matches(/^\+[1-9]\d{1,14}$/).withMessage('Phone number must be in E.164 format'),
     body('code').isLength({ min: 6, max: 6 }).withMessage('Valid 6-digit code is required')
 ], async (req, res) => {
     // Validate request
@@ -161,7 +162,7 @@ router.post('/verify/check', [
  * POST /api/auth/verify/resend
  */
 router.post('/verify/resend', [
-    body('phone').isMobilePhone().withMessage('Valid phone number is required')
+    body('phone').matches(/^\+[1-9]\d{1,14}$/).withMessage('Phone number must be in E.164 format')
 ], async (req, res) => {
     // Validate request
     const errors = validationResult(req);
@@ -215,4 +216,4 @@ router.post('/verify/resend', [
     }
 });
 
-module.exports = router;
+export default router;
