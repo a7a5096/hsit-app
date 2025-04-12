@@ -1,8 +1,7 @@
 /**
- * direct-sms-verification.js - ES Module Version
+ * direct-sms-verification.js - Fixed Version
  * 
- * Alternative implementation using direct SMS instead of Twilio Verify API.
- * This can be used if you prefer to handle verification codes yourself.
+ * Clean implementation using direct SMS instead of Twilio Verify API.
  */
 
 import express from 'express';
@@ -21,12 +20,11 @@ const twilioClient = twilio(
     process.env.TWILIO_AUTH_TOKEN    // 29ebf5ec303ed1208d74592b114d2a31
 );
 
-// In-memory storage for verification codes (replace with database in production)
+// In-memory storage for verification codes
 const verificationCodes = new Map();
 
 /**
  * Generate a random 6-digit verification code
- * @returns {string} - 6-digit code
  */
 function generateVerificationCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -84,7 +82,7 @@ router.post('/verify/start', [
  * POST /api/auth/verify/check
  */
 router.post('/verify/check', [
-    body('phone').matches(/^\+[1-9]\d{1,14}$/).withMessage('Phone number must be in E.164 format'),
+    body('phone').matches(/^\+[1-9]\d{1,14}$/).withMessage('Valid phone number is required'),
     body('code').isLength({ min: 6, max: 6 }).withMessage('Valid 6-digit code is required')
 ], async (req, res) => {
     // Validate request
@@ -162,7 +160,7 @@ router.post('/verify/check', [
  * POST /api/auth/verify/resend
  */
 router.post('/verify/resend', [
-    body('phone').matches(/^\+[1-9]\d{1,14}$/).withMessage('Phone number must be in E.164 format')
+    body('phone').matches(/^\+[1-9]\d{1,14}$/).withMessage('Valid phone number is required')
 ], async (req, res) => {
     // Validate request
     const errors = validationResult(req);
@@ -177,12 +175,14 @@ router.post('/verify/resend', [
         const existingVerification = verificationCodes.get(phone);
         
         // Implement cooldown (1 minute between resends)
-        if (existingVerification && (Date.now() - existingVerification.timestamp) < 60000) {
-            const timeRemaining = Math.ceil((60000 - (Date.now() - existingVerification.timestamp)) / 1000);
-            return res.status(429).json({
-                success: false,
-                message: `Please wait ${timeRemaining} seconds before requesting a new code`,
-            });
+        if (existingVerification) {
+            const timeRemaining = Math.ceil(((60 * 1000) - (Date.now() - existingVerification.timestamp)) / 1000);
+            if (timeRemaining > 0) {
+                return res.status(429).json({
+                    success: false,
+                    message: `Please wait ${timeRemaining} seconds before requesting a new code`
+                });
+            }
         }
         
         // Generate new verification code
