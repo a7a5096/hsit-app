@@ -1,10 +1,6 @@
 /**
- * twilio-verification.js
- * 
- * Handles the Twilio SMS verification process during signup.
- * This script manages the two-step verification process:
- * 1. Initial form submission - sends phone number to backend for verification code
- * 2. Code verification - validates the code entered by the user
+ * twilio-verification.js - Frontend handler for phone verification
+ * Fixed, clean implementation with proper error handling
  */
 
 // DOM Elements
@@ -18,9 +14,17 @@ let pendingUser = {};
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    signupForm.addEventListener('submit', handleInitialSignup);
-    verificationForm.addEventListener('submit', handleVerification);
-    resendCodeButton.addEventListener('click', handleResendCode);
+    if (signupForm) {
+        signupForm.addEventListener('submit', handleInitialSignup);
+    }
+    
+    if (verificationForm) {
+        verificationForm.addEventListener('submit', handleVerification);
+    }
+    
+    if (resendCodeButton) {
+        resendCodeButton.addEventListener('click', handleResendCode);
+    }
 });
 
 /**
@@ -44,14 +48,14 @@ async function handleInitialSignup(event) {
         email: document.getElementById('email').value.trim(),
         phone: document.getElementById('phone').value.trim(),
         password: document.getElementById('password').value,
-        invitationCode: document.getElementById('invitation-code').value.trim() || null
+        invitationCode: document.getElementById('invitation-code')?.value?.trim() || null
     };
     
     try {
         // Call API to initiate verification
         showStatus('Sending verification code...', 'info');
         
-        const response = await fetch(`${API_BASE_URL}/api/auth/verify/start`, {
+        const response = await fetch(`${window.location.origin}/api/auth/verify/start`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -97,7 +101,7 @@ async function handleVerification(event) {
         // Call API to verify code
         showStatus('Verifying code...', 'info');
         
-        const verifyResponse = await fetch(`${API_BASE_URL}/api/auth/verify/check`, {
+        const verifyResponse = await fetch(`${window.location.origin}/api/auth/verify/check`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -117,7 +121,7 @@ async function handleVerification(event) {
         // If verification successful, complete the signup
         showStatus('Phone verified! Creating your account...', 'success');
         
-        const signupResponse = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+        const signupResponse = await fetch(`${window.location.origin}/api/auth/signup`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -159,7 +163,7 @@ async function handleResendCode() {
     try {
         showStatus('Resending verification code...', 'info');
         
-        const response = await fetch(`${API_BASE_URL}/api/auth/verify/resend`, {
+        const response = await fetch(`${window.location.origin}/api/auth/verify/resend`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -206,7 +210,7 @@ function validateSignupForm() {
     }
     
     if (!phone || !isValidPhone(phone)) {
-        showStatus('Please enter a valid phone number with country code (e.g., +1234567890)', 'error');
+        showStatus('Please enter a valid phone number in E.164 format (e.g., +15873304312)', 'error');
         return false;
     }
     
@@ -244,7 +248,7 @@ function isValidEmail(email) {
  * @returns {boolean} - Whether the phone number is valid
  */
 function isValidPhone(phone) {
-    // E.164 format validation (+ followed by digits only)
+    // E.164 format validation
     const phoneRegex = /^\+[1-9]\d{1,14}$/;
     return phoneRegex.test(phone);
 }
@@ -255,15 +259,22 @@ function isValidPhone(phone) {
  * @param {string} type - The type of message (info, success, error)
  */
 function showStatus(message, type = 'info') {
-    statusMessage.textContent = message;
-    statusMessage.className = `status-message ${type}`;
-    statusMessage.style.display = 'block';
+    if (statusMessage) {
+        statusMessage.textContent = message;
+        statusMessage.className = `status-message ${type}`;
+        statusMessage.style.display = 'block';
+    } else {
+        // Fallback if status message element doesn't exist
+        alert(message);
+    }
 }
 
 /**
  * Clears the status message
  */
 function clearStatus() {
-    statusMessage.textContent = '';
-    statusMessage.style.display = 'none';
+    if (statusMessage) {
+        statusMessage.textContent = '';
+        statusMessage.style.display = 'none';
+    }
 }
