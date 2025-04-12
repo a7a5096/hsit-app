@@ -57,11 +57,11 @@ router.post('/verify/start', [
         });
         
         // Send SMS with verification code
-        await twilioClient.messages.create({
-            body: `Your verification code is: ${verificationCode}`,
-            from: process.env.TWILIO_PHONE_NUMBER,  // +15873304312
-            to: phone
-        });
+await twilioClient.messages.create({
+    body: `Your verification code is: ${verificationCode}`,
+    messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID,
+    to: phone
+});
 
         return res.status(200).json({
             success: true,
