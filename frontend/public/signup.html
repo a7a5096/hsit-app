@@ -23,9 +23,10 @@
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" required>
             </div>
-            <div class="form-group">
+            <!-- Phone number field hidden temporarily -->
+            <div class="form-group phone-field" style="display: none;">
                 <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" placeholder="+15873304312" required>
+                <input type="tel" id="phone" name="phone" placeholder="+15873304312">
                 <small>Required for SMS verification (format: +CountryCodeNumber e.g., +15873304312)</small>
             </div>
             <div class="form-group">
@@ -47,7 +48,7 @@
             <button type="submit" class="btn btn-primary">Sign Up</button>
         </form>
         
-        <!-- Step 2: Verification Form (hidden initially) -->
+        <!-- Step 2: Verification Form (hidden while verification is disabled) -->
         <form id="verificationForm" style="display: none;">
             <div class="form-group">
                 <label for="verification-code">Verification Code</label>
@@ -66,7 +67,114 @@
     </div>
     
     <script src="js/config.js"></script> 
-    <script src="js/twilio-verification.js"></script>
+    <script>
+    // Temporary replacement for twilio-verification.js
+    // Skip verification and directly handle signup
+    document.addEventListener('DOMContentLoaded', function() {
+        var signupForm = document.getElementById('signupForm');
+        if (signupForm) {
+            signupForm.addEventListener('submit', handleSignup);
+        }
+    });
+    
+    function handleSignup(event) {
+        event.preventDefault();
+        
+        // Get form values
+        var username = document.getElementById('username').value.trim();
+        var email = document.getElementById('email').value.trim();
+        var password = document.getElementById('password').value;
+        var confirmPassword = document.getElementById('confirm-password').value;
+        var invitationCode = document.getElementById('invitation-code').value.trim();
+        var privacyPolicy = document.getElementById('privacy-policy').checked;
+        
+        // Validation
+        if (!username) {
+            showStatus('Username is required', 'error');
+            return false;
+        }
+        
+        if (!email || !isValidEmail(email)) {
+            showStatus('Please enter a valid email address', 'error');
+            return false;
+        }
+        
+        if (!password || password.length < 8) {
+            showStatus('Password must be at least 8 characters long', 'error');
+            return false;
+        }
+        
+        if (password !== confirmPassword) {
+            showStatus('Passwords do not match', 'error');
+            return false;
+        }
+        
+        if (!privacyPolicy) {
+            showStatus('You must agree to the Privacy Policy', 'error');
+            return false;
+        }
+        
+        // Prepare user data
+        var userData = {
+            username: username,
+            email: email,
+            password: password
+        };
+        
+        if (invitationCode) {
+            userData.invitationCode = invitationCode;
+        }
+        
+        // Skip verification and directly create account
+        showStatus('Creating your account...', 'info');
+        
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', window.location.origin + '/api/auth/signup', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200 || xhr.status === 201) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        showStatus('Account created successfully! Redirecting...', 'success');
+                        
+                        // Store token if provided
+                        if (data.token) {
+                            localStorage.setItem('auth_token', data.token);
+                            setTimeout(function() {
+                                window.location.href = 'dashboard.html';
+                            }, 1500);
+                        } else {
+                            // If no token, redirect to login
+                            setTimeout(function() {
+                                window.location.href = 'index.html';
+                            }, 1500);
+                        }
+                    } catch (e) {
+                        showStatus('Account created, but there was an error processing the response', 'warning');
+                        setTimeout(function() {
+                            window.location.href = 'index.html';
+                        }, 1500);
+                    }
+                } else {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        showStatus(response.message || 'Failed to create account', 'error');
+                    } catch (e) {
+                        showStatus('Failed to create account', 'error');
+                    }
+                }
+            }
+        };
+        xhr.send(JSON.stringify(userData));
+    }
+    
+    function isValidEmail(email) {
+        // Simple email check
+        return email.indexOf('@') > 0 && email.indexOf('.') > 0;
+    }
+    </script>
+    
     <script>
     /**
      * auth.js
