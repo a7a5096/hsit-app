@@ -73,12 +73,16 @@ async function handleInitialSignup(event) {
             body: JSON.stringify({ phone: pendingUser.phone })
         });
         
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to send verification code');
-        }
-        
+     const data = await response.json();
+
+if (!response.ok) {
+  throw new Error(data.message || 'Failed to send verification code');
+}
+
+// Show verification form
+signupForm.style.display = 'none';
+verificationForm.style.display = 'block';
+showStatus('Verification code sent! Please check your phone.', 'success');   
         // Show verification form
         signupForm.style.display = 'none';
         verificationForm.style.display = 'block';
