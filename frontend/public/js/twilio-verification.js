@@ -1,6 +1,6 @@
 /**
  * twilio-verification.js - Frontend handler for phone verification
- * Fixed version that avoids pattern matching errors
+ * Fixed, clean implementation with proper error handling
  */
 
 // DOM Elements
@@ -47,57 +47,28 @@ async function handleInitialSignup(event) {
         username: document.getElementById('username').value.trim(),
         email: document.getElementById('email').value.trim(),
         phone: document.getElementById('phone').value.trim(),
-        password: document.getElementById('password').value
+        password: document.getElementById('password').value,
+        invitationCode: document.getElementById('invitation-code')?.value?.trim() || null
     };
     
-    // Add invitation code if element exists
-    const invitationCode = document.getElementById('invitation-code');
-    if (invitationCode) {
-        pendingUser.invitationCode = invitationCode.value.trim() || null;
-    }
-    
     try {
-    // Call API to initiate verification
-    showStatus('Sending verification code...', 'info');
-    
-    // Simple check for phone number format (without regex)
-    const phone = document.getElementById('phone').value.trim();
-    if (!phone.startsWith('+')) {
-        showStatus('Phone number must start with "+" and include country code (e.g., +15873304312)', 'error');
-        return;
-    }
-    
-    const response = await fetch(`${window.location.origin}/api/auth/verify/start`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ phone: phone })
-    });
-    
-    // Safely handle the response
-    let responseData;
-    try {
-        responseData = await response.json();
-    } catch (parseError) {
-        console.error('Error parsing response:', parseError);
-        responseData = { message: 'Invalid response from server' };
-    }
-    
-    if (!response.ok) {
-        throw new Error(responseData.message || 'Failed to send verification code');
-    }
-    
-    // Show verification form
-    signupForm.style.display = 'none';
-    verificationForm.style.display = 'block';
-    showStatus('Verification code sent! Please check your phone.', 'success');
-    
-} catch (error) {
-    showStatus('An error occurred during verification: ' + error.message, 'error');
-    console.error('Verification error:', error);
-}
- 
+        // Call API to initiate verification
+        showStatus('Sending verification code...', 'info');
+        
+        const response = await fetch(`${window.location.origin}/api/auth/verify/start`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ phone: pendingUser.phone })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to send verification code');
+        }
+        
         // Show verification form
         signupForm.style.display = 'none';
         verificationForm.style.display = 'block';
@@ -238,8 +209,8 @@ function validateSignupForm() {
         return false;
     }
     
-    if (!phone || !phone.startsWith('+')) {
-        showStatus('Please enter a valid phone number with country code (e.g., +15873304312)', 'error');
+    if (!phone || !isValidPhone(phone)) {
+        showStatus('Please enter a valid phone number in E.164 format (e.g., +15873304312)', 'error');
         return false;
     }
     
@@ -267,8 +238,19 @@ function validateSignupForm() {
  * @returns {boolean} - Whether the email is valid
  */
 function isValidEmail(email) {
-    // Simple email check
-    return email.includes('@') && email.includes('.');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+/**
+ * Validates a phone number format (ensures E.164 format)
+ * @param {string} phone - The phone number to validate
+ * @returns {boolean} - Whether the phone number is valid
+ */
+function isValidPhone(phone) {
+    // E.164 format validation
+    const phoneRegex = /^\+[1-9]\d{1,14}$/;
+    return phoneRegex.test(phone);
 }
 
 /**
