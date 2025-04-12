@@ -1,0 +1,175 @@
+/* auth.css - Styles for authentication pages */
+
+/* Main container */
+.auth-container {
+    max-width: 500px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo */
+.logo {
+    display: block;
+    max-width: 150px;
+    margin: 0 auto 1.5rem;
+}
+
+/* Form title */
+.auth-container h1 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+/* Form groups */
+.form-group {
+    margin-bottom: 1.2rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 0.3rem;
+    color: #777;
+    font-size: 0.8rem;
+}
+
+/* Privacy policy checkbox */
+.privacy-policy {
+    display: flex;
+    align-items: flex-start;
+}
+
+.privacy-policy input[type="checkbox"] {
+    width: auto;
+    margin-top: 0.25rem;
+    margin-right: 0.5rem;
+}
+
+.privacy-policy label {
+    margin-bottom: 0;
+    font-weight: normal;
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: #4a90e2;
+    color: white;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background-color: #3a80d2;
+}
+
+.btn-secondary {
+    background-color: #f2f2f2;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background-color: #e2e2e2;
+}
+
+/* Form actions for verification form */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.form-actions .btn-primary {
+    flex: 2;
+}
+
+.form-actions .btn-secondary {
+    flex: 1;
+}
+
+/* Login/signup switch link */
+.auth-switch {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #666;
+}
+
+.auth-switch a {
+    color: #4a90e2;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
+/* Status message */
+.status-message {
+    max-width: 500px;
+    margin: 1rem auto;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    text-align: center;
+    display: none;
+}
+
+.status-message.info {
+    background-color: #e5f5fa;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.status-message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .auth-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+}
