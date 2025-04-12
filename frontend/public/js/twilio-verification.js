@@ -1,19 +1,19 @@
 /**
- * twilio-verification.js - Frontend handler for phone verification
- * Fixed, clean implementation with proper error handling
+ * twilio-verification.js - Compatible version
+ * Simplified and cross-browser compatible
  */
 
 // DOM Elements
-const signupForm = document.getElementById('signupForm');
-const verificationForm = document.getElementById('verificationForm');
-const resendCodeButton = document.getElementById('resend-code');
-const statusMessage = document.getElementById('statusMessage');
+var signupForm = document.getElementById('signupForm');
+var verificationForm = document.getElementById('verificationForm');
+var resendCodeButton = document.getElementById('resend-code');
+var statusMessage = document.getElementById('statusMessage');
 
 // User information storage for the verification process
-let pendingUser = {};
+var pendingUser = {};
 
 // Event listeners
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     if (signupForm) {
         signupForm.addEventListener('submit', handleInitialSignup);
     }
@@ -29,9 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /**
  * Handles the initial signup form submission
- * @param {Event} event - The form submission event
  */
-async function handleInitialSignup(event) {
+function handleInitialSignup(event) {
     event.preventDefault();
     
     // Clear previous status messages
@@ -47,156 +46,175 @@ async function handleInitialSignup(event) {
         username: document.getElementById('username').value.trim(),
         email: document.getElementById('email').value.trim(),
         phone: document.getElementById('phone').value.trim(),
-        password: document.getElementById('password').value,
-        invitationCode: document.getElementById('invitation-code')?.value?.trim() || null
+        password: document.getElementById('password').value
     };
     
-    try {
-        // Call API to initiate verification
-        showStatus('Sending verification code...', 'info');
-        
-        const response = await fetch(`${window.location.origin}/api/auth/verify/start`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ phone: pendingUser.phone })
-        });
-        
-        const data = await response.json();
-        
+    // Add invitation code if element exists
+    var invitationCode = document.getElementById('invitation-code');
+    if (invitationCode) {
+        pendingUser.invitationCode = invitationCode.value.trim() || null;
+    }
+    
+    // Simple check for phone number format
+    if (!pendingUser.phone.startsWith('+')) {
+        showStatus('Phone number must start with "+" and include country code (e.g., +15873304312)', 'error');
+        return;
+    }
+    
+    // Show status
+    showStatus('Sending verification code...', 'info');
+    
+    // Call API to initiate verification
+    fetch(window.location.origin + '/api/auth/verify/start', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ phone: pendingUser.phone })
+    })
+    .then(function(response) {
         if (!response.ok) {
-            throw new Error(data.message || 'Failed to send verification code');
+            return response.json().then(function(data) {
+                throw new Error(data.message || 'Failed to send verification code');
+            });
         }
-        
+        return response.json();
+    })
+    .then(function(data) {
         // Show verification form
         signupForm.style.display = 'none';
         verificationForm.style.display = 'block';
         showStatus('Verification code sent! Please check your phone.', 'success');
-        
-    } catch (error) {
+    })
+    .catch(function(error) {
         showStatus(error.message || 'An error occurred during verification', 'error');
         console.error('Verification error:', error);
-    }
+    });
 }
 
 /**
  * Handles the verification code submission
- * @param {Event} event - The form submission event
  */
-async function handleVerification(event) {
+function handleVerification(event) {
     event.preventDefault();
     
     // Clear previous status messages
     clearStatus();
     
-    const verificationCode = document.getElementById('verification-code').value.trim();
+    var verificationCode = document.getElementById('verification-code').value.trim();
     
     if (!verificationCode) {
         showStatus('Please enter the verification code', 'error');
         return;
     }
     
-    try {
-        // Call API to verify code
-        showStatus('Verifying code...', 'info');
-        
-        const verifyResponse = await fetch(`${window.location.origin}/api/auth/verify/check`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-                phone: pendingUser.phone,
-                code: verificationCode
-            })
-        });
-        
-        const verifyData = await verifyResponse.json();
-        
-        if (!verifyResponse.ok) {
-            throw new Error(verifyData.message || 'Invalid verification code');
+    // Show status
+    showStatus('Verifying code...', 'info');
+    
+    // Call API to verify code
+    fetch(window.location.origin + '/api/auth/verify/check', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            phone: pendingUser.phone,
+            code: verificationCode
+        })
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            return response.json().then(function(data) {
+                throw new Error(data.message || 'Invalid verification code');
+            });
         }
-        
+        return response.json();
+    })
+    .then(function() {
         // If verification successful, complete the signup
         showStatus('Phone verified! Creating your account...', 'success');
         
-        const signupResponse = await fetch(`${window.location.origin}/api/auth/signup`, {
+        return fetch(window.location.origin + '/api/auth/signup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(pendingUser)
         });
-        
-        const signupData = await signupResponse.json();
-        
-        if (!signupResponse.ok) {
-            throw new Error(signupData.message || 'Failed to create account');
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            return response.json().then(function(data) {
+                throw new Error(data.message || 'Failed to create account');
+            });
         }
-        
+        return response.json();
+    })
+    .then(function(data) {
         // Handle successful signup
         showStatus('Account created successfully! Redirecting to login...', 'success');
         
         // Store token if provided
-        if (signupData.token) {
-            localStorage.setItem('auth_token', signupData.token);
-            setTimeout(() => window.location.href = 'dashboard.html', 1500);
+        if (data.token) {
+            localStorage.setItem('auth_token', data.token);
+            setTimeout(function() { window.location.href = 'dashboard.html'; }, 1500);
         } else {
             // If no token, redirect to login
-            setTimeout(() => window.location.href = 'index.html', 1500);
+            setTimeout(function() { window.location.href = 'index.html'; }, 1500);
         }
-        
-    } catch (error) {
+    })
+    .catch(function(error) {
         showStatus(error.message || 'Verification failed', 'error');
         console.error('Verification error:', error);
-    }
+    });
 }
 
 /**
  * Handles resending the verification code
  */
-async function handleResendCode() {
+function handleResendCode() {
     // Clear previous status messages
     clearStatus();
     
-    try {
-        showStatus('Resending verification code...', 'info');
-        
-        const response = await fetch(`${window.location.origin}/api/auth/verify/resend`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ phone: pendingUser.phone })
-        });
-        
-        const data = await response.json();
-        
+    // Show status
+    showStatus('Resending verification code...', 'info');
+    
+    // Call API to resend code
+    fetch(window.location.origin + '/api/auth/verify/resend', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ phone: pendingUser.phone })
+    })
+    .then(function(response) {
         if (!response.ok) {
-            throw new Error(data.message || 'Failed to resend verification code');
+            return response.json().then(function(data) {
+                throw new Error(data.message || 'Failed to resend verification code');
+            });
         }
-        
+        return response.json();
+    })
+    .then(function() {
         showStatus('New verification code sent!', 'success');
-        
-    } catch (error) {
+    })
+    .catch(function(error) {
         showStatus(error.message || 'Failed to resend code', 'error');
         console.error('Resend code error:', error);
-    }
+    });
 }
 
 /**
  * Validates the signup form fields
- * @returns {boolean} - Whether the form is valid
  */
 function validateSignupForm() {
     // Get form values
-    const username = document.getElementById('username').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirm-password').value;
-    const privacyPolicy = document.getElementById('privacy-policy').checked;
+    var username = document.getElementById('username').value.trim();
+    var email = document.getElementById('email').value.trim();
+    var phone = document.getElementById('phone').value.trim();
+    var password = document.getElementById('password').value;
+    var confirmPassword = document.getElementById('confirm-password').value;
+    var privacyPolicy = document.getElementById('privacy-policy').checked;
     
     // Validation checks
     if (!username) {
@@ -209,8 +227,8 @@ function validateSignupForm() {
         return false;
     }
     
-    if (!phone || !isValidPhone(phone)) {
-        showStatus('Please enter a valid phone number in E.164 format (e.g., +15873304312)', 'error');
+    if (!phone || !phone.startsWith('+')) {
+        showStatus('Please enter a valid phone number with country code (e.g., +15873304312)', 'error');
         return false;
     }
     
@@ -234,34 +252,21 @@ function validateSignupForm() {
 
 /**
  * Validates an email address format
- * @param {string} email - The email to validate
- * @returns {boolean} - Whether the email is valid
  */
 function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-/**
- * Validates a phone number format (ensures E.164 format)
- * @param {string} phone - The phone number to validate
- * @returns {boolean} - Whether the phone number is valid
- */
-function isValidPhone(phone) {
-    // E.164 format validation
-    const phoneRegex = /^\+[1-9]\d{1,14}$/;
-    return phoneRegex.test(phone);
+    // Simple email check
+    return email.includes('@') && email.includes('.');
 }
 
 /**
  * Displays a status message to the user
- * @param {string} message - The message to display
- * @param {string} type - The type of message (info, success, error)
  */
-function showStatus(message, type = 'info') {
+function showStatus(message, type) {
+    if (!type) type = 'info';
+    
     if (statusMessage) {
         statusMessage.textContent = message;
-        statusMessage.className = `status-message ${type}`;
+        statusMessage.className = 'status-message ' + type;
         statusMessage.style.display = 'block';
     } else {
         // Fallback if status message element doesn't exist
