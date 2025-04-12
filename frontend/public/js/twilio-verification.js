@@ -1,6 +1,6 @@
 /**
  * twilio-verification.js - Frontend handler for phone verification
- * Fixed, clean implementation with proper error handling
+ * Fixed version that avoids pattern matching errors
  */
 
 // DOM Elements
@@ -47,13 +47,23 @@ async function handleInitialSignup(event) {
         username: document.getElementById('username').value.trim(),
         email: document.getElementById('email').value.trim(),
         phone: document.getElementById('phone').value.trim(),
-        password: document.getElementById('password').value,
-        invitationCode: document.getElementById('invitation-code')?.value?.trim() || null
+        password: document.getElementById('password').value
     };
+    
+    // Add invitation code if element exists
+    const invitationCode = document.getElementById('invitation-code');
+    if (invitationCode) {
+        pendingUser.invitationCode = invitationCode.value.trim() || null;
+    }
     
     try {
         // Call API to initiate verification
         showStatus('Sending verification code...', 'info');
+        
+        // Simple check for phone number format (without regex)
+        if (!pendingUser.phone.startsWith('+')) {
+            throw new Error('Phone number must start with "+" and include country code (e.g., +15873304312)');
+        }
         
         const response = await fetch(`${window.location.origin}/api/auth/verify/start`, {
             method: 'POST',
@@ -209,8 +219,8 @@ function validateSignupForm() {
         return false;
     }
     
-    if (!phone || !isValidPhone(phone)) {
-        showStatus('Please enter a valid phone number in E.164 format (e.g., +15873304312)', 'error');
+    if (!phone || !phone.startsWith('+')) {
+        showStatus('Please enter a valid phone number with country code (e.g., +15873304312)', 'error');
         return false;
     }
     
@@ -238,19 +248,8 @@ function validateSignupForm() {
  * @returns {boolean} - Whether the email is valid
  */
 function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-/**
- * Validates a phone number format (ensures E.164 format)
- * @param {string} phone - The phone number to validate
- * @returns {boolean} - Whether the phone number is valid
- */
-function isValidPhone(phone) {
-    // E.164 format validation
-    const phoneRegex = /^\+[1-9]\d{1,14}$/;
-    return phoneRegex.test(phone);
+    // Simple email check
+    return email.includes('@') && email.includes('.');
 }
 
 /**
