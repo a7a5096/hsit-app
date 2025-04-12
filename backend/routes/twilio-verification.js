@@ -57,32 +57,47 @@ async function handleInitialSignup(event) {
     }
     
     try {
-        // Call API to initiate verification
-        showStatus('Sending verification code...', 'info');
-        
-        // Simple check for phone number format (without regex)
-        if (!pendingUser.phone.startsWith('+')) {
-            throw new Error('Phone number must start with "+" and include country code (e.g., +15873304312)');
-        }
-        
-        const response = await fetch(`${window.location.origin}/api/auth/verify/start`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ phone: pendingUser.phone })
-        });
-        
-     const data = await response.json();
-
-if (!response.ok) {
-  throw new Error(data.message || 'Failed to send verification code');
+    // Call API to initiate verification
+    showStatus('Sending verification code...', 'info');
+    
+    // Simple check for phone number format (without regex)
+    const phone = document.getElementById('phone').value.trim();
+    if (!phone.startsWith('+')) {
+        showStatus('Phone number must start with "+" and include country code (e.g., +15873304312)', 'error');
+        return;
+    }
+    
+    const response = await fetch(`${window.location.origin}/api/auth/verify/start`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ phone: phone })
+    });
+    
+    // Safely handle the response
+    let responseData;
+    try {
+        responseData = await response.json();
+    } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        responseData = { message: 'Invalid response from server' };
+    }
+    
+    if (!response.ok) {
+        throw new Error(responseData.message || 'Failed to send verification code');
+    }
+    
+    // Show verification form
+    signupForm.style.display = 'none';
+    verificationForm.style.display = 'block';
+    showStatus('Verification code sent! Please check your phone.', 'success');
+    
+} catch (error) {
+    showStatus('An error occurred during verification: ' + error.message, 'error');
+    console.error('Verification error:', error);
 }
-
-// Show verification form
-signupForm.style.display = 'none';
-verificationForm.style.display = 'block';
-showStatus('Verification code sent! Please check your phone.', 'success');   
+ 
         // Show verification form
         signupForm.style.display = 'none';
         verificationForm.style.display = 'block';
