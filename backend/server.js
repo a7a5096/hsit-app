@@ -17,6 +17,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+//SMS Direct verification
+const directSmsVerification = require('./routes/direct-sms-verification');  // Adjust path as needed
+app.use('/api/auth', directSmsVerification);
 // Middleware
 // Configure CORS to allow requests from your frontend domain
 const allowedOrigins = [
