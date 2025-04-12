@@ -4,10 +4,9 @@
  * Authentication utilities for the application.
  * Handles login, logout, and auth token management.
  */
-
 // Login form handling
-document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('loginForm');
+document.addEventListener('DOMContentLoaded', function() {
+    var loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', handleLogin);
     }
@@ -17,63 +16,65 @@ document.addEventListener('DOMContentLoaded', () => {
  * Handles login form submission
  * @param {Event} event - The form submission event
  */
-async function handleLogin(event) {
+function handleLogin(event) {
     event.preventDefault();
     
-    const statusMessage = document.getElementById('statusMessage');
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
+    var statusMessage = document.getElementById('statusMessage');
+    var email = document.getElementById('email').value.trim();
+    var password = document.getElementById('password').value;
     
-    try {
-        // Clear previous status messages
-        if (statusMessage) {
-            statusMessage.textContent = '';
-            statusMessage.style.display = 'none';
-        }
-        
-        // Validate form data
-        if (!email || !password) {
-            showStatus('Please enter both email and password', 'error');
-            return;
-        }
-        
-        showStatus('Signing in...', 'info');
-        
-        // Call login API
-        const response = await fetch(`${window.location.origin}/api/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                email,
-                password
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Login failed');
-        }
-        
-        // Save auth token
-        if (data.token) {
-            localStorage.setItem('auth_token', data.token);
-            
-            // Redirect to dashboard
-            showStatus('Login successful! Redirecting...', 'success');
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 1000);
-        } else {
-            throw new Error('No authentication token received');
-        }
-        
-    } catch (error) {
-        showStatus(error.message || 'An error occurred during login', 'error');
-        console.error('Login error:', error);
+    // Clear previous status messages
+    if (statusMessage) {
+        statusMessage.textContent = '';
+        statusMessage.style.display = 'none';
     }
+    
+    // Validate form data
+    if (!email || !password) {
+        showStatus('Please enter both email and password', 'error');
+        return;
+    }
+    
+    showStatus('Signing in...', 'info');
+    
+    // Call login API using XMLHttpRequest (more compatible)
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', window.location.origin + '/api/auth/login', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    // Save auth token
+                    if (data.token) {
+                        localStorage.setItem('auth_token', data.token);
+                        
+                        // Redirect to dashboard
+                        showStatus('Login successful! Redirecting...', 'success');
+                        setTimeout(function() {
+                            window.location.href = 'dashboard.html';
+                        }, 1000);
+                    } else {
+                        showStatus('No authentication token received', 'error');
+                    }
+                } catch (e) {
+                    showStatus('Error parsing server response', 'error');
+                }
+            } else {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    showStatus(response.message || 'Login failed', 'error');
+                } catch (e) {
+                    showStatus('Login failed', 'error');
+                }
+            }
+        }
+    };
+    xhr.send(JSON.stringify({
+        email: email,
+        password: password
+    }));
 }
 
 /**
@@ -81,11 +82,13 @@ async function handleLogin(event) {
  * @param {string} message - The message to display
  * @param {string} type - The type of message (info, success, error)
  */
-function showStatus(message, type = 'info') {
-    const statusMessage = document.getElementById('statusMessage');
+function showStatus(message, type) {
+    var statusMessage = document.getElementById('statusMessage');
+    if (!type) type = 'info';
+    
     if (statusMessage) {
         statusMessage.textContent = message;
-        statusMessage.className = `status-message ${type}`;
+        statusMessage.className = 'status-message ' + type;
         statusMessage.style.display = 'block';
     } else {
         // Fallback if status message element doesn't exist
@@ -118,18 +121,18 @@ function logout() {
 }
 
 // For protected pages, redirect if not logged in
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     // Check if this is a protected page
-    const requiresAuth = document.body.classList.contains('requires-auth');
+    var requiresAuth = document.body.classList.contains('requires-auth');
     
     if (requiresAuth && !isAuthenticated()) {
         window.location.href = 'index.html?require_login=true';
     }
     
     // Setup logout button if it exists
-    const logoutButton = document.getElementById('logout-button');
+    var logoutButton = document.getElementById('logout-button');
     if (logoutButton) {
-        logoutButton.addEventListener('click', (e) => {
+        logoutButton.addEventListener('click', function(e) {
             e.preventDefault();
             logout();
         });
