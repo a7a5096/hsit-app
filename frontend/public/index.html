@@ -28,6 +28,90 @@
         </p>
     </div>
     <!-- Removed config.js reference -->
-    <script src="js/auth.js"></script>
-</body>
+<script>
+/**
+ * auth.js
+ * 
+ * Authentication utilities for the application.
+ * Handles login, logout, and auth token management.
+ */
+
+// Login form handling
+document.addEventListener('DOMContentLoaded', function() {
+    var loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+});
+
+/**
+ * Handles login form submission
+ */
+function handleLogin(event) {
+    event.preventDefault();
+    
+    var statusMessage = document.getElementById('statusMessage');
+    var email = document.getElementById('email').value.trim();
+    var password = document.getElementById('password').value;
+    
+    // Clear previous status messages
+    if (statusMessage) {
+        statusMessage.textContent = '';
+        statusMessage.style.display = 'none';
+    }
+    
+    // Validate form data
+    if (!email || !password) {
+        showStatus('Please enter both email and password', 'error');
+        return;
+    }
+    
+    showStatus('Signing in...', 'info');
+    
+    // Call login API
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', window.location.origin + '/api/auth/login', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    // Save auth token
+                    if (data.token) {
+                        localStorage.setItem('auth_token', data.token);
+                        
+                        // Redirect to dashboard
+                        showStatus('Login successful! Redirecting...', 'success');
+                        setTimeout(function() {
+                            window.location.href = 'dashboard.html';
+                        }, 1000);
+                    } else {
+                        showStatus('No authentication token received', 'error');
+                    }
+                } catch (e) {
+                    showStatus('Error parsing server response', 'error');
+                }
+            } else {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    showStatus(response.message || 'Login failed', 'error');
+                } catch (e) {
+                    showStatus('Login failed', 'error');
+                }
+            }
+        }
+    };
+    xhr.send(JSON.stringify({
+        email: email,
+        password: password
+    }));
+}
+
+/**
+ * Displays a status message to the user
+ */
+function showStatus(message, type) {
+    var statusMessage = document.getElementById('statusMessage');
+    if</body>
 </html>
