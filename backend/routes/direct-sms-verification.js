@@ -34,22 +34,22 @@ function generateVerificationCode() {
  * Start phone verification process
  * POST /api/auth/verify/start
  */
-router.post('/verify/start', [
-    body('phone').matches(/^\+[1-9]\d{1,14}$/).withMessage('Phone number must be in E.164 format (e.g., +15873304312)')
+
+// In your direct-sms-verification.js file
+router.post('/start', [
+    body('phone').matches(/^\+[1-9]\d{1,14}$/).withMessage('Phone number must be in E.164 format')
 ], async (req, res) => {
-    // Validate request
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ success: false, message: errors.array()[0].msg });
-    }
-
-    const { phone } = req.body;
-
+    // Debug info
+    console.log('Verification request received for phone:', req.body.phone);
+    
+    // Rest of your code...
+    
     try {
         // Generate verification code
         const verificationCode = generateVerificationCode();
+        console.log('Generated verification code:', verificationCode);
         
-        // Store code with timestamp (expires in 5 minutes)
+        // Store code with timestamp
         verificationCodes.set(phone, {
             code: verificationCode,
             timestamp: Date.now(),
@@ -57,25 +57,25 @@ router.post('/verify/start', [
         });
         
         // Send SMS with verification code
+        console.log('Attempting to send SMS via Twilio to:', phone);
+        
         await twilioClient.messages.create({
             body: `Your verification code is: ${verificationCode}`,
-            from: process.env.TWILIO_PHONE_NUMBER,  // +15873304312
+            from: process.env.TWILIO_PHONE_NUMBER,
             to: phone
-        });
+        }).then(message => console.log('SMS sent successfully, SID:', message.sid));
 
+        // Success response
         return res.status(200).json({
             success: true,
             message: 'Verification code sent'
         });
     } catch (error) {
-        console.error('SMS sending error:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to send verification code',
-            error: error.message
-        });
+        console.error('SMS sending error details:', error);
+        // Rest of error handling...
     }
 });
+
 
 /**
  * Check verification code
