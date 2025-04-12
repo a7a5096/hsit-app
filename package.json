@@ -1,14 +1,17 @@
 {
   "name": "hsit-backend-root",
   "version": "1.0.0",
-  "description": "Backend for HSIT app",
   "type": "module",
-  "main": "backend/server.js",
-  "scripts": {
-    "start": "node backend/server.js",
-    "build": "npm install --prefix frontend && npm run build --prefix frontend",
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "dependencies": {
+    "twilio": "^4.11.0",
+    "express-validator": "^7.0.1",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
   },
+  "scripts": {
+    "start": "node backend/server.js"
+  }
+}
 
   
   "dependencies": {
