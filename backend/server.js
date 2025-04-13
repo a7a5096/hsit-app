@@ -22,6 +22,7 @@ const app = express();
 // Configure CORS to allow requests from your frontend domain
 const allowedOrigins = [
   'https://hsitapp.link',
+  'https://www.hsitapp.link',
   'https://hsit-app.onrender.com',
   'http://localhost:3000',
   'http://localhost:5000'

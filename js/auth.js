@@ -39,7 +39,8 @@ function handleLogin(event) {
     
     // Call login API using XMLHttpRequest (more compatible)
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', window.location.origin + '/api/auth/login', true);
+    // Fix: Use the correct backend URL and endpoint
+    xhr.open('POST', 'https://hsit-backend.onrender.com/api/auth', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
