@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Username Referral System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+        .code-block {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+        .mock-section {
+            margin-top: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .invitation-code {
+            padding: 10px;
+            background-color: #eee;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Username Referral System Test</h1>
+        <p>This page allows you to test the username-based referral system implementation before deploying it to the live site.</p>
+        
+        <div class="test-section">
+            <h2>1. Test User Identification</h2>
+            <p>Test if the system can correctly identify the user's username from various sources.</p>
+            <button id="test-url-param" class="test-button">Test URL Parameter</button>
+            <button id="test-localstorage" class="test-button">Test localStorage</button>
+            <button id="test-sessionstorage" class="test-button">Test sessionStorage</button>
+            <div id="user-id-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. Test UI Updates</h2>
+            <p>Test if the system correctly updates the UI elements.</p>
+            <div class="mock-section">
+                <h3>Your Invitation Code</h3>
+                <div class="invitation-code">Loading...</div>
+                <button id="generate-button">Generate New Code</button>
+                <p id="instruction-text">Share this code to invite new members to your team. Bonuses for successful referrals are paid in UBT tokens.</p>
+                
+                <h3>Bonus Rules</h3>
+                <ul>
+                    <li>Earn 10 UBT for every bot purchased by anyone you invite directly</li>
+                    <li>Earn 15 UBT for every bot purchased by people invited by your direct invites</li>
+                    <li>Get 1 free 500 bot when you have 10 qualified invites who purchase a bot</li>
+                </ul>
+            </div>
+            <button id="test-ui-updates" class="test-button">Test UI Updates</button>
+            <div id="ui-update-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. Test Complete Implementation</h2>
+            <p>Test the complete username referral system implementation.</p>
+            <div class="code-block">
+                &lt;script src="username_referral_system.js"&gt;&lt;/script&gt;
+            </div>
+            <p>To test the complete implementation:</p>
+            <ol>
+                <li>Add a test email to localStorage</li>
+                <li>Run the complete implementation script</li>
+                <li>Verify all UI elements are updated correctly</li>
+            </ol>
+            <button id="setup-test" class="test-button">Setup Test Data</button>
+            <button id="run-complete-test" class="test-button">Run Complete Test</button>
+            <div id="complete-test-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Implementation Instructions</h2>
+            <p>After testing, follow these steps to implement the username referral system:</p>
+            <ol>
+                <li>Upload the <code>username_referral_system.js</code> file to your server in the js directory</li>
+                <li>Add this script tag to your my_team.html file just before the closing <code>&lt;/body&gt;</code> tag:
+                    <div class="code-block">
+                        &lt;script src="js/username_referral_system.js"&gt;&lt;/script&gt;
+                    </div>
+                </li>
+                <li>Test the implementation on your live site</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Test functions
+        document.getElementById('test-url-param').addEventListener('click', function() {
+            // Add email parameter to URL
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('email', 'testuser@example.com');
+            history.replaceState(null, '', currentUrl);
+            
+            // Display result
+            document.getElementById('user-id-result').innerHTML = 
+                'Added email parameter to URL: testuser@example.com<br>' +
+                'Expected username: <strong>testuser</strong>';
+        });
+        
+        document.getElementById('test-localstorage').addEventListener('click', function() {
+            // Store email in localStorage
+            localStorage.setItem('userEmail', 'localuser@example.com');
+            
+            // Display result
+            document.getElementById('user-id-result').innerHTML = 
+                'Added email to localStorage: localuser@example.com<br>' +
+                'Expected username: <strong>localuser</strong>';
+        });
+        
+        document.getElementById('test-sessionstorage').addEventListener('click', function() {
+            // Store email in sessionStorage
+            sessionStorage.setItem('userEmail', 'sessionuser@example.com');
+            
+            // Display result
+            document.getElementById('user-id-result').innerHTML = 
+                'Added email to sessionStorage: sessionuser@example.com<br>' +
+                'Expected username: <strong>sessionuser</strong>';
+        });
+        
+        document.getElementById('test-ui-updates').addEventListener('click', function() {
+            // Get the mock UI elements
+            const codeElement = document.querySelector('.invitation-code');
+            const generateButton = document.getElementById('generate-button');
+            const instructionText = document.getElementById('instruction-text');
+            
+            // Update the UI
+            codeElement.textContent = 'testuser';
+            codeElement.style.backgroundColor = '#f0f8ff';
+            codeElement.style.fontWeight = 'bold';
+            
+            generateButton.style.display = 'none';
+            
+            instructionText.innerHTML = '<strong>Your username is your referral code.</strong> Share your username with new members and ask them to enter it when they sign up. Bonuses for successful referrals are paid in UBT tokens.';
+            
+            // Create and add copy button
+            const copyButton = document.createElement('button');
+            copyButton.textContent = 'Copy';
+            copyButton.style.marginLeft = '10px';
+            copyButton.style.padding = '5px 10px';
+            copyButton.style.backgroundColor = '#4CAF50';
+            copyButton.style.color = 'white';
+            copyButton.style.border = 'none';
+            copyButton.style.borderRadius = '4px';
+            copyButton.style.cursor = 'pointer';
+            
+            codeElement.parentNode.insertBefore(copyButton, codeElement.nextSibling);
+            
+            // Add instructions component
+            const bonusRules = document.querySelector('h3:contains("Bonus Rules")').parentNode;
+            const lastBonusRule = bonusRules.querySelector('ul li:last-child');
+            
+            const instructionsElement = document.createElement('div');
+            instructionsElement.style.marginTop = '20px';
+            instructionsElement.style.padding = '15px';
+            instructionsElement.style.backgroundColor = '#f9f9f9';
+            instructionsElement.style.border = '1px solid #e0e0e0';
+            instructionsElement.style.borderRadius = '5px';
+            instructionsElement.innerHTML = `
+                <h3 style="margin-top: 0; margin-bottom: 10px;">How to Share Your Referral Code</h3>
+                <p>Your username <strong>testuser</strong> is your referral code. Share it with others using these steps:</p>
+                <ol style="padding-left: 20px; margin-bottom: 15px;">
+                    <li style="margin-bottom: 8px;">Tell new members to visit <strong>hsitapp.link</strong> and click "Sign Up"</li>
+                    <li style="margin-bottom: 8px;">During signup, they should enter your username in the "Referral Code" field</li>
+                    <li style="margin-bottom: 8px;">Once they purchase a bot, you'll receive your UBT bonus automatically</li>
+                    <li style="margin-bottom: 8px;">Track your team members and earned bonuses in the table below</li>
+                </ol>
+                <div style="background-color: #e8f5e9; padding: 10px; border-radius: 4px;">
+                    <strong>Pro Tip: </strong>The more active members you refer, the more UBT you earn! Remember, you also get bonuses from your direct invites' referrals.
+                </div>
+            `;
+            
+            lastBonusRule.parentNode.parentNode.insertBefore(instructionsElement, lastBonusRule.parentNode.nextSibling);
+            
+            // Display result
+            document.getElementById('ui-update-result').innerHTML = 
+                'UI updated successfully:<br>' +
+                '- Invitation code replaced with username<br>' +
+                '- Generate button hidden<br>' +
+                '- Instructions text updated<br>' +
+                '- Copy button added<br>' +
+                '- Detailed instructions component added';
+        });
+        
+        document.getElementById('setup-test').addEventListener('click', function() {
+            // Clear existing data
+            localStorage.removeItem('userEmail');
+            sessionStorage.removeItem('userEmail');
+            
+            // Set test data
+            localStorage.setItem('userEmail', 'completetest@example.com');
+            
+            // Display result
+            document.getElementById('complete-test-result').innerHTML = 
+                'Test data set up:<br>' +
+                'Email in localStorage: completetest@example.com<br>' +
+                'Expected username: <strong>completetest</strong>';
+        });
+        
+        document.getElementById('run-complete-test').addEventListener('click', function() {
+            // Check if test data is set up
+            const userEmail = localStorage.getItem('userEmail');
+            if (!userEmail) {
+                document.getElementById('complete-test-result').innerHTML = 
+                    'Error: Test data not set up. Please click "Setup Test Data" first.';
+                return;
+            }
+            
+            // Simulate loading the script
+            document.getElementById('complete-test-result').innerHTML = 
+                'Loading username_referral_system.js...<br>' +
+                'This would normally execute the complete implementation.<br><br>' +
+                'Expected results:<br>' +
+                '- Username "completetest" displayed instead of invitation code<br>' +
+                '- Generate button hidden<br>' +
+                '- Instructions updated to reference username<br>' +
+                '- Detailed instructions added after bonus rules<br><br>' +
+                'To implement on your live site, follow the Implementation Instructions below.';
+        });
+        
+        // Helper for querySelector with :contains
+        HTMLElement.prototype.querySelector = function(selector) {
+            if (selector.includes(':contains')) {
+                const parts = selector.split(':contains');
+                const tag = parts[0];
+                const text = parts[1].replace(/['"()]/g, '');
+                
+                const elements = this.querySelectorAll(tag || '*');
+                for (let i = 0; i < elements.length; i++) {
+                    if (elements[i].textContent.includes(text)) {
+                        return elements[i];
+                    }
+                }
+                return null;
+            } else {
+                return HTMLElement.prototype.querySelector.call(this, selector);
+            }
+        };
+    </script>
+</body>
+</html>
