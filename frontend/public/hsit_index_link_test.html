@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSIT Index Link Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121225;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            color: #ffffff;
+        }
+        .common-operations {
+            background-color: #1e1e2d;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .service {
+            background-color: #1e1e2d;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .links-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .link-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            background-color: #2d2d42;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            min-width: 120px;
+        }
+        .link-item:hover {
+            background-color: #3e3e5a;
+        }
+        .link-item img {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 8px;
+        }
+        .test-section {
+            background-color: #2a2a3c;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 30px;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #1a1a2e;
+            border-radius: 4px;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HSIT Index Link Test</h1>
+        <p>This page simulates the HSIT dashboard to test the implementation of the HSIT Index link.</p>
+        
+        <div class="common-operations">
+            <h2>Common Operations</h2>
+            <div class="links-container">
+                <a href="#" class="link-item">
+                    <img src="https://via.placeholder.com/32" alt="AI">
+                    <span>AI</span>
+                </a>
+                <a href="#" class="link-item">
+                    <img src="https://via.placeholder.com/32" alt="Option">
+                    <span>Option (Coming soon)</span>
+                </a>
+                <a href="#" class="link-item">
+                    <img src="https://via.placeholder.com/32" alt="Deposit">
+                    <span>Deposit</span>
+                </a>
+                <a href="#" class="link-item">
+                    <img src="https://via.placeholder.com/32" alt="Daily Sign In">
+                    <span>Daily Sign In</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="service">
+            <h2>Service</h2>
+            <div class="links-container">
+                <a href="#" class="link-item">
+                    <img src="https://via.placeholder.com/32" alt="Service 1">
+                    <span>Service 1</span>
+                </a>
+                <a href="#" class="link-item">
+                    <img src="https://via.placeholder.com/32" alt="Service 2">
+                    <span>Service 2</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Implementation</h2>
+            <p>Click the button below to test adding the HSIT Index link to the dashboard:</p>
+            <button id="test-button" class="test-button">Test HSIT Index Link Implementation</button>
+            <div id="test-result" class="result"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('test-button').addEventListener('click', function() {
+            const resultElement = document.getElementById('test-result');
+            resultElement.innerHTML = '<span class="success">Loading script...</span>';
+            
+            // Load the HSIT Index Link script
+            const script = document.createElement('script');
+            script.src = 'hsit_index_link.js';
+            script.onerror = function() {
+                resultElement.innerHTML = '<span class="error">Error loading script. Make sure hsit_index_link.js is in the same directory as this HTML file.</span>';
+            };
+            document.head.appendChild(script);
+            
+            // Check if the script added the section after a short delay
+            setTimeout(function() {
+                const hsitSection = document.querySelector('.hsit-private-section');
+                if (hsitSection) {
+                    resultElement.innerHTML = '<span class="success">Success! The HSIT Index link has been added to the dashboard.</span>';
+                } else {
+                    resultElement.innerHTML = '<span class="error">The script loaded but the HSIT Index link was not added. Check the console for errors.</span>';
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
