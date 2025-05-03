@@ -186,4 +186,4 @@ function showMessage(message, type = 'info') {
   setTimeout(() => {
     statusElement.style.display = 'none';
   }, 5000);
-} 
+}
