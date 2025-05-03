@@ -1,9 +1,8 @@
 // Script to handle feeling lucky functionality with CORS-enabled API configuration
-// No external config dependency - completely self-contained
+// Includes API call to update backend and refresh local user data.
 
 // API configuration directly integrated into this file
 const API_URL = 'https://hsit-backend.onrender.com';
-
 
 document.addEventListener('DOMContentLoaded', () => {
     const luckyButton = document.getElementById('lucky-button');
@@ -11,27 +10,73 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultText = document.getElementById('result-text');
     const remainingTriesElement = document.getElementById('remaining-tries');
     
-    // Define the possible prizes (same structure as the wheel)
+    // Define the possible prizes
     const prizes = [
-        { label: "1 UBT", value: 1, probability: 0.1 },
-        { label: "10 UBT", value: 10, probability: 0.05 },
-        { label: "20 USDT", value: 20, probability: 0.02 },
-        { label: "Better luck next time", value: 0, probability: 0.83 }
+        { label: "1 UBT", value: 1, type: 'UBT', probability: 0.1 },
+        { label: "10 UBT", value: 10, type: 'UBT', probability: 0.05 },
+        { label: "20 USDT", value: 20, type: 'USDT', probability: 0.02 },
+        { label: "Better luck next time", value: 0, type: 'None', probability: 0.83 }
     ];
     
     // Function to get user data including bot count and remaining tries
-    async function getUserData() {
+    async function getUserData(token) {
+        if (!token) {
+            console.error("No token provided to getUserData");
+            window.location.href = '/index.html'; // Redirect if no token
+            return null;
+        }
         try {
-            // First try to get token from localStorage
-            const token = localStorage.getItem('token');
-            if (!token) {
+            const response = await fetch(`${API_URL}/api/auth`, {
+                headers: {
+                    'x-auth-token': token,
+                    'Origin': window.location.origin
+                },
+                credentials: 'include',
+                mode: 'cors'
+            });
+            
+            if (!response.ok) {
+                // If fetching fails (e.g., expired token), clear local storage and redirect
+                localStorage.removeItem('token');
+                localStorage.removeItem('userData');
                 window.location.href = '/index.html';
-                return null;
+                throw new Error(`Failed to fetch user data: ${response.statusText}`);
             }
             
-            // Try to get user data from API
+            const data = await response.json();
+            // Store updated user data
+            localStorage.setItem('userData', JSON.stringify(data));
+            return data;
+
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+            // Clear potentially invalid token and redirect
+            localStorage.removeItem('token');
+            localStorage.removeItem('userData');
+            window.location.href = '/index.html';
+            return null;
+        }
+    }
+    
+    // Function to save user data (primarily for non-critical updates like last reset date)
+    function saveLocalUserData(userData) {
+        try {
+            localStorage.setItem('userData', JSON.stringify(userData));
+        } catch (error) {
+            console.error("Error saving user data locally:", error);
+        }
+    }
+    
+    // Function to reset daily tries if it's a new day
+    async function resetDailyTriesIfNeeded(userData, token) {
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (userData.lastLuckyReset !== today) {
+            console.log("New day detected, resetting lucky tries.");
+            // It's a new day, reset tries based on bot count via API
             try {
-                const response = await fetch(`${API_URL}/api/auth`, {
+                const response = await fetch(`${API_URL}/api/lucky/reset-tries`, {
+                    method: 'POST',
                     headers: {
                         'x-auth-token': token,
                         'Origin': window.location.origin
@@ -39,62 +84,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     credentials: 'include',
                     mode: 'cors'
                 });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    // Store updated user data
-                    localStorage.setItem('userData', JSON.stringify(data));
-                    return data;
+
+                if (!response.ok) {
+                    throw new Error(`Failed to reset tries via API: ${response.statusText}`);
                 }
-            } catch (apiError) {
-                console.error("API error:", apiError);
-                // Fall back to localStorage if API fails
+
+                const updatedData = await response.json();
+                console.log("Tries reset successfully via API:", updatedData);
+                // Update local storage with fresh data from the server
+                saveLocalUserData(updatedData.userData);
+                return updatedData.userData; // Return the fresh user data
+
+            } catch (error) {
+                console.error("Error resetting lucky tries via API:", error);
+                showNotification("Failed to reset daily tries. Please refresh.", "error");
+                // Return original data, but tries might be incorrect
+                return userData; 
             }
-            
-            // Check if we have user data in localStorage
-            const userData = localStorage.getItem('userData');
-            if (userData) {
-                return JSON.parse(userData);
-            }
-            
-            // Mock data if no localStorage data exists
-            return {
-                username: "TestUser",
-                botsPurchased: ["100", "300", "500"], // Example: user has 3 bots
-                remainingLuckyTries: 3, // Should match bot count initially
-                lastLuckyReset: new Date().toISOString().split('T')[0] // Today's date
-            };
-        } catch (error) {
-            console.error("Error fetching user data:", error);
-            return {
-                botsPurchased: [],
-                remainingLuckyTries: 0,
-                lastLuckyReset: ""
-            };
+        } else {
+            // Not a new day, return existing data
+            return userData;
         }
-    }
-    
-    // Function to save user data
-    function saveUserData(userData) {
-        try {
-            localStorage.setItem('userData', JSON.stringify(userData));
-        } catch (error) {
-            console.error("Error saving user data:", error);
-        }
-    }
-    
-    // Function to reset daily tries if it's a new day
-    function resetDailyTriesIfNeeded(userData) {
-        const today = new Date().toISOString().split('T')[0];
-        
-        if (userData.lastLuckyReset !== today) {
-            // It's a new day, reset tries based on bot count
-            userData.remainingLuckyTries = userData.botsPurchased ? userData.botsPurchased.length : 0;
-            userData.lastLuckyReset = today;
-            saveUserData(userData);
-        }
-        
-        return userData;
     }
     
     // Function to update the UI with remaining tries
@@ -105,9 +115,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tries <= 0) {
             luckyButton.disabled = true;
             luckyButton.textContent = "No Tries Left Today";
+            luckyButton.style.opacity = '0.7';
         } else {
             luckyButton.disabled = false;
             luckyButton.textContent = "I'm Feeling Lucky!";
+            luckyButton.style.opacity = '1';
         }
     }
     
@@ -123,79 +135,174 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // Fallback to the last prize (should never reach here if probabilities sum to 1)
+        // Fallback to the last prize (likely 'Better luck next time')
         return prizes[prizes.length - 1];
+    }
+
+    // Function to record the win and update balance via API
+    async function recordWin(token, prize) {
+        if (prize.value <= 0) {
+            // No need to call API for 'Better luck next time'
+            console.log("No prize won, skipping API call.");
+            return true; // Indicate success (no action needed)
+        }
+
+        console.log(`Recording win: ${prize.label}`);
+        try {
+            const response = await fetch(`${API_URL}/api/lucky/record-win`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-auth-token': token,
+                    'Origin': window.location.origin
+                },
+                credentials: 'include',
+                mode: 'cors',
+                body: JSON.stringify({
+                    prizeValue: prize.value,
+                    prizeType: prize.type // e.g., 'UBT' or 'USDT'
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || `Server responded with status ${response.status}`);
+            }
+
+            console.log("Win recorded successfully:", data);
+            // IMPORTANT: Update local storage with the fresh user data returned by the API
+            if (data && data.userData) {
+                saveLocalUserData(data.userData);
+                // Optional: Update dashboard balance if visible
+                const balanceElement = document.querySelector('.balance-amount'); 
+                if (balanceElement && data.userData.balances && data.userData.balances.ubt !== undefined) {
+                    balanceElement.textContent = `${data.userData.balances.ubt.toFixed(2)} UBT`;
+                }
+                return true;
+            } else {
+                console.warn("API did not return updated user data after recording win.");
+                // Attempt to fetch manually as fallback
+                const freshData = await getUserData(token);
+                return !!freshData; // Return true if manual fetch succeeded
+            }
+
+        } catch (error) {
+            console.error("Error recording win via API:", error);
+            showNotification(`Failed to record prize: ${error.message}`, "error");
+            return false; // Indicate failure
+        }
     }
     
     // Function to handle the lucky button click
     async function handleLuckyButtonClick() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            showNotification("Authentication error. Please log in again.", "error");
+            window.location.href = '/index.html';
+            return;
+        }
+
         // Disable button during processing
         luckyButton.disabled = true;
         luckyButton.textContent = "Processing...";
+        luckyButton.style.opacity = '0.7';
+        resultDisplay.classList.remove('show'); // Hide previous result
         
         try {
-            // Get user data
-            let userData = await getUserData();
-            if (!userData) return;
+            // Get current user data from local storage first (might be slightly stale)
+            let userData = JSON.parse(localStorage.getItem('userData') || '{}');
             
-            // Reset tries if it's a new day
-            userData = resetDailyTriesIfNeeded(userData);
-            
-            // Check if user has remaining tries
+            // Reset tries if it's a new day (fetches fresh data if reset happens)
+            userData = await resetDailyTriesIfNeeded(userData, token);
+            if (!userData) { // If reset failed critically
+                 throw new Error("Failed to initialize user data after reset check.");
+            }
+
+            // Double-check remaining tries from potentially updated data
             if (userData.remainingLuckyTries <= 0) {
                 resultText.textContent = "You have no tries left today. Come back tomorrow!";
                 resultDisplay.classList.add('show');
                 updateRemainingTriesUI(0);
-                return;
+                return; // Exit early
             }
             
-            // Simulate server request delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Select a prize
+            // Select a prize (client-side decision)
             const prize = selectPrize();
+            console.log("Prize selected:", prize);
             
-            // Update user data
-            userData.remainingLuckyTries--;
-            saveUserData(userData);
-            
-            // Display the result
-            resultText.textContent = `Congratulations! You won: ${prize.label}`;
-            resultDisplay.classList.add('show');
-            
-            // Update UI
-            updateRemainingTriesUI(userData.remainingLuckyTries);
-            
-            // In a real implementation, you would send an API request to update the user's balance
-            // and record the prize won
+            // Attempt to record the win/loss and update balance via API
+            const recordSuccess = await recordWin(token, prize);
+
+            if (recordSuccess) {
+                // Fetch the absolute latest user data after the win was recorded
+                const finalUserData = await getUserData(token);
+                if (!finalUserData) {
+                    throw new Error("Failed to fetch final user data after recording win.");
+                }
+
+                // Display the result
+                resultText.textContent = `You got: ${prize.label}`;
+                resultDisplay.classList.add('show');
+                
+                // Update UI with remaining tries from the latest data
+                updateRemainingTriesUI(finalUserData.remainingLuckyTries);
+
+                // Show notification for actual wins
+                if (prize.value > 0) {
+                    showNotification(`Congratulations! You won ${prize.label}!`, "success");
+                }
+
+            } else {
+                // API call failed, result wasn't recorded, don't decrement tries visually yet
+                resultText.textContent = "Failed to record result. Please try again.";
+                resultDisplay.classList.add('show');
+                // Re-enable button since the try wasn't used
+                luckyButton.disabled = false;
+                luckyButton.textContent = "I'm Feeling Lucky!";
+                luckyButton.style.opacity = '1';
+            }
             
         } catch (error) {
             console.error("Error processing lucky button click:", error);
-            resultText.textContent = "An error occurred. Please try again.";
+            resultText.textContent = `An error occurred: ${error.message}. Please try again.`;
             resultDisplay.classList.add('show');
             
-            // Re-enable button
+            // Re-enable button on error
             luckyButton.disabled = false;
             luckyButton.textContent = "I'm Feeling Lucky!";
+            luckyButton.style.opacity = '1';
         }
     }
     
     // Initialize the page
     async function initPage() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/index.html';
+            return;
+        }
+
+        luckyButton.disabled = true; // Disable initially
+        luckyButton.textContent = "Loading...";
+
         try {
-            // Get user data
-            let userData = await getUserData();
-            if (!userData) return;
+            // Get user data (fetches from API)
+            let userData = await getUserData(token);
+            if (!userData) return; // getUserData handles redirect on failure
             
-            // Reset tries if it's a new day
-            userData = resetDailyTriesIfNeeded(userData);
+            // Reset tries if it's a new day (fetches fresh data if reset happens)
+            userData = await resetDailyTriesIfNeeded(userData, token);
+            if (!userData) return; // resetDailyTriesIfNeeded handles errors
             
-            // Update UI
+            // Update UI with potentially updated data
             updateRemainingTriesUI(userData.remainingLuckyTries);
             
         } catch (error) {
             console.error("Error initializing page:", error);
             remainingTriesElement.textContent = "Error";
+            luckyButton.textContent = "Error Loading";
+            showNotification("Failed to load lucky wheel data. Please refresh.", "error");
         }
     }
     
@@ -205,3 +312,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize the page when loaded
     initPage();
 });
+
+// Shared showNotification function (ensure it's defined or imported if not in this file)
+function showNotification(message, type = 'info') {
+    let notification = document.getElementById('hsit-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'hsit-notification';
+        document.body.appendChild(notification);
+        Object.assign(notification.style, {
+            position: 'fixed', bottom: '20px', right: '20px',
+            padding: '15px 20px', borderRadius: '5px',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.2)', zIndex: '1000',
+            maxWidth: '300px', transition: 'all 0.3s ease-in-out',
+            opacity: '0', transform: 'translateY(20px)'
+        });
+    }
+    if (type === 'success') { notification.style.backgroundColor = '#4CAF50'; notification.style.color = 'white'; }
+    else if (type === 'error') { notification.style.backgroundColor = '#F44336'; notification.style.color = 'white'; }
+    else { notification.style.backgroundColor = '#2196F3'; notification.style.color = 'white'; }
+    notification.textContent = message;
+    requestAnimationFrame(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateY(0)';
+    });
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(20px)';
+    }, 5000);
+}
+
