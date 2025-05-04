@@ -1,0 +1,125 @@
+body {
+    font-family: 'Times New Roman', Times, serif;
+    margin: 40px;
+    border: 10px solid #a08d5b; /* Gold-like border */
+    padding: 20px;
+    position: relative;
+    background-color: #fdfdfa; /* Off-white background */
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #a08d5b;
+    padding-bottom: 20px;
+    position: relative;
+}
+
+.coat-of-arms {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 80px; /* Adjust size as needed */
+    height: auto;
+}
+
+.mfsa-logo {
+    position: absolute;
+    top: 10px;
+    right: 0;
+    width: 120px; /* Adjust size as needed */
+    height: auto;
+}
+
+.header h1 {
+    font-size: 24px;
+    margin: 10px 0 5px 0;
+    color: #333;
+    font-weight: bold;
+}
+
+.header h2 {
+    font-size: 20px;
+    margin: 0;
+    color: #555;
+    font-weight: normal;
+}
+
+.content {
+    margin-top: 30px;
+    line-height: 1.6;
+}
+
+.content h3 {
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.content h4 {
+    text-align: center;
+    font-size: 22px;
+    margin-bottom: 30px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.content p {
+    margin-bottom: 15px;
+    text-align: justify;
+}
+
+.content ul {
+    margin-left: 40px;
+    margin-bottom: 15px;
+}
+
+.content li {
+    margin-bottom: 5px;
+}
+
+.company-name {
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.footer {
+    margin-top: 50px;
+    display: flex; /* Use flexbox for layout */
+    justify-content: space-between; /* Space out signature and seal */
+    align-items: flex-end; /* Align items at the bottom */
+    padding-top: 20px;
+    border-top: 1px solid #ccc;
+}
+
+.signature-area {
+    text-align: center;
+    width: 60%; /* Allocate space for signature */
+}
+
+.signature-area p {
+    margin: 2px 0;
+    font-size: 14px;
+    text-align: center;
+}
+
+.seal-area {
+    text-align: center;
+    width: 30%; /* Allocate space for seal */
+    border: 1px dashed #ccc; /* Placeholder for seal */
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-style: italic;
+}
+
+strong {
+    font-weight: bold;
+}
+
