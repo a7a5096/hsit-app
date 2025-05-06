@@ -1,6 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import * as jose from 'jose'; // Changed import for jose
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
@@ -8,8 +8,9 @@ dotenv.config();
 
 const router = express.Router();
 
-// JWT Secret for token signing
-const JWT_SECRET = process.env.JWT_SECRET || 'hsit-secret-key';
+// JWT Secret for token signing - must be a Uint8Array for jose
+const JWT_SECRET_STRING = process.env.JWT_SECRET || 'hsit-secret-key';
+const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
 
 // A simple user schema (since we don't have access to your User model)
@@ -91,25 +92,24 @@ router.post('/', async (req, res) => {
       }
     };
 
-    // Sign token
-    jwt.sign(
-      payload,
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRE },
-      (err, token) => {
-        if (err) throw err;
-        res.json({
-          token,
-          user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            isVerified: user.isPhoneVerified,
-            balances: user.balances
-          }
-        });
+    // Sign token using jose
+    const token = await new jose.SignJWT(payload)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime(JWT_EXPIRE)
+      .sign(JWT_SECRET);
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        isVerified: user.isPhoneVerified,
+        balances: user.balances
       }
-    );
+    });
+
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -117,32 +117,18 @@ router.post('/', async (req, res) => {
 });
 
 // @route   GET api/auth
-// @desc    Get user data
+// @desc    Get user data (Protected Route - example)
 // @access  Private
 router.get('/', async (req, res) => {
+  const token = req.header('x-auth-token');
+
+  if (!token) {
+    return res.status(401).json({ msg: 'No token, authorization denied' });
+  }
+
   try {
-    // For testing - normally this would check a token
-    // In production, use middleware to verify the token and set req.user
-    const userId = req.header('x-auth-token');
-    
-    // For testing, if no token is provided, just return a test user
-    if (!userId) {
-      return res.json({
-        id: '12345',
-        username: 'testuser',
-        email: 'test@example.com',
-        isVerified: true,
-        balances: {
-          btc: 0.01,
-          eth: 0.5,
-          usdt: 100,
-          ubt: 500
-        }
-      });
-    }
-    
-    // Find the user (normally by ID from token)
-    const user = await User.findById(userId).select('-password');
+    const { payload } = await jose.jwtVerify(token, JWT_SECRET);
+    const user = await User.findById(payload.user.id).select('-password');
     
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
@@ -150,10 +136,16 @@ router.get('/', async (req, res) => {
     
     res.json(user);
   } catch (err) {
-    console.error(err.message);
+    console.error('Token verification failed:', err.message);
+    if (err.code === 'ERR_JWT_EXPIRED') {
+        return res.status(401).json({ msg: 'Token is expired' });
+    } else if (err.code === 'ERR_JWS_INVALID' || err.code === 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED') {
+        return res.status(401).json({ msg: 'Token is not valid' });
+    }
     res.status(500).send('Server Error');
   }
 });
+
 
 // @route   POST api/auth/register
 // @desc    Register a new user
@@ -197,24 +189,23 @@ router.post('/register', async (req, res) => {
       }
     };
 
-    // Sign token
-    jwt.sign(
-      payload,
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRE },
-      (err, token) => {
-        if (err) throw err;
-        res.json({
-          token,
-          user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            phoneVerificationCode: user.phoneVerificationCode // Normally you'd send this via SMS
-          }
-        });
+    // Sign token using jose
+    const token = await new jose.SignJWT(payload)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime(JWT_EXPIRE)
+      .sign(JWT_SECRET);
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        phoneVerificationCode: user.phoneVerificationCode // Normally you'd send this via SMS
       }
-    );
+    });
+
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -222,3 +213,4 @@ router.post('/register', async (req, res) => {
 });
 
 export default router;
+
