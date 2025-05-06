@@ -12,7 +12,6 @@
     "express": "^4.19.2",
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^8.5.1",
-    "jwa": "^2.0.0",
     "mongoose": "^8.4.0",
     "twilio": "^5.5.2"
   },
