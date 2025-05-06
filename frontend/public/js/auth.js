@@ -2,19 +2,31 @@
  * auth.js
  * 
  * Authentication utilities for the application.
- * Handles login (using username), logout, and auth token management.
+ * Handles login, logout, and auth token management.
  */
-// Login form handling
+console.log("auth.js: Script loaded"); // DEBUG
+
 document.addEventListener("DOMContentLoaded", function() {
+    console.log("auth.js: DOMContentLoaded event fired"); // DEBUG
+
     var loginForm = document.getElementById("loginForm");
     if (loginForm) {
+        console.log("auth.js: loginForm found"); // DEBUG
         loginForm.addEventListener("submit", handleLogin);
+        console.log("auth.js: Event listener attached to loginForm"); // DEBUG
+    } else {
+        console.error("auth.js: loginForm not found!"); // DEBUG
     }
 
-    // Signup form handling (assuming signup also uses auth.js or similar logic)
+    // Signup form handling
     var signupForm = document.getElementById("signupForm");
     if (signupForm) {
+        console.log("auth.js: signupForm found"); // DEBUG
         signupForm.addEventListener("submit", handleSignup);
+        console.log("auth.js: Event listener attached to signupForm"); // DEBUG
+    } else {
+        // This is not an error on the login page
+        // console.log("auth.js: signupForm not found (this is okay on login page)"); 
     }
 });
 
@@ -23,12 +35,16 @@ document.addEventListener("DOMContentLoaded", function() {
  * @param {Event} event - The form submission event
  */
 function handleLogin(event) {
+    console.log("auth.js: handleLogin function called"); // DEBUG
     event.preventDefault();
     
     var statusMessage = document.getElementById("statusMessage");
-    // Changed from email to username
-    var username = document.getElementById("username").value.trim(); 
-    var password = document.getElementById("password").value;
+    // CORRECTED: Changed from "username" to "email" to match the form ID
+    var emailValue = document.getElementById("email").value.trim(); 
+    var passwordValue = document.getElementById("password").value;
+
+    console.log("auth.js: Email value -", emailValue); // DEBUG
+    console.log("auth.js: Password value -", passwordValue ? "[PRESENT]" : "[EMPTY]"); // DEBUG
     
     // Clear previous status messages
     if (statusMessage) {
@@ -37,55 +53,60 @@ function handleLogin(event) {
     }
     
     // Validate form data
-    if (!username || !password) {
-        showStatus("Please enter both username and password", "error");
+    if (!emailValue || !passwordValue) {
+        showStatus("Please enter both email and password", "error");
+        console.error("auth.js: Email or password empty"); // DEBUG
         return;
     }
     
     showStatus("Signing in...", "info");
+    console.log("auth.js: Attempting to sign in..."); // DEBUG
     
     // Call login API using XMLHttpRequest
     var xhr = new XMLHttpRequest();
-    // Ensure the backend endpoint /api/auth accepts username
     xhr.open("POST", "https://hsit-backend.onrender.com/api/auth", true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
+            console.log("auth.js: Login API response received, status:", xhr.status); // DEBUG
             if (xhr.status === 200) {
                 try {
                     var data = JSON.parse(xhr.responseText);
-                    // Save auth token and user data
+                    console.log("auth.js: Login API success, data:", data); // DEBUG
                     if (data.token && data.user) {
-                        localStorage.setItem("token", data.token); // Use "token" consistently
-                        localStorage.setItem("userData", JSON.stringify(data.user)); // Store user data
+                        localStorage.setItem("token", data.token);
+                        localStorage.setItem("userData", JSON.stringify(data.user));
                         
-                        // Redirect to dashboard
                         showStatus("Login successful! Redirecting...", "success");
                         setTimeout(function() {
                             window.location.href = "dashboard.html";
                         }, 1000);
                     } else {
                         showStatus("Authentication failed: Missing token or user data.", "error");
+                        console.error("auth.js: Missing token or user data from API"); // DEBUG
                     }
                 } catch (e) {
-                    console.error("Error parsing login response:", e);
+                    console.error("auth.js: Error parsing login response:", e, xhr.responseText); // DEBUG
                     showStatus("Error processing server response", "error");
                 }
             } else {
                 try {
                     var response = JSON.parse(xhr.responseText);
+                    console.error("auth.js: Login API error, response:", response); // DEBUG
                     showStatus(response.message || `Login failed (Status: ${xhr.status})`, "error");
                 } catch (e) {
+                    console.error("auth.js: Login API error, could not parse response:", xhr.responseText); // DEBUG
                     showStatus(`Login failed (Status: ${xhr.status})`, "error");
                 }
             }
         }
     };
-    // Send username instead of email
+    // CORRECTED: Send email instead of username, and use the correct variable names
     xhr.send(JSON.stringify({
-        username: username,
-        password: password
+        email: emailValue,
+        password: passwordValue
     }));
+    console.log("auth.js: Login request sent to API"); // DEBUG
 }
 
 /**
@@ -93,16 +114,18 @@ function handleLogin(event) {
  * @param {Event} event - The form submission event
  */
 function handleSignup(event) {
+    console.log("auth.js: handleSignup function called"); // DEBUG
     event.preventDefault();
 
     var statusMessage = document.getElementById("statusMessage");
-    var username = document.getElementById("username").value.trim();
-    var email = document.getElementById("email").value.trim();
-    var phone = document.getElementById("phone").value.trim();
-    var password = document.getElementById("password").value;
-    var confirmPassword = document.getElementById("confirm-password").value;
-    var invitationCode = document.getElementById("invitation-code").value.trim();
-    var privacyPolicy = document.getElementById("privacy-policy").checked;
+    // Ensure these IDs match your signup.html form
+    var usernameValue = document.getElementById("username") ? document.getElementById("username").value.trim() : null;
+    var emailValue = document.getElementById("email") ? document.getElementById("email").value.trim() : null;
+    var phoneValue = document.getElementById("phone") ? document.getElementById("phone").value.trim() : null;
+    var passwordValue = document.getElementById("password") ? document.getElementById("password").value : null;
+    var confirmPasswordValue = document.getElementById("confirm-password") ? document.getElementById("confirm-password").value : null;
+    var invitationCodeValue = document.getElementById("invitation-code") ? document.getElementById("invitation-code").value.trim() : null;
+    var privacyPolicyChecked = document.getElementById("privacy-policy") ? document.getElementById("privacy-policy").checked : false;
 
     // Clear previous status messages
     if (statusMessage) {
@@ -111,38 +134,35 @@ function handleSignup(event) {
     }
 
     // Basic Validations
-    if (!username || !email || !phone || !password || !confirmPassword) {
+    if (!usernameValue || !emailValue || !phoneValue || !passwordValue || !confirmPasswordValue) {
         showStatus("Please fill in all required fields.", "error");
         return;
     }
-    if (password !== confirmPassword) {
+    if (passwordValue !== confirmPasswordValue) {
         showStatus("Passwords do not match.", "error");
         return;
     }
-    if (!privacyPolicy) {
+    if (!privacyPolicyChecked) {
         showStatus("You must agree to the Privacy Policy.", "error");
         return;
     }
 
     showStatus("Creating account...", "info");
 
-    // Call signup API
     var xhr = new XMLHttpRequest();
-    // Ensure the backend endpoint /api/users/register exists and handles these fields
     xhr.open("POST", "https://hsit-backend.onrender.com/api/users/register", true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
-            if (xhr.status === 201 || xhr.status === 200) { // 201 Created or 200 OK
+            if (xhr.status === 201 || xhr.status === 200) { 
                 try {
                     var data = JSON.parse(xhr.responseText);
                     showStatus(data.message || "Signup successful! Please log in.", "success");
-                    // Optionally log the user in directly or redirect to login
                     setTimeout(function() {
-                        window.location.href = "index.html"; // Redirect to login page
+                        window.location.href = "index.html";
                     }, 2000);
                 } catch (e) {
-                    console.error("Error parsing signup response:", e);
+                    console.error("Error parsing signup response:", e, xhr.responseText);
                     showStatus("Account created, but there was an issue processing the response. Please try logging in.", "warning");
                      setTimeout(function() {
                         window.location.href = "index.html";
@@ -159,11 +179,11 @@ function handleSignup(event) {
         }
     };
     xhr.send(JSON.stringify({
-        username: username,
-        email: email,
-        phone: phone,
-        password: password,
-        invitationCode: invitationCode || null // Send null if empty
+        username: usernameValue,
+        email: emailValue,
+        phone: phoneValue,
+        password: passwordValue,
+        invitationCode: invitationCodeValue || null
     }));
 }
 
@@ -179,10 +199,8 @@ function showStatus(message, type = "info") {
         statusMessage.textContent = message;
         statusMessage.className = `status-message ${type}`;
         statusMessage.style.display = "block";
-        // Auto-hide after some time, except for persistent errors?
-        // setTimeout(() => { statusMessage.style.display = 'none'; }, 5000);
     } else {
-        // Fallback if status message element doesn't exist
+        console.warn("auth.js: statusMessage element not found, using alert."); // DEBUG
         alert(`${type.toUpperCase()}: ${message}`);
     }
 }
@@ -192,7 +210,7 @@ function showStatus(message, type = "info") {
  * @returns {boolean} Whether the user is authenticated
  */
 function isAuthenticated() {
-    return !!localStorage.getItem("token"); // Use "token" consistently
+    return !!localStorage.getItem("token");
 }
 
 /**
@@ -200,7 +218,7 @@ function isAuthenticated() {
  * @returns {string|null} The authentication token or null if not authenticated
  */
 function getAuthToken() {
-    return localStorage.getItem("token"); // Use "token" consistently
+    return localStorage.getItem("token");
 }
 
 /**
@@ -208,26 +226,26 @@ function getAuthToken() {
  */
 function logout() {
     localStorage.removeItem("token");
-    localStorage.removeItem("userData"); // Also clear user data
+    localStorage.removeItem("userData");
     window.location.href = "index.html";
 }
 
 // For protected pages, redirect if not logged in
 document.addEventListener("DOMContentLoaded", function() {
-    // Check if this is a protected page (e.g., dashboard, my_team)
-    // A more robust check might involve specific page URLs or a meta tag
+    // This second DOMContentLoaded listener is fine, they will both execute.
+    // console.log("auth.js: Second DOMContentLoaded for protected page check"); // DEBUG
     const protectedPages = ["dashboard.html", "my_team.html", "lucky_wheel.html", "transactions.html", "ubt_exchange.html", "ai_products.html", "asset_center.html", "deposit.html"];
     const currentPage = window.location.pathname.split("/").pop();
 
     if (protectedPages.includes(currentPage) && !isAuthenticated()) {
-        console.log("Not authenticated, redirecting to login.");
+        console.log("auth.js: Not authenticated on a protected page, redirecting to login."); // DEBUG
         window.location.href = "index.html?require_login=true";
-        return; // Stop further execution on this page
+        return;
     }
     
-    // Setup logout button if it exists on the page
-    var logoutButton = document.getElementById("logout-button"); // Assuming a common ID for logout buttons
+    var logoutButton = document.getElementById("logout-button");
     if (logoutButton) {
+        // console.log("auth.js: Logout button found, attaching listener"); // DEBUG
         logoutButton.addEventListener("click", function(e) {
             e.preventDefault();
             logout();
