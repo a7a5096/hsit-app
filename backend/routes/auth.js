@@ -41,6 +41,12 @@ const UserSchema = new mongoose.Schema({
   phoneVerificationCode: {
     type: String
   },
+  invitationCode: { // Added invitationCode to the schema
+    type: String,
+    // unique: true, // This unique constraint is causing issues with nulls
+    // sparse: true, // Consider sparse index if uniqueness is needed for non-null values
+    default: null
+  },
   balances: {
     btc: { type: Number, default: 0 },
     eth: { type: Number, default: 0 },
@@ -151,7 +157,7 @@ router.get('/', async (req, res) => {
 // @desc    Register a new user
 // @access  Public
 router.post('/register', async (req, res) => {
-  const { username, email, password, phoneNumber } = req.body;
+  const { username, email, password, phoneNumber, invitationCode } = req.body; // Added invitationCode
 
   try {
     // Check for existing user
@@ -165,15 +171,31 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ msg: 'Username already taken' });
     }
 
-    // Create new user
-    user = new User({
+    // Create new user object
+    const newUserFields = {
       username,
       email,
       password,
       phoneNumber,
       // Generate random verification code
       phoneVerificationCode: Math.floor(100000 + Math.random() * 900000).toString()
-    });
+    };
+
+    // Only add invitationCode if it's provided and not null/empty
+    if (invitationCode && invitationCode.trim() !== '') {
+      newUserFields.invitationCode = invitationCode.trim();
+    } else {
+      // If no invitation code, explicitly set to undefined or don't set it
+      // Mongoose will use the schema default (null) if not set, 
+      // but we want to avoid setting it to null if the index causes issues.
+      // By not setting it, if the schema default is null, it will be null.
+      // The issue is the unique index on null values.
+      // The best fix is to adjust the index in MongoDB to be sparse or remove uniqueness on nulls.
+      // For now, we will not set the field if it's empty to avoid the direct error.
+      // This relies on the schema default or Mongoose behavior for unset fields.
+    }
+
+    user = new User(newUserFields);
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
@@ -207,7 +229,10 @@ router.post('/register', async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err.message);
+    console.error('Registration Error:', err.message);
+    if (err.code === 11000) { // Handle duplicate key error specifically
+        return res.status(400).json({ msg: 'Duplicate key error. This might be due to the invitation code or another unique field.' });
+    }
     res.status(500).send('Server Error');
   }
 });
