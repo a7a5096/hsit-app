@@ -150,7 +150,8 @@ function handleSignup(event) {
     showStatus("Creating account...", "info");
 
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "https://hsit-backend.onrender.com/api/users/register", true);
+    // CORRECTED SIGNUP API ENDPOINT
+    xhr.open("POST", "https://hsit-backend.onrender.com/api/auth/register", true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
@@ -252,4 +253,5 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
+
 
