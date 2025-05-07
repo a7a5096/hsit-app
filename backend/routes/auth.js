@@ -41,11 +41,11 @@ const UserSchema = new mongoose.Schema({
   phoneVerificationCode: {
     type: String
   },
-  invitationCode: { // Added invitationCode to the schema
+  invitationCode: { 
     type: String,
     // unique: true, // This unique constraint is causing issues with nulls
-    // sparse: true, // Consider sparse index if uniqueness is needed for non-null values
-    default: null
+    // sparse: true, // IMPORTANT: For production, if uniqueness is desired for non-null values, make this index sparse in MongoDB.
+    // Removed default: null to prevent Mongoose from setting it if not provided
   },
   balances: {
     btc: { type: Number, default: 0 },
@@ -157,7 +157,7 @@ router.get('/', async (req, res) => {
 // @desc    Register a new user
 // @access  Public
 router.post('/register', async (req, res) => {
-  const { username, email, password, phoneNumber, invitationCode } = req.body; // Added invitationCode
+  const { username, email, password, phone, invitationCode } = req.body; 
 
   try {
     // Check for existing user
@@ -176,24 +176,16 @@ router.post('/register', async (req, res) => {
       username,
       email,
       password,
-      phoneNumber,
-      // Generate random verification code
+      phoneNumber: phone, // Use the 'phone' value from req.body for the 'phoneNumber' field in the schema
       phoneVerificationCode: Math.floor(100000 + Math.random() * 900000).toString()
     };
 
-    // Only add invitationCode if it's provided and not null/empty
+    // Only add invitationCode to the fields if it's provided and not an empty string
     if (invitationCode && invitationCode.trim() !== '') {
       newUserFields.invitationCode = invitationCode.trim();
-    } else {
-      // If no invitation code, explicitly set to undefined or don't set it
-      // Mongoose will use the schema default (null) if not set, 
-      // but we want to avoid setting it to null if the index causes issues.
-      // By not setting it, if the schema default is null, it will be null.
-      // The issue is the unique index on null values.
-      // The best fix is to adjust the index in MongoDB to be sparse or remove uniqueness on nulls.
-      // For now, we will not set the field if it's empty to avoid the direct error.
-      // This relies on the schema default or Mongoose behavior for unset fields.
     }
+    // If invitationCode is not provided or is empty, it will NOT be added to newUserFields,
+    // and Mongoose will not attempt to set it (and will not use a default if none is specified in schema).
 
     user = new User(newUserFields);
 
@@ -224,14 +216,14 @@ router.post('/register', async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        phoneVerificationCode: user.phoneVerificationCode // Normally you'd send this via SMS
+        phoneVerificationCode: user.phoneVerificationCode 
       }
     });
 
   } catch (err) {
     console.error('Registration Error:', err.message);
-    if (err.code === 11000) { // Handle duplicate key error specifically
-        return res.status(400).json({ msg: 'Duplicate key error. This might be due to the invitation code or another unique field.' });
+    if (err.code === 11000) { 
+        return res.status(400).json({ msg: 'Duplicate key error. This might be due to the invitation code, username, or email already being in use.' });
     }
     res.status(500).send('Server Error');
   }

@@ -11,11 +11,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
     var loginForm = document.getElementById("loginForm");
     if (loginForm) {
-        console.log("auth.js: loginForm found"); // DEBUG
+        // console.log("auth.js: loginForm found"); // DEBUG
         loginForm.addEventListener("submit", handleLogin);
-        console.log("auth.js: Event listener attached to loginForm"); // DEBUG
+        // console.log("auth.js: Event listener attached to loginForm"); // DEBUG
     } else {
-        console.error("auth.js: loginForm not found!"); // DEBUG
+        // Only log error if we are on a page that should have a login form (e.g., index.html)
+        const currentPage = window.location.pathname.split("/").pop();
+        if (currentPage === "index.html" || currentPage === "") { // Empty string for root path
+            console.warn("auth.js: loginForm not found on login page (index.html)!"); // DEBUG
+        }
     }
 
     // Signup form handling
@@ -64,7 +68,7 @@ function handleLogin(event) {
     
     // Call login API using XMLHttpRequest
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "https://hsit-backend.onrender.com/api/auth", true);
+    xhr.open("POST", `${API_URL}/api/auth`, true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
@@ -160,7 +164,7 @@ function handleSignup(event) {
 
     var xhr = new XMLHttpRequest();
     // CORRECTED SIGNUP API ENDPOINT
-    xhr.open("POST", "https://hsit-backend.onrender.com/api/auth/register", true);
+    xhr.open("POST", `${API_URL}/api/auth/register`, true);
     xhr.setRequestHeader("Content-Type", "application/json");
     
     console.log("auth.js: XHR object created and configured. ReadyState:", xhr.readyState); // DEBUG

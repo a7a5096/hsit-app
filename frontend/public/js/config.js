@@ -6,9 +6,9 @@
  */
 
 // Base URL for API requests
-const API_BASE_URL = window.location.origin; // Dynamic API URL based on current origin for production
+const API_URL = 'https://hsit-backend.onrender.com'; // Centralized API URL
 
-// Twilio credentials
+// Twilio credentials (Consider moving to backend environment variables for security)
 const TWILIO_CREDENTIALS = {
     accountSid: 'ACa349c314fae309a21427c73a204d7afc',
     authToken: '29ebf5ec303ed1208d74592b114d2a31',
@@ -22,3 +22,4 @@ const TWILIO_SETTINGS = {
 };
 
 // Other global configuration settings can be added here
+
