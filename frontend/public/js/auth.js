@@ -114,8 +114,11 @@ function handleLogin(event) {
  * @param {Event} event - The form submission event
  */
 function handleSignup(event) {
-    console.log("auth.js: handleSignup function called"); // DEBUG
+    console.log("auth.js: handleSignup function called. Event:", event); // DEBUG
+    
+    console.log("auth.js: Attempting to prevent default form submission..."); // DEBUG
     event.preventDefault();
+    console.log("auth.js: Default form submission hopefully prevented. event.defaultPrevented:", event.defaultPrevented); // DEBUG
 
     var statusMessage = document.getElementById("statusMessage");
     // Ensure these IDs match your signup.html form
@@ -127,6 +130,8 @@ function handleSignup(event) {
     var invitationCodeValue = document.getElementById("invitation-code") ? document.getElementById("invitation-code").value.trim() : null;
     var privacyPolicyChecked = document.getElementById("privacy-policy") ? document.getElementById("privacy-policy").checked : false;
 
+    console.log("auth.js: Signup form values collected:", { usernameValue, emailValue, phoneValue, passwordPresent: !!passwordValue, confirmPasswordPresent: !!confirmPasswordValue, invitationCodeValue, privacyPolicyChecked }); // DEBUG
+
     // Clear previous status messages
     if (statusMessage) {
         statusMessage.textContent = "";
@@ -136,34 +141,43 @@ function handleSignup(event) {
     // Basic Validations
     if (!usernameValue || !emailValue || !phoneValue || !passwordValue || !confirmPasswordValue) {
         showStatus("Please fill in all required fields.", "error");
+        console.error("auth.js: Signup validation failed - missing required fields."); // DEBUG
         return;
     }
     if (passwordValue !== confirmPasswordValue) {
         showStatus("Passwords do not match.", "error");
+        console.error("auth.js: Signup validation failed - passwords do not match."); // DEBUG
         return;
     }
     if (!privacyPolicyChecked) {
         showStatus("You must agree to the Privacy Policy.", "error");
+        console.error("auth.js: Signup validation failed - privacy policy not agreed."); // DEBUG
         return;
     }
 
+    console.log("auth.js: Signup validations passed."); // DEBUG
     showStatus("Creating account...", "info");
 
     var xhr = new XMLHttpRequest();
     // CORRECTED SIGNUP API ENDPOINT
     xhr.open("POST", "https://hsit-backend.onrender.com/api/auth/register", true);
     xhr.setRequestHeader("Content-Type", "application/json");
+    
+    console.log("auth.js: XHR object created and configured. ReadyState:", xhr.readyState); // DEBUG
+
     xhr.onreadystatechange = function() {
+        console.log("auth.js: XHR onreadystatechange. ReadyState:", xhr.readyState, "Status:", xhr.status); // DEBUG
         if (xhr.readyState === 4) {
             if (xhr.status === 201 || xhr.status === 200) { 
                 try {
                     var data = JSON.parse(xhr.responseText);
+                    console.log("auth.js: Signup API success, data:", data); // DEBUG
                     showStatus(data.message || "Signup successful! Please log in.", "success");
                     setTimeout(function() {
                         window.location.href = "index.html";
                     }, 2000);
                 } catch (e) {
-                    console.error("Error parsing signup response:", e, xhr.responseText);
+                    console.error("auth.js: Error parsing signup success response:", e, xhr.responseText); // DEBUG
                     showStatus("Account created, but there was an issue processing the response. Please try logging in.", "warning");
                      setTimeout(function() {
                         window.location.href = "index.html";
@@ -172,20 +186,31 @@ function handleSignup(event) {
             } else {
                 try {
                     var response = JSON.parse(xhr.responseText);
+                    console.error("auth.js: Signup API error, response:", response); // DEBUG
                     showStatus(response.message || `Signup failed (Status: ${xhr.status})`, "error");
                 } catch (e) {
+                    console.error("auth.js: Signup API error, could not parse response:", xhr.responseText); // DEBUG
                     showStatus(`Signup failed (Status: ${xhr.status})`, "error");
                 }
             }
         }
     };
-    xhr.send(JSON.stringify({
+    
+    const payload = {
         username: usernameValue,
         email: emailValue,
         phone: phoneValue,
         password: passwordValue,
         invitationCode: invitationCodeValue || null
-    }));
+    };
+    console.log("auth.js: Preparing to send signup request with payload:", payload); // DEBUG
+    try {
+        xhr.send(JSON.stringify(payload));
+        console.log("auth.js: Signup request sent to API."); // DEBUG
+    } catch (e) {
+        console.error("auth.js: Error sending XHR request:", e); // DEBUG
+        showStatus("Error sending request to server. Please check your network connection.", "error");
+    }
 }
 
 
