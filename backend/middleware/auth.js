@@ -1,29 +1,43 @@
-const jwt = require('jsonwebtoken');
-const config = require('../config/config');
+import * as jose from "jose";
+import dotenv from "dotenv";
+
+dotenv.config(); // Ensure environment variables are loaded
+
+// JWT Secret for token verification - must be a Uint8Array for jose
+const JWT_SECRET_STRING = process.env.JWT_SECRET || "hsit-secret-key";
+const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
 
 /**
- * Middleware to authenticate JWT token
+ * Middleware to authenticate JWT token using jose
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-const auth = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   // Get token from header
-  const token = req.header('x-auth-token');
+  const token = req.header("x-auth-token");
 
   // Check if no token
   if (!token) {
-    return res.status(401).json({ msg: 'No token, authorization denied' });
+    return res.status(401).json({ msg: "No token, authorization denied" });
   }
 
-  // Verify token
+  // Verify token using jose
   try {
-    const decoded = jwt.verify(token, config.JWT_SECRET);
-    req.user = decoded.user;
+    const { payload } = await jose.jwtVerify(token, JWT_SECRET);
+    req.user = payload.user; // Attach user information to request object
     next();
   } catch (err) {
-    res.status(401).json({ msg: 'Token is not valid' });
+    console.error("Auth Middleware - Token verification failed:", err.message); // Log the error
+    if (err.code === "ERR_JWT_EXPIRED") {
+        return res.status(401).json({ msg: "Token is expired" });
+    } else if (err.code === "ERR_JWS_INVALID" || err.code === "ERR_JWS_SIGNATURE_VERIFICATION_FAILED" || err.code === "ERR_JWT_CLAIM_VALIDATION_FAILED") {
+        return res.status(401).json({ msg: "Token is not valid" });
+    }
+    // For other errors, send a generic 500 or a more specific 401 if appropriate
+    res.status(401).json({ msg: "Token is not valid" }); 
   }
 };
 
-module.exports = auth;
+export default authMiddleware; // Changed to ES6 export to match routes/auth.js style
+

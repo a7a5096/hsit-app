@@ -411,7 +411,7 @@ img {
 
 .deposit-info .note {
     font-size: 0.85rem;
-    color: #aaa;
+    color: #ccc; /* Increased contrast from #aaa */
     margin-top: 10px;
 }
 

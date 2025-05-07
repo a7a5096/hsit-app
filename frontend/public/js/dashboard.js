@@ -1,8 +1,5 @@
 // Dashboard.js with CORS-enabled API configuration
-// No external config dependency - completely self-contained
-
-// API configuration directly integrated into this file
-const API_URL = 'https://hsit-backend.onrender.com';
+// Depends on config.js for API_URL
 
 // Script to handle dashboard functionality
 document.addEventListener('DOMContentLoaded', function() {
@@ -28,32 +25,51 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Fetch user data
   async function fetchUserData() {
+    console.log("dashboard.js: Attempting to fetch user data."); // DEBUG
+    const token = localStorage.getItem("token"); // Re-fetch token just in case, though it should be available from above
+    console.log("dashboard.js: Token for fetchUserData:", token ? "[PRESENT]" : "[MISSING]"); // DEBUG
+    if (!token) {
+        console.error("dashboard.js: No token found before fetching user data. Redirecting.");
+        showMessage("Authentication error. Please log in again.", "error");
+        // window.location.href = "/index.html"; // Avoid redirecting immediately if already on dashboard and token vanished
+        return null;
+    }
+
+    const fetchUrl = `${API_URL}/api/auth`;
+    console.log("dashboard.js: Fetching from URL:", fetchUrl); // DEBUG
+
     try {
-      const response = await fetch(`${API_URL}/api/auth`, {
+      console.log("dashboard.js: About to make fetch request to:", fetchUrl); // DEBUG
+      const response = await fetch(fetchUrl, {
         headers: {
-          'x-auth-token': token,
-          'Origin': window.location.origin
+          "x-auth-token": token,
+          "Origin": window.location.origin // Optional: for certain CORS setups
         },
-        credentials: 'include',
-        mode: 'cors'
+        // credentials: "include", // Usually not needed if sending token in header and CORS is permissive
+        mode: "cors"
       });
       
+      console.log("dashboard.js: Fetch response received. Status:", response.status); // DEBUG
+
       if (!response.ok) {
-        throw new Error('Failed to fetch user data');
+        const errorText = await response.text();
+        console.error(`dashboard.js: Failed to fetch user data. Status: ${response.status}, Response: ${errorText}`); // DEBUG
+        throw new Error(`Failed to fetch user data. Status: ${response.status}`);
       }
       
-      const userData = await response.json();
+      const userDataResponse = await response.json();
+      console.log("dashboard.js: User data fetched successfully:", userDataResponse); // DEBUG
       
       // Update UI with user data
-      updateUI(userData);
+      updateUI(userDataResponse);
       
       // Store updated user data
-      localStorage.setItem('userData', JSON.stringify(userData));
+      localStorage.setItem("userData", JSON.stringify(userDataResponse));
       
-      return userData;
+      return userDataResponse;
     } catch (error) {
-      console.error('Error fetching user data:', error);
-      showMessage('Error loading your account data. Please try again later.', 'error');
+      console.error("dashboard.js: Error in fetchUserData catch block:", error); // DEBUG
+      showMessage("Error loading your account data. Please try again later.", "error");
       return null;
     }
   }
@@ -67,16 +83,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Update bots list
-    if (botsList && userData.bots) {
-      // Clear existing bots
-      botsList.innerHTML = '';
-      
-      if (userData.bots.length === 0) {
-        const emptyMessage = document.createElement('div');
-        emptyMessage.className = 'empty-bots-message';
-        emptyMessage.textContent = 'You don\'t have any bots yet. Purchase your first bot to get started!';
-        botsList.appendChild(emptyMessage);
-      } else {
+    if (botsList) { // Check if the botsList element exists
+      botsList.innerHTML = ''; // Clear existing bots first
+      if (userData.bots && Array.isArray(userData.bots) && userData.bots.length > 0) {
         // Add each bot
         userData.bots.forEach(bot => {
           const botItem = document.createElement('div');
@@ -117,6 +126,12 @@ document.addEventListener('DOMContentLoaded', function() {
         botButtons.forEach(button => {
           button.addEventListener('click', handleBotAction);
         });
+      } else {
+        // Handle case where there are no bots or userData.bots is undefined/not an array
+        const emptyMessage = document.createElement('div');
+        emptyMessage.className = 'empty-bots-message';
+        emptyMessage.textContent = 'You don\'t have any bots yet. Purchase your first bot to get started!';
+        botsList.appendChild(emptyMessage);
       }
     }
   }
