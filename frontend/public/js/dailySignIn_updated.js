@@ -5,8 +5,7 @@
  * Includes API call to update backend and refresh local user data.
  */
 
-// API configuration - Ensure this matches your backend URL
-const API_URL = 'https://hsit-backend.onrender.com';
+// API_URL is now expected to be globally available from config.js
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the daily sign-in functionality
