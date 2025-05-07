@@ -19,25 +19,9 @@ const __dirname = path.dirname(__filename); // Fixed variable name
 const app = express();
 
 // Middleware
-// Configure CORS to allow requests from your frontend domain
-const allowedOrigins = [
-  'https://hsitapp.link',
-  'https://www.hsitapp.link',
-  'https://hsit-app.onrender.com',
-  'http://localhost:3000',
-  'http://localhost:5000'
-];
-
+// Configure CORS - TEMPORARILY ALLOW ALL ORIGINS FOR DEBUGGING
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.error(`CORS Error: Origin ${origin} not allowed`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: "*", // Allow all origins for debugging
   credentials: true,
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   allowedHeaders: "Content-Type, Authorization, X-Requested-With, Accept, x-auth-token"
@@ -96,3 +80,4 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
+
