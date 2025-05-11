@@ -162,14 +162,24 @@ img {
     padding: 20px;
 }
 
+/* Banner Styles with GIF Background */
 .banner {
     margin-bottom: 30px;
     border-radius: 8px;
     overflow: hidden;
+    position: relative; /* For positioning context and ensuring children are layered correctly */
+    background-image: url('../images/IMG_6179.gif');
+    background-size: cover; /* Cover the entire banner area */
+    background-position: center; /* Center the GIF */
+    background-repeat: no-repeat; /* GIF is likely a scene, not a tile */
 }
+
 .banner img {
-    display: block; /* Remove extra space below image */
+    display: block;
     width: 100%;
+    position: relative; /* To allow z-index to work effectively */
+    z-index: 1;         /* Ensure the PNG image is on top of the section's background GIF */
+    /* For the GIF to be visible, banner.png must have transparent areas */
 }
 
 
