@@ -91,7 +91,7 @@ function createWheelSegments() {
         textSpan.style.position = "absolute";
         textSpan.style.left = "65%"; // Push towards outer edge (percentage of segment width)
         textSpan.style.top = "50%";
-        textSpan.style.transform = `translate(-50%, -50%) rotate(${textAngle}deg)`;
+        textSpan.style.transform = `translate(-50%, -50%) rotate(${textAngle + 90}deg)`;
         textSpan.style.textAlign = "center"; // Ensure text itself is centered if it wraps
         textSpan.style.width = "100px"; // Give some width to the text span
 
