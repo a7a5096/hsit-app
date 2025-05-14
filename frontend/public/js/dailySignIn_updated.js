@@ -139,6 +139,7 @@ async function handleDailySignIn(event) {
  */
 async function sendSignInDataToServer(token, ubtReward, consecutiveDays) {
     console.log(`Attempting to sign in. Reward: ${ubtReward} UBT. Consecutive days: ${consecutiveDays}`);
+    console.log("API_URL value:", typeof API_URL !== "undefined" ? API_URL : "API_URL is UNDEFINED"); // Diagnostic log
     
     try {
         const response = await fetch(`${API_URL}/api/daily-signin`, {
