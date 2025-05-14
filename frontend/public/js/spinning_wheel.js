@@ -4,7 +4,7 @@ const prizes = [
     { text: "Try Again", color: "#C70039", value: 0 },
     { text: "5 UBT", color: "#900C3F", value: 5 },
     { text: "20 UBT", color: "#581845", value: 20 },
-    { text: "Bonus Spin", color: "#FF5733", value: "bonus" }, 
+    // { text: "Bonus Spin", color: "#FF5733", value: "bonus" }, // Removed Bonus Spin
     { text: "2 UBT", color: "#DAF7A6", value: 2 },
     { text: "50 UBT", color: "#3498DB", value: 50 },
     { text: "Jackpot!", color: "#2ECC71", value: 100 }
@@ -87,13 +87,17 @@ function createWheelSegments() {
         // Final attempt at text orientation for clarity:
         // The segment is rotated. Text is a child. We need to position text near the outer edge of the segment
         // and rotate it so it's upright and readable.
-        const textAngle = segmentAngleDegrees / 2; // Angle to center text in segment
+        const textAngle = segmentAngleDegrees / 2; // Angle for the radial line in the middle of the segment
         textSpan.style.position = "absolute";
-        textSpan.style.left = "65%"; // Push towards outer edge (percentage of segment width)
-        textSpan.style.top = "50%";
-        textSpan.style.transform = `translate(-50%, -50%) rotate(${textAngle + 90}deg)`;
-        textSpan.style.textAlign = "center"; // Ensure text itself is centered if it wraps
-        textSpan.style.width = "100px"; // Give some width to the text span
+        textSpan.style.top = "50%"; // Vertically center the text's transform origin
+        textSpan.style.left = "5px";  // Start text 5px from the segment's origin (which is the wheel's center)
+        textSpan.style.transformOrigin = "left center"; // Rotate around the starting point (left) of the text, vertically centered
+        textSpan.style.transform = `translateY(-50%) rotate(${textAngle + 90}deg)`;
+        // translateY(-50%) to vertically center the text line itself around its 'top: 50%' position.
+        // rotate(textAngle + 90deg): textAngle aligns with segment radial center, +90 makes it perpendicular.
+        textSpan.style.textAlign = "left"; // Text flows from the left.
+        textSpan.style.width = "auto"; // Let the text define its width.
+        textSpan.style.whiteSpace = "nowrap"; // Prevent wrapping.
 
         segment.appendChild(textSpan);
         wheelElement.appendChild(segment);
