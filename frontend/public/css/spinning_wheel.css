@@ -4,34 +4,36 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #f0f2f5;
+    background-color: #000000; /* Black background */
+    color: #ffffff; /* White text for the body */
     margin: 0;
     padding-top: 20px;
 }
 
-header h1 {
-    color: #333;
+header h1,
+.balance-info p,
+.wager-area label,
+.result-area h3,
+.result-area p,
+footer p {
+    color: #ffffff; /* White text for these elements */
 }
 
 .game-section {
-    background-color: #fff;
+    background-color: #1a1a1a; /* Darker gray for section background */
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(255,255,255,0.1); /* Light shadow for dark theme */
     text-align: center;
-}
-
-.balance-info p,
-.wager-area label {
-    font-size: 1.1em;
-    color: #555;
-    margin-bottom: 10px;
+    border: 1px solid #333;
 }
 
 .wager-area input[type="number"] {
     padding: 8px;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid #555;
+    background-color: #333;
+    color: #fff;
     width: 100px;
     text-align: center;
     font-size: 1em;
@@ -40,8 +42,8 @@ header h1 {
 
 .wheel-container {
     position: relative;
-    width: 300px; /* Adjust as needed */
-    height: 300px; /* Adjust as needed */
+    width: 300px;
+    height: 300px;
     margin: 30px auto;
     display: flex;
     justify-content: center;
@@ -52,11 +54,11 @@ header h1 {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    border: 5px solid #333;
+    border: 5px solid #444; /* Lighter border for dark theme */
     position: relative;
-    overflow: hidden; /* To clip segments */
-    transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1); /* Smooth spin animation */
-    background-color: #ddd; /* Fallback, segments will cover this */
+    overflow: hidden;
+    transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1);
+    background-color: #222; /* Dark fallback for wheel background */
 }
 
 .wheel-segment {
@@ -65,21 +67,26 @@ header h1 {
     height: 50%;
     top: 0;
     left: 50%;
-    transform-origin: 0% 100%; /* Pivot from center bottom of segment */
+    transform-origin: 0% 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
-    font-weight: bold;
-    color: white;
-    /* Clip-path will be set by JS to form a triangle/wedge */
 }
 
 .wheel-segment span {
     display: block;
-    transform: rotate(45deg); /* Counter-rotate text to be upright, adjust as needed */
-    padding-left: 20px; /* Adjust to position text within segment */
-    font-size: 0.9em;
+    position: absolute;
+    left: 10%; /* Adjust for better positioning within the wedge */
+    top: 50%;
+    width: 80%;
+    transform-origin: center center;
+    font-weight: bold;
+    font-size: 14px; /* Increased font size */
+    padding: 2px;
+    box-sizing: border-box;
+    /* Text color is set by JS using isLight() for contrast with segment color */
+    /* transform will be set by JS to align text correctly */
 }
 
 .pointer {
@@ -88,8 +95,8 @@ header h1 {
     height: 0;
     border-left: 15px solid transparent;
     border-right: 15px solid transparent;
-    border-top: 30px solid #c0392b; /* Red pointer */
-    top: -10px; /* Position above the wheel center */
+    border-top: 30px solid #e74c3c; /* Brighter red pointer */
+    top: -10px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
@@ -99,7 +106,7 @@ header h1 {
     padding: 12px 25px;
     font-size: 1.2em;
     color: white;
-    background-color: #27ae60;
+    background-color: #27ae60; /* Keep green, good contrast on black */
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -112,24 +119,19 @@ header h1 {
 }
 
 #spin-button:disabled {
-    background-color: #95a5a6;
+    background-color: #7f8c8d; /* Adjusted disabled color */
     cursor: not-allowed;
 }
 
 .result-area {
     margin-top: 20px;
     padding: 15px;
-    background-color: #ecf0f1;
+    background-color: #2c3e50; /* Dark blue-gray for result area */
     border-radius: 5px;
 }
 
-.result-area h3 {
-    margin-top: 0;
-    color: #2c3e50;
-}
-
-.result-area p {
-    font-size: 1.1em;
-    color: #34495e;
+/* Ensure links in header are white */
+header nav a {
+    color: #ffffff;
 }
 
