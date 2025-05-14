@@ -166,10 +166,17 @@ img {
     margin-bottom: 30px;
     border-radius: 8px;
     overflow: hidden;
+    background-image: url('../images/IMG_6204.gif'); /* Added animated GIF background */
+    background-size: cover; /* Ensure GIF covers the banner area */
+    background-position: center; /* Center the GIF */
+    position: relative; /* Needed if banner.png is absolutely positioned on top */
 }
 .banner img {
     display: block; /* Remove extra space below image */
     width: 100%;
+    position: relative; /* Ensure img is on top of the background GIF if needed, or adjust opacity */
+    /* As an alternative to the above, if banner.png is meant to be transparent or smaller, this works. */
+    /* If banner.png is opaque and full-size, the GIF won't be visible unless banner.png is removed or made transparent. */
 }
 
 
