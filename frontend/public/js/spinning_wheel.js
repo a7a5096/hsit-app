@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function createWheelSegments() {
     const numSegments = prizes.length;
     const segmentAngleDegrees = 360 / numSegments;
-    wheelElement.innerHTML = 
+    wheelElement.innerHTML = ""; // Clear the wheel first
     prizes.forEach((prize, index) => {
         const segment = document.createElement("div");
         segment.className = "wheel-segment";
