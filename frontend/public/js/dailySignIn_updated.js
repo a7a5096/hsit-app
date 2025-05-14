@@ -139,23 +139,25 @@ async function handleDailySignIn(event) {
  */
 async function sendSignInDataToServer(token, ubtReward, consecutiveDays) {
     console.log(`Attempting to sign in. Reward: ${ubtReward} UBT. Consecutive days: ${consecutiveDays}`);
-    console.log("API_URL value:", typeof API_URL !== "undefined" ? API_URL : "API_URL is UNDEFINED"); // Diagnostic log
+    console.log("API_URL value:", typeof API_URL !== "undefined" ? API_URL : "API_URL is UNDEFINED");
+    console.log("Token value:", typeof token === "string" && token.length > 0 ? token : "Token is INVALID or EMPTY", "Type:", typeof token); // Diagnostic log for token
     
     try {
-        const response = await fetch(`${API_URL}/api/daily-signin`, {
+        const fetchOptions = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-auth-token': token, // Include auth token
-                'Origin': window.location.origin // Include Origin for CORS if needed
+                'x-auth-token': token
             },
-            credentials: 'include', // Include cookies if necessary
-            mode: 'cors', // Ensure CORS mode
+            mode: 'cors',
             body: JSON.stringify({
                 reward: ubtReward,
                 consecutiveDays: consecutiveDays
-            }),
-        });
+            })
+        };
+        console.log("Fetch options:", JSON.stringify(fetchOptions, null, 2)); // Log fetch options
+
+        const response = await fetch(`${API_URL}/api/daily-signin`, fetchOptions);
 
         const data = await response.json();
 
