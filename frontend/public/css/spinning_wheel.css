@@ -1,4 +1,135 @@
-/* Placeholder for spinning_wheel_game.html specific styles */
+/* spinning_wheel_game.html specific styles */
 body {
     font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding-top: 20px;
 }
+
+header h1 {
+    color: #333;
+}
+
+.game-section {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.balance-info p,
+.wager-area label {
+    font-size: 1.1em;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.wager-area input[type="number"] {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    width: 100px;
+    text-align: center;
+    font-size: 1em;
+    margin-bottom: 20px;
+}
+
+.wheel-container {
+    position: relative;
+    width: 300px; /* Adjust as needed */
+    height: 300px; /* Adjust as needed */
+    margin: 30px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 5px solid #333;
+    position: relative;
+    overflow: hidden; /* To clip segments */
+    transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1); /* Smooth spin animation */
+    background-color: #ddd; /* Fallback, segments will cover this */
+}
+
+.wheel-segment {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    top: 0;
+    left: 50%;
+    transform-origin: 0% 100%; /* Pivot from center bottom of segment */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-weight: bold;
+    color: white;
+    /* Clip-path will be set by JS to form a triangle/wedge */
+}
+
+.wheel-segment span {
+    display: block;
+    transform: rotate(45deg); /* Counter-rotate text to be upright, adjust as needed */
+    padding-left: 20px; /* Adjust to position text within segment */
+    font-size: 0.9em;
+}
+
+.pointer {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 30px solid #c0392b; /* Red pointer */
+    top: -10px; /* Position above the wheel center */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+#spin-button {
+    padding: 12px 25px;
+    font-size: 1.2em;
+    color: white;
+    background-color: #27ae60;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 20px;
+}
+
+#spin-button:hover {
+    background-color: #2ecc71;
+}
+
+#spin-button:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+}
+
+.result-area {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #ecf0f1;
+    border-radius: 5px;
+}
+
+.result-area h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.result-area p {
+    font-size: 1.1em;
+    color: #34495e;
+}
+
