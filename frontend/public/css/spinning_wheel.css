@@ -82,7 +82,7 @@ footer p {
     width: 80%;
     transform-origin: center center;
     font-weight: bold;
-    font-size: 14px; /* Increased font size */
+    font-size: 7px; /* Increased font size */
     padding: 2px;
     box-sizing: border-box;
     /* Text color is set by JS using isLight() for contrast with segment color */
