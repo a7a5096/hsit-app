@@ -1,5 +1,6 @@
-const nodemailer = require('nodemailer');
-const config = require('../config/config');
+import nodemailer from 'nodemailer';
+import config from '../config/config.js';
+
 // Create reusable transporter
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -8,13 +9,14 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD // Should be set in .env file
   }
 });
+
 /**
  * Send verification email to user
  * @param {string} email - User's email address
  * @param {string} verificationCode - Verification code to send
  * @returns {Promise} - Email sending response
  */
-const sendVerificationEmail = async (email, verificationCode) => {
+export const sendVerificationEmail = async (email, verificationCode) => {
   try {
     const mailOptions = {
       from: config.ADMIN_EMAIL,
@@ -40,12 +42,13 @@ const sendVerificationEmail = async (email, verificationCode) => {
     };
   }
 };
+
 /**
  * Send withdrawal notification to admin
  * @param {Object} withdrawalData - Withdrawal details
  * @returns {Promise} - Email sending response
  */
-const sendWithdrawalNotificationEmail = async (withdrawalData) => {
+export const sendWithdrawalNotificationEmail = async (withdrawalData) => {
   try {
     const { userId, username, amount, currency, walletAddress } = withdrawalData;
     
@@ -81,7 +84,7 @@ const sendWithdrawalNotificationEmail = async (withdrawalData) => {
  * @param {Object} exchangeData - Exchange details
  * @returns {Promise} - Email sending response
  */
-const sendExchangeNotificationEmail = async (exchangeData) => {
+export const sendExchangeNotificationEmail = async (exchangeData) => {
   try {
     const { userId, username, fromAmount, fromCurrency, toAmount, toCurrency } = exchangeData;
     
@@ -109,10 +112,4 @@ const sendExchangeNotificationEmail = async (exchangeData) => {
       error: error.message
     };
   }
-};
-
-module.exports = {
-  sendVerificationEmail,
-  sendWithdrawalNotificationEmail,
-  sendExchangeNotificationEmail
 };

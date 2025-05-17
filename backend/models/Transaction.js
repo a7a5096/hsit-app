@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
 const TransactionSchema = new Schema({
@@ -48,4 +48,7 @@ const TransactionSchema = new Schema({
   }
 });
 
-module.exports = mongoose.model('transaction', TransactionSchema);
+// Check if the model already exists before defining it
+const Transaction = mongoose.models.transaction || mongoose.model('transaction', TransactionSchema);
+
+export default Transaction;
