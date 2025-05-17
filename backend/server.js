@@ -4,11 +4,12 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
 // Import routes
 import authRoutes from './routes/auth.js';
 import directSmsVerification from './routes/direct-sms-verification.js';
 import dailySignInRoutes from './routes/dailySignInRoutes.js'; // Added daily sign-in routes
+import transactionsRoutes from './routes/transactions.js'; // Import transactions routes
+import botsRoutes from './routes/bots.js'; // Import bots routes
 
 // Load environment variables
 dotenv.config();
@@ -26,6 +27,7 @@ const corsOptions = {
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   allowedHeaders: "Content-Type, Authorization, X-Requested-With, Accept, x-auth-token"
 };
+
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
@@ -34,6 +36,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/verify', directSmsVerification);
 app.use('/api/daily-signin', dailySignInRoutes); // Use daily sign-in routes
+app.use('/api/transactions', transactionsRoutes); // Use transactions routes
+app.use('/api/bots', botsRoutes); // Use bots routes
 
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend API is working!' });
@@ -51,6 +55,7 @@ app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ message: 'API endpoint not found.' });
   }
+  
   // Otherwise, attempt to send index.html or another appropriate file
   // For now, let's be more specific for known HTML files or let express.static handle it.
   // If a file like /dashboard.html is requested, express.static(projectRoot) should serve it.
@@ -82,4 +87,3 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
-
