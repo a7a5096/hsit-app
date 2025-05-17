@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch exchange rates
     async function fetchExchangeRates() {
       try {
-        const response = await fetch('${API_BASE_URL}/api/transactions/exchange-rates');
+        const response = await fetch(`${API_URL}/api/transactions/exchange-rates`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch exchange rates');
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch user data
     async function fetchUserData() {
       try {
-        const response = await fetch('${API_BASE_URL}/api/auth', {
+        const response = await fetch(`${API_URL}/api/auth`, {
           headers: {
             'x-auth-token': token
           }
@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (exchangeType === 'buy') {
           // Buy Un-Buyable Token with crypto
-          response = await fetch('${API_BASE_URL}/api/transactions/buy-ubt', {
+          response = await fetch(`${API_URL}/api/transactions/buy-ubt`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         } else {
           // Sell Un-Buyable Token for USDT
-          response = await fetch('${API_BASE_URL}/api/transactions/withdraw', {
+          response = await fetch(`${API_URL}/api/transactions/withdraw`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
