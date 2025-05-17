@@ -1,12 +1,13 @@
-const express = require('express');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import User from '../models/User.js';
+import Transaction from '../models/Transaction.js';
+import ExchangeRate from '../models/ExchangeRate.js';
+import config from '../config/config.js';
+import { sendWithdrawalNotification } from '../utils/smsService.js';
+import { sendWithdrawalNotificationEmail, sendExchangeNotificationEmail } from '../utils/emailService.js';
+
 const router = express.Router();
-const auth = require('../middleware/auth');
-const User = require('../models/User');
-const Transaction = require('../models/Transaction');
-const ExchangeRate = require('../models/ExchangeRate');
-const config = require('../config/config');
-const { sendWithdrawalNotification } = require('../utils/smsService');
-const { sendWithdrawalNotificationEmail, sendExchangeNotificationEmail } = require('../utils/emailService');
 
 // Helper functions for UBT exchange rate calculations
 function calculateUBTExchangeRate(withdrawalCount, initialRate, increaseAmount) {
@@ -269,4 +270,4 @@ router.get('/exchange-rates', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

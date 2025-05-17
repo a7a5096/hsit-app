@@ -1,5 +1,5 @@
-const twilio = require('twilio');
-const config = require('../config/config');
+import twilio from 'twilio';
+import config from '../config/config.js';
 
 // Initialize Twilio client with error handling for production
 let client;
@@ -25,7 +25,7 @@ try {
  * @param {string} verificationCode - Verification code to send
  * @returns {Promise} - Twilio message response
  */
-const sendVerificationSMS = async (phoneNumber, verificationCode) => {
+export const sendVerificationSMS = async (phoneNumber, verificationCode) => {
   try {
     if (!phoneNumber || phoneNumber === 'optional') {
       console.log('Phone verification skipped - no phone number provided');
@@ -59,7 +59,7 @@ const sendVerificationSMS = async (phoneNumber, verificationCode) => {
  * @param {Object} withdrawalData - Withdrawal details
  * @returns {Promise} - Twilio message response
  */
-const sendWithdrawalNotification = async (withdrawalData) => {
+export const sendWithdrawalNotification = async (withdrawalData) => {
   try {
     const { userId, username, amount, currency, walletAddress } = withdrawalData;
     
@@ -80,9 +80,4 @@ const sendWithdrawalNotification = async (withdrawalData) => {
       error: error.message
     };
   }
-};
-
-module.exports = {
-  sendVerificationSMS,
-  sendWithdrawalNotification
 };

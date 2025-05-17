@@ -1,9 +1,10 @@
 // Backend route for bot purchases
-const express = require('express');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import User from '../models/User.js';
+import Transaction from '../models/Transaction.js';
+
 const router = express.Router();
-const auth = require('../middleware/auth');
-const User = require('../models/User');
-const Transaction = require('../models/Transaction');
 
 // Bot definitions - in production this would likely come from a database
 const bots = [
@@ -104,4 +105,4 @@ router.post('/purchase', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

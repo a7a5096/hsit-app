@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
 const ExchangeRateSchema = new Schema({
@@ -20,4 +20,7 @@ const ExchangeRateSchema = new Schema({
   }
 });
 
-module.exports = mongoose.model('exchangeRate', ExchangeRateSchema);
+// Check if the model already exists before defining it
+const ExchangeRate = mongoose.models.exchangeRate || mongoose.model('exchangeRate', ExchangeRateSchema);
+
+export default ExchangeRate;
