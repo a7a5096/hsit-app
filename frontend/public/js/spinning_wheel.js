@@ -22,11 +22,11 @@ let isSpinning = false;
 let currentRotation = 0;
 
 // --- API Interaction Functions (Hypothetical Backend) ---
-const API_BASE_URL = "/api/ubt"; // Example: Adjust to your actual API base URL
+const API_URL = "https://hsit-backend.onrender.com"; // Correct backend URL
 
 async function fetchUserBalanceAPI() {
     try {
-        const response = await fetch(`${API_BASE_URL}/balance`); // GET request
+        const response = await fetch(`${API_URL}/api/ubt/balance`); // GET request
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: `Server error: ${response.status}` }));
             throw new Error(errorData.message || `Failed to fetch balance.`);
@@ -41,7 +41,7 @@ async function fetchUserBalanceAPI() {
 
 async function placeBetAndDetermineOutcomeAPI(wagerAmount) {
     try {
-        const response = await fetch(`${API_BASE_URL}/spin`, { // POST request
+        const response = await fetch(`${API_URL}/api/ubt/spin`, { // POST request
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ wager: wagerAmount })

@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     try {
       // Make purchase API call
-      const response = await fetch('${API_BASE_URL}/api/bots/purchase', {
+      const response = await fetch(`${API_URL}/api/bots/purchase`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
