@@ -1,14 +1,15 @@
-const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
-const csv = require('csv-parser');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+import csv from 'csv-parser';
 
 // Models
-const User = require('../models/User');
-const Transaction = require('../models/Transaction');
+import User from '../models/User.js';
+import Transaction from '../models/Transaction.js';
+
+const router = express.Router();
 
 // Environment variables
 const JWT_SECRET = process.env.JWT_SECRET || 'hsit_jwt_secret_key_2025';
@@ -411,4 +412,4 @@ router.post('/login', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
