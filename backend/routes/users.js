@@ -1,20 +1,15 @@
-import express from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import twilio from 'twilio';
-import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import User from '../models/User.js';
-import CryptoAddress from '../models/CryptoAddress.js';
-import auth from '../middleware/auth.js';
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const twilio = require('twilio');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const User = require('../models/User');
+const CryptoAddress = require('../models/CryptoAddress');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
-
-// Get directory name in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Initialize Twilio client
 const twilioClient = new twilio(
@@ -31,10 +26,10 @@ const generateVerificationCode = () => {
 const assignCryptoAddresses = async (userId) => {
   try {
     // Read CSV files for addresses
-    const btcAddressesPath = path.join(__dirname, '../../../frontend/public/csv/bitcoin.csv');
-    const ethAddressesPath = path.join(__dirname, '../../../frontend/public/csv/ethereum.csv');
-    const usdtAddressesPath = path.join(__dirname, '../../../frontend/public/csv/USDT.csv');
-    const usedAddressesPath = path.join(__dirname, '../../../frontend/public/csv/used.csv');
+    const btcAddressesPath = path.join(process.cwd(), '../frontend/public/csv/bitcoin.csv');
+    const ethAddressesPath = path.join(process.cwd(), '../frontend/public/csv/ethereum.csv');
+    const usdtAddressesPath = path.join(process.cwd(), '../frontend/public/csv/USDT.csv');
+    const usedAddressesPath = path.join(process.cwd(), '../frontend/public/csv/used.csv');
     
     // Read addresses from files
     const btcAddresses = fs.readFileSync(btcAddressesPath, 'utf8').split('\n').filter(addr => addr.trim());
@@ -262,4 +257,4 @@ router.post('/resend-verification', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
