@@ -257,6 +257,81 @@ router.post('/register/initial', async (req, res) => {
   }
 });
 
+// Add the missing /register endpoint to match frontend expectations
+router.post('/register', async (req, res) => {
+  try {
+    const { username, email, phone, password, invitationCode } = req.body;
+    
+    // Validate inputs
+    if (!username || !email || !password || !phone) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      $or: [
+        { username },
+        { email },
+        { phoneNumber: phone }
+      ]
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Username, email, or phone number already in use' });
+    }
+    
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    
+    // Generate verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationExpires = Date.now() + 3600000; // 1 hour
+    
+    // Create new user with verification data stored in database
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword,
+      phoneNumber: phone,
+      phoneVerified: false,
+      phoneVerificationCode: verificationCode,
+      phoneVerificationExpires: verificationExpires
+    });
+    
+    // Save user to database
+    await user.save();
+    
+    // Send verification code via Twilio
+    try {
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+      
+      const client = require('twilio')(accountSid, authToken);
+      
+      await client.messages.create({
+        body: `Your HSIT verification code is: ${verificationCode}`,
+        from: twilioPhone,
+        to: phone
+      });
+    } catch (twilioErr) {
+      console.error('Twilio error:', twilioErr);
+      // Continue with registration even if SMS fails
+      // User can request code resend later
+    }
+    
+    // Return success with userId for verification redirect
+    return res.status(201).json({
+      message: 'Account created! Please verify your phone number.',
+      userId: user._id
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+  }
+});
+
 // Verify SMS code
 router.post('/verify-sms', async (req, res) => {
   try {
