@@ -26,12 +26,23 @@ const corsOptions = {
   origin: process.env.CORS_ALLOWED_ORIGINS || "*", // Use environment variable or allow all origins
   credentials: true,
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  allowedHeaders: "Content-Type, Authorization, X-Requested-With, Accept, x-auth-token"
+  allowedHeaders: "Content-Type, Authorization, X-Requested-With, Accept, x-auth-token",
+  exposedHeaders: "Content-Type, Authorization"
 };
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
+
+// Global error handler middleware to ensure consistent JSON responses
+app.use((err, req, res, next) => {
+  console.error('Request error:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Server error',
+    error: process.env.NODE_ENV === 'production' ? null : err.message
+  });
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -60,20 +71,28 @@ app.use(express.static(projectRoot));
 app.get('*', (req, res) => {
   // Check if the request is for an API route, if so, don't send index.html
   if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ message: 'API endpoint not found.' });
+    return res.status(404).json({ success: false, message: 'API endpoint not found.' });
   }
   
   // Otherwise, send index.html for client-side routing
   res.sendFile(path.resolve(projectRoot, 'index.html'));
 });
 
-// Error handling middleware
+// Error handling middleware - must be after all routes
 app.use((err, req, res, next) => {
   console.error('Server error:', err.stack);
   res.status(500).json({ 
     success: false, 
     message: 'Server error', 
     error: process.env.NODE_ENV === 'production' ? null : err.message 
+  });
+});
+
+// 404 handler - must be after all routes
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Resource not found'
   });
 });
 
