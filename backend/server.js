@@ -23,7 +23,7 @@ const app = express();
 
 // Middleware
 const corsOptions = {
-  origin: "*", // Allow all origins for debugging - consider restricting in production
+  origin: process.env.CORS_ALLOWED_ORIGINS || "*", // Use environment variable or allow all origins
   credentials: true,
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   allowedHeaders: "Content-Type, Authorization, X-Requested-With, Accept, x-auth-token"
@@ -40,6 +40,11 @@ app.use('/api/daily-signin', dailySignInRoutes); // Use daily sign-in routes
 app.use('/api/transactions', transactionsRoutes); // Use transactions routes
 app.use('/api/bots', botsRoutes); // Use bots routes
 app.use('/api/users', usersRoutes); // Use users routes with SMS verification
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Backend API is healthy!' });
+});
 
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend API is working!' });
@@ -58,23 +63,28 @@ app.get('*', (req, res) => {
     return res.status(404).json({ message: 'API endpoint not found.' });
   }
   
-  // Otherwise, attempt to send index.html or another appropriate file
-  // For now, let's be more specific for known HTML files or let express.static handle it.
-  // If a file like /dashboard.html is requested, express.static(projectRoot) should serve it.
-  // If not found by express.static, it will eventually 404.
-  // We can add a specific fallback to root index.html if needed:
-  // res.sendFile(path.resolve(projectRoot, 'index.html'));
-  // However, for now, let express.static handle it and it will 404 if file not found.
+  // Otherwise, send index.html for client-side routing
+  res.sendFile(path.resolve(projectRoot, 'index.html'));
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err.stack);
+  res.status(500).json({ 
+    success: false, 
+    message: 'Server error', 
+    error: process.env.NODE_ENV === 'production' ? null : err.message 
+  });
 });
 
 // Connect to MongoDB
-const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb+srv://a7a5096:MM00nngg2@cluster0hsit.xelat83.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0HSIT';
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb+srv://a7a5096:MM00nngg2@cluster0hsit.xelat83.mongodb.net/hsit_app?retryWrites=true&w=majority&appName=Cluster0HSIT';
 const PORT = process.env.PORT || 5000;
 
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('MongoDB Connected Successfully');
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server listening on port ${PORT}`);
     });
   })
