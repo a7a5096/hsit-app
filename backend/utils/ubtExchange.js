@@ -6,9 +6,9 @@
  */
 
 // Import required modules
-const mongoose = require('mongoose');
-const User = require('./models/User');
-const ExchangeRate = require('./models/ExchangeRate');
+import mongoose from 'mongoose';
+import User from '../models/User.js';
+import ExchangeRate from '../models/ExchangeRate.js';
 
 /**
  * Get the current UBT exchange rate
@@ -204,7 +204,7 @@ async function processUBTTransaction(userId, amount, transactionType) {
   }
 }
 
-module.exports = {
+export {
   getCurrentUBTRate,
   increaseUBTRate,
   convertToUBT,
