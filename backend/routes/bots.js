@@ -1,7 +1,7 @@
-const express = require('express');
-const auth = require('../middleware/auth');
-const User = require('../models/User');
-const Transaction = require('../models/Transaction');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import User from '../models/User.js';
+import Transaction from '../models/Transaction.js';
 
 const router = express.Router();
 
@@ -104,4 +104,4 @@ router.post('/purchase', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
