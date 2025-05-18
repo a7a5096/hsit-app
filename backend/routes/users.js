@@ -1,14 +1,20 @@
-const express = require('express');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import twilio from 'twilio';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import User from '../models/User.js';
+import CryptoAddress from '../models/CryptoAddress.js';
+import auth from '../middleware/auth.js';
+
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const twilio = require('twilio');
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
-const User = require('../models/User');
-const CryptoAddress = require('../models/CryptoAddress');
-const auth = require('../middleware/auth');
+
+// Get directory name in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize Twilio client
 const twilioClient = new twilio(
@@ -25,10 +31,10 @@ const generateVerificationCode = () => {
 const assignCryptoAddresses = async (userId) => {
   try {
     // Read CSV files for addresses
-    const btcAddressesPath = path.join(__dirname, '../../frontend/public/csv/bitcoin.csv');
-    const ethAddressesPath = path.join(__dirname, '../../frontend/public/csv/ethereum.csv');
-    const usdtAddressesPath = path.join(__dirname, '../../frontend/public/csv/USDT.csv');
-    const usedAddressesPath = path.join(__dirname, '../../frontend/public/csv/used.csv');
+    const btcAddressesPath = path.join(__dirname, '../../../frontend/public/csv/bitcoin.csv');
+    const ethAddressesPath = path.join(__dirname, '../../../frontend/public/csv/ethereum.csv');
+    const usdtAddressesPath = path.join(__dirname, '../../../frontend/public/csv/USDT.csv');
+    const usedAddressesPath = path.join(__dirname, '../../../frontend/public/csv/used.csv');
     
     // Read addresses from files
     const btcAddresses = fs.readFileSync(btcAddressesPath, 'utf8').split('\n').filter(addr => addr.trim());
@@ -137,7 +143,7 @@ router.post('/register', async (req, res) => {
         });
       } catch (twilioErr) {
         console.error('Twilio error:', twilioErr);
-        return res.status(500).json({ message: 'Failed to send verification SMS' });
+        return res.status(500).json({ message: 'Failed to send verification SMS: ' + twilioErr.message });
       }
     } else {
       // If no verification required, mark as verified
@@ -154,7 +160,7 @@ router.post('/register', async (req, res) => {
     });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error: ' + err.message });
   }
 });
 
@@ -204,7 +210,7 @@ router.post('/verify-phone', async (req, res) => {
 
     return res.status(200).json({ message: 'Phone verified successfully!' });
   } catch (err) {
-    console.error(err.message);
+    console.error('Verification error:', err.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -216,6 +222,7 @@ router.post('/resend-verification', async (req, res) => {
   const { userId, phone } = req.body;
 
   try {
+    
     // Find user
     const user = await User.findById(userId);
     if (!user) {
@@ -239,9 +246,10 @@ router.post('/resend-verification', async (req, res) => {
         from: process.env.TWILIO_PHONE_NUMBER,
         to: phone
       });
+
     } catch (twilioErr) {
       console.error('Twilio error:', twilioErr);
-      return res.status(500).json({ message: 'Failed to send verification SMS' });
+      return res.status(500).json({ message: 'Failed to send verification SMS: ' + twilioErr.message });
     }
 
     // Save user
@@ -249,9 +257,9 @@ router.post('/resend-verification', async (req, res) => {
 
     return res.status(200).json({ message: 'Verification code resent successfully!' });
   } catch (err) {
-    console.error(err.message);
+    console.error('Resend error:', err.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-module.exports = router;
+export default router;
