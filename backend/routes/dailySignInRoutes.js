@@ -1,7 +1,7 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const auth = require('../middleware/auth'); // Assuming auth middleware is in middleware/auth.js
-const User = require('../models/User'); // Assuming User model is in models/User.js
+import express from 'express';
+import mongoose from 'mongoose';
+import auth from '../middleware/auth.js'; // Updated import path with .js extension
+import User from '../models/User.js'; // Updated import path with .js extension
 
 const router = express.Router();
 
@@ -48,4 +48,4 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;
