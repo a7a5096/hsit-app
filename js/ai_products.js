@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
       lockPeriod: 2,
       dailyPayment: 10,
       bonuses: [],
-      principalReturn: false,
+      principalReturn: true,
       description: "Our entry-level AI trading bot is perfect for new users looking to experience the benefits of automated trading with minimal commitment."
     },
     {
