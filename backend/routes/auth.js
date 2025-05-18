@@ -86,121 +86,143 @@ const getAvailableCryptoAddresses = async () => {
     ubt: null
   };
   
-  // Path to CSV files
-  const bitcoinCsvPath = path.join(process.cwd(), '../frontend/public/csv/bitcoin.csv');
-  const ethereumCsvPath = path.join(process.cwd(), '../frontend/public/csv/ethereum.csv');
-  
-  // Read Bitcoin addresses
-  const bitcoinAddresses = [];
-  await new Promise((resolve) => {
-    fs.createReadStream(bitcoinCsvPath)
-      .pipe(csv())
-      .on('data', (row) => {
-        if (row.used === 'false' || row.used === '0') {
-          bitcoinAddresses.push({
-            address: row.address,
-            privateKey: row.privateKey
-          });
-        }
-      })
-      .on('end', resolve);
-  });
-  
-  // Read Ethereum addresses
-  const ethereumAddresses = [];
-  await new Promise((resolve) => {
-    fs.createReadStream(ethereumCsvPath)
-      .pipe(csv())
-      .on('data', (row) => {
-        if (row.used === 'false' || row.used === '0') {
-          ethereumAddresses.push({
-            address: row.address,
-            privateKey: row.privateKey
-          });
-        }
-      })
-      .on('end', resolve);
-  });
-  
-  // Assign addresses if available
-  if (bitcoinAddresses.length > 0) {
-    addresses.bitcoin = bitcoinAddresses[0];
-  }
-  
-  if (ethereumAddresses.length > 0) {
-    addresses.ethereum = ethereumAddresses[0];
-  }
-  
-  // For UBT, we'll use the Ethereum address as well
-  if (addresses.ethereum) {
-    addresses.ubt = {
-      address: addresses.ethereum.address,
-      privateKey: addresses.ethereum.privateKey
-    };
+  try {
+    // Path to CSV files
+    const bitcoinCsvPath = path.join(process.cwd(), '../csv/bitcoin.csv');
+    const ethereumCsvPath = path.join(process.cwd(), '../csv/ethereum.csv');
+    
+    // Read Bitcoin addresses
+    const bitcoinAddresses = [];
+    if (fs.existsSync(bitcoinCsvPath)) {
+      await new Promise((resolve) => {
+        fs.createReadStream(bitcoinCsvPath)
+          .pipe(csv())
+          .on('data', (row) => {
+            if (row.used === 'false' || row.used === '0') {
+              bitcoinAddresses.push({
+                address: row.address,
+                privateKey: row.privateKey
+              });
+            }
+          })
+          .on('end', resolve);
+      });
+    } else {
+      console.warn('Bitcoin CSV file not found at:', bitcoinCsvPath);
+    }
+    
+    // Read Ethereum addresses
+    const ethereumAddresses = [];
+    if (fs.existsSync(ethereumCsvPath)) {
+      await new Promise((resolve) => {
+        fs.createReadStream(ethereumCsvPath)
+          .pipe(csv())
+          .on('data', (row) => {
+            if (row.used === 'false' || row.used === '0') {
+              ethereumAddresses.push({
+                address: row.address,
+                privateKey: row.privateKey
+              });
+            }
+          })
+          .on('end', resolve);
+      });
+    } else {
+      console.warn('Ethereum CSV file not found at:', ethereumCsvPath);
+    }
+    
+    // Assign addresses if available
+    if (bitcoinAddresses.length > 0) {
+      addresses.bitcoin = bitcoinAddresses[0];
+    }
+    
+    if (ethereumAddresses.length > 0) {
+      addresses.ethereum = ethereumAddresses[0];
+    }
+    
+    // For UBT, we'll use the Ethereum address as well
+    if (addresses.ethereum) {
+      addresses.ubt = {
+        address: addresses.ethereum.address,
+        privateKey: addresses.ethereum.privateKey
+      };
+    }
+  } catch (error) {
+    console.error('Error getting crypto addresses:', error);
   }
   
   return addresses;
 };
 
 const markAddressAsAssigned = async (currency, address) => {
-  let csvPath;
-  
-  if (currency === 'bitcoin') {
-    csvPath = path.join(process.cwd(), '../frontend/public/csv/bitcoin.csv');
-  } else if (currency === 'ethereum' || currency === 'ubt') {
-    csvPath = path.join(process.cwd(), '../frontend/public/csv/ethereum.csv');
-  } else {
-    throw new Error('Invalid currency');
-  }
-  
-  // Read the CSV file
-  const rows = [];
-  await new Promise((resolve) => {
-    fs.createReadStream(csvPath)
-      .pipe(csv())
-      .on('data', (row) => {
-        rows.push(row);
-      })
-      .on('end', resolve);
-  });
-  
-  // Update the row with the matching address
-  for (let i = 0; i < rows.length; i++) {
-    if (rows[i].address === address) {
-      rows[i].used = 'true';
-      break;
+  try {
+    let csvPath;
+    
+    if (currency === 'bitcoin') {
+      csvPath = path.join(process.cwd(), '../csv/bitcoin.csv');
+    } else if (currency === 'ethereum' || currency === 'ubt') {
+      csvPath = path.join(process.cwd(), '../csv/ethereum.csv');
+    } else {
+      throw new Error('Invalid currency');
     }
+    
+    if (!fs.existsSync(csvPath)) {
+      console.warn(`CSV file for ${currency} not found at: ${csvPath}`);
+      return false;
+    }
+    
+    // Read the CSV file
+    const rows = [];
+    await new Promise((resolve) => {
+      fs.createReadStream(csvPath)
+        .pipe(csv())
+        .on('data', (row) => {
+          rows.push(row);
+        })
+        .on('end', resolve);
+    });
+    
+    // Update the row with the matching address
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].address === address) {
+        rows[i].used = 'true';
+        break;
+      }
+    }
+    
+    // Write back to the CSV file
+    const csvWriter = require('csv-writer').createObjectCsvWriter({
+      path: csvPath,
+      header: Object.keys(rows[0]).map(key => ({ id: key, title: key }))
+    });
+    
+    await csvWriter.writeRecords(rows);
+    
+    // Also update the used.csv file for tracking
+    const usedCsvPath = path.join(process.cwd(), '../csv/used.csv');
+    const usedRow = {
+      address,
+      currency,
+      assignedAt: new Date().toISOString()
+    };
+    
+    const usedCsvWriter = require('csv-writer').createObjectCsvWriter({
+      path: usedCsvPath,
+      header: [
+        { id: 'address', title: 'address' },
+        { id: 'currency', title: 'currency' },
+        { id: 'assignedAt', title: 'assignedAt' }
+      ],
+      append: true
+    });
+    
+    await usedCsvWriter.writeRecords([usedRow]);
+    
+    return true;
+  } catch (error) {
+    console.error('Error marking address as assigned:', error);
+    return false;
   }
-  
-  // Write back to the CSV file
-  const csvWriter = require('csv-writer').createObjectCsvWriter({
-    path: csvPath,
-    header: Object.keys(rows[0]).map(key => ({ id: key, title: key }))
-  });
-  
-  await csvWriter.writeRecords(rows);
-  
-  // Also update the used.csv file for tracking
-  const usedCsvPath = path.join(process.cwd(), '../frontend/public/csv/used.csv');
-  const usedRow = {
-    address,
-    currency,
-    assignedAt: new Date().toISOString()
-  };
-  
-  const usedCsvWriter = require('csv-writer').createObjectCsvWriter({
-    path: usedCsvPath,
-    header: [
-      { id: 'address', title: 'address' },
-      { id: 'currency', title: 'currency' },
-      { id: 'assignedAt', title: 'assignedAt' }
-    ],
-    append: true
-  });
-  
-  await usedCsvWriter.writeRecords([usedRow]);
-  
-  return true;
 };
 
 // Routes
@@ -293,8 +315,16 @@ router.post('/register/initial', async (req, res) => {
       phoneNumber
     };
     
-    // Store temp user in session
-    req.session.tempUser = tempUser;
+    // Store temp user in session or use a temporary storage solution
+    if (!req.session) {
+      // If session is not available, use global object (not ideal for production)
+      if (!global.tempUsers) {
+        global.tempUsers = {};
+      }
+      global.tempUsers[phoneNumber] = tempUser;
+    } else {
+      req.session.tempUser = tempUser;
+    }
     
     // Send verification code via SMS
     const smsSent = await sendVerificationCode(phoneNumber);
@@ -396,7 +426,14 @@ router.post('/verify-sms', async (req, res) => {
     }
     
     // Check if we have temp user data
-    if (!req.session.tempUser || req.session.tempUser.phoneNumber !== phoneNumber) {
+    let tempUser;
+    if (req.session && req.session.tempUser) {
+      tempUser = req.session.tempUser;
+    } else if (global.tempUsers && global.tempUsers[phoneNumber]) {
+      tempUser = global.tempUsers[phoneNumber];
+    }
+    
+    if (!tempUser || tempUser.phoneNumber !== phoneNumber) {
       return res.status(400).json({ success: false, message: 'Session expired, please start registration again' });
     }
     
@@ -410,30 +447,33 @@ router.post('/verify-sms', async (req, res) => {
     // Get crypto addresses for the user
     const cryptoAddresses = await getAvailableCryptoAddresses();
     
-    // Ensure we have all required addresses
-    if (!cryptoAddresses.bitcoin || !cryptoAddresses.ethereum || !cryptoAddresses.ubt) {
-      return res.status(500).json({ success: false, message: 'Unable to allocate crypto addresses' });
-    }
-    
     // Create and save the user
     const user = new User({
-      ...req.session.tempUser,
+      ...tempUser,
       phoneVerified: true,
       walletAddresses: {
-        bitcoin: cryptoAddresses.bitcoin.address,
-        ethereum: cryptoAddresses.ethereum.address,
-        ubt: cryptoAddresses.ubt.address
+        bitcoin: cryptoAddresses.bitcoin ? cryptoAddresses.bitcoin.address : '',
+        ethereum: cryptoAddresses.ethereum ? cryptoAddresses.ethereum.address : '',
+        ubt: cryptoAddresses.ubt ? cryptoAddresses.ubt.address : ''
       }
     });
     
     await user.save();
     
-    // Mark addresses as assigned
-    await markAddressAsAssigned('bitcoin', cryptoAddresses.bitcoin.address);
-    await markAddressAsAssigned('ethereum', cryptoAddresses.ethereum.address);
+    // Mark addresses as assigned if available
+    if (cryptoAddresses.bitcoin) {
+      await markAddressAsAssigned('bitcoin', cryptoAddresses.bitcoin.address);
+    }
+    if (cryptoAddresses.ethereum) {
+      await markAddressAsAssigned('ethereum', cryptoAddresses.ethereum.address);
+    }
     
     // Clear temp user data
-    delete req.session.tempUser;
+    if (req.session) {
+      delete req.session.tempUser;
+    } else if (global.tempUsers) {
+      delete global.tempUsers[phoneNumber];
+    }
     
     // Generate JWT token
     const token = jwt.sign(
@@ -447,9 +487,9 @@ router.post('/verify-sms', async (req, res) => {
       userId: user._id,
       token,
       addresses: [
-        cryptoAddresses.bitcoin.address,
-        cryptoAddresses.ethereum.address,
-        cryptoAddresses.ubt.address
+        cryptoAddresses.bitcoin ? cryptoAddresses.bitcoin.address : '',
+        cryptoAddresses.ethereum ? cryptoAddresses.ethereum.address : '',
+        cryptoAddresses.ubt ? cryptoAddresses.ubt.address : ''
       ]
     });
   } catch (error) {
@@ -464,7 +504,14 @@ router.post('/resend-verification', async (req, res) => {
     const { phoneNumber } = req.body;
     
     // Check if we have temp user data
-    if (!req.session.tempUser || req.session.tempUser.phoneNumber !== phoneNumber) {
+    let tempUser;
+    if (req.session && req.session.tempUser) {
+      tempUser = req.session.tempUser;
+    } else if (global.tempUsers && global.tempUsers[phoneNumber]) {
+      tempUser = global.tempUsers[phoneNumber];
+    }
+    
+    if (!tempUser || tempUser.phoneNumber !== phoneNumber) {
       return res.status(400).json({ success: false, message: 'Session expired, please start registration again' });
     }
     
@@ -505,7 +552,7 @@ router.post('/login', async (req, res) => {
     }
     
     // Check password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(password, user.password);
     
     if (!isMatch) {
       return res.status(400).json({ success: false, message: 'Invalid credentials' });
