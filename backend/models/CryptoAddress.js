@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
 const CryptoAddressSchema = new Schema({
   type: {
     type: String,
-    enum: ['BTC', 'ETH'],
+    enum: ['BTC', 'ETH', 'USDT'],
     required: true
   },
   address: {
@@ -25,4 +25,4 @@ const CryptoAddressSchema = new Schema({
   }
 });
 
-module.exports = mongoose.model('cryptoAddress', CryptoAddressSchema);
+export default mongoose.model('cryptoAddress', CryptoAddressSchema);
