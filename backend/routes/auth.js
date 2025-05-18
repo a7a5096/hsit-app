@@ -205,6 +205,59 @@ const markAddressAsAssigned = async (currency, address) => {
 
 // Routes
 
+// Add the root POST endpoint to match frontend login expectations
+router.post('/', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Validate inputs
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+    
+    // Find user by email
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    }
+    
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    }
+    
+    // Update last login
+    user.lastLogin = Date.now();
+    await user.save();
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, username: user.username },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRE }
+    );
+    
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        walletAddresses: user.walletAddresses,
+        cryptoBalance: user.cryptoBalance
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // Initial registration - collect user info and send verification code
 router.post('/register/initial', async (req, res) => {
   try {
