@@ -227,6 +227,87 @@ const markAddressAsAssigned = async (currency, address) => {
 
 // Routes
 
+// GET endpoint to retrieve authenticated user data
+router.get('/', async (req, res) => {
+  try {
+    // Get token from header
+    const token = req.header('x-auth-token');
+    
+    // Check if token exists
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'No authentication token, authorization denied' 
+      });
+    }
+    
+    // Verify token
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      
+      // Find user by id from decoded token
+      const user = await User.findById(decoded.id).select('-password');
+      
+      if (!user) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'User not found' 
+        });
+      }
+      
+      // Get user's transactions
+      const transactions = await Transaction.find({ 
+        userId: user._id 
+      }).sort({ date: -1 }).limit(10);
+      
+      // Calculate balances
+      const balances = {
+        bitcoin: 0,
+        ethereum: 0,
+        ubt: 0
+      };
+      
+      // Process transactions to calculate balances
+      transactions.forEach(transaction => {
+        if (transaction.type === 'deposit') {
+          balances[transaction.currency] += transaction.amount;
+        } else if (transaction.type === 'withdrawal') {
+          balances[transaction.currency] -= transaction.amount;
+        }
+      });
+      
+      // Return user data with balances and recent transactions
+      res.json({
+        success: true,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          walletAddresses: user.walletAddresses,
+          isVerified: user.isVerified,
+          lastLogin: user.lastLogin,
+          createdAt: user.createdAt
+        },
+        balances,
+        recentTransactions: transactions
+      });
+    } catch (err) {
+      console.error('Token verification error:', err);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Token is not valid' 
+      });
+    }
+  } catch (error) {
+    console.error('GET /api/auth error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error' 
+    });
+  }
+});
+
 // Add the root POST endpoint to match frontend login expectations
 router.post('/', async (req, res) => {
   try {
