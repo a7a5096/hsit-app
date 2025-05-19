@@ -8,7 +8,7 @@ import corsMiddleware from './middleware/cors.js';
 // Import routes
 import authRoutes from './routes/auth.js';
 import directSmsVerification from './routes/direct-sms-verification.js';
-import dailySignInRoutes from './routes/dailySignIn.js'; // Updated path to match new file
+import dailySignInRoutes from './routes/dailySignInRoutes.js'; // Fixed path to match original import
 import transactionsRoutes from './routes/transactions.js'; // Import transactions routes
 import botsRoutes from './routes/bots.js'; // Import bots routes
 import usersRoutes from './routes/users.js'; // Import users routes with SMS verification
