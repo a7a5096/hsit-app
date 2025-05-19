@@ -8,10 +8,11 @@ import corsMiddleware from './middleware/cors.js';
 // Import routes
 import authRoutes from './routes/auth.js';
 import directSmsVerification from './routes/direct-sms-verification.js';
-import dailySignInRoutes from './routes/dailySignInRoutes.js'; // Added daily sign-in routes
+import dailySignInRoutes from './routes/dailySignIn.js'; // Updated path to match new file
 import transactionsRoutes from './routes/transactions.js'; // Import transactions routes
 import botsRoutes from './routes/bots.js'; // Import bots routes
 import usersRoutes from './routes/users.js'; // Import users routes with SMS verification
+import ubtRoutes from './routes/ubt.js'; // Import UBT routes for balance and spin
 
 // Load environment variables
 dotenv.config();
@@ -53,6 +54,7 @@ app.use('/api/daily-signin', dailySignInRoutes); // Use daily sign-in routes
 app.use('/api/transactions', transactionsRoutes); // Use transactions routes
 app.use('/api/bots', botsRoutes); // Use bots routes
 app.use('/api/users', usersRoutes); // Use users routes with SMS verification
+app.use('/api/ubt', ubtRoutes); // Use UBT routes for balance and spin
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
