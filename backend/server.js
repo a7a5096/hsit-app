@@ -1,9 +1,10 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+// Import custom CORS middleware
+import corsMiddleware from './middleware/cors.js';
 // Import routes
 import authRoutes from './routes/auth.js';
 import directSmsVerification from './routes/direct-sms-verification.js';
@@ -21,18 +22,19 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Middleware
-const corsOptions = {
-  origin: process.env.CORS_ALLOWED_ORIGINS || "*", // Use environment variable or allow all origins
-  credentials: true,
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  allowedHeaders: "Content-Type, Authorization, X-Requested-With, Accept, x-auth-token",
-  exposedHeaders: "Content-Type, Authorization"
-};
+// Apply enhanced CORS middleware
+app.use(corsMiddleware());
+app.options('*', corsMiddleware());
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+// Body parser middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Request logging middleware for debugging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
 
 // Global error handler middleware to ensure consistent JSON responses
 app.use((err, req, res, next) => {
