@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import * as jose from 'jose'; // Changed import for jose
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import User from '../models/User.js'; // Import User model directly
 
 dotenv.config();
 
@@ -13,60 +14,6 @@ const JWT_SECRET_STRING = process.env.JWT_SECRET || 'hsit-secret-key';
 const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
 
-// A simple user schema (since we don't have access to your User model)
-// Replace this with your actual User model import
-const UserSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  password: {
-    type: String,
-    required: true
-  },
-  phoneNumber: {
-    type: String,
-    required: false
-  },
-  isPhoneVerified: {
-    type: Boolean,
-    default: false
-  },
-  phoneVerificationCode: {
-    type: String
-  },
-  invitationCode: { 
-    type: String,
-    // unique: true, // This unique constraint is causing issues with nulls
-    // sparse: true, // IMPORTANT: For production, if uniqueness is desired for non-null values, make this index sparse in MongoDB.
-    // Removed default: null to prevent Mongoose from setting it if not provided
-  },
-  balances: {
-    btc: { type: Number, default: 0 },
-    eth: { type: Number, default: 0 },
-    usdt: { type: Number, default: 0 },
-    ubt: { type: Number, default: 100 }  // Start with 100 UBT for testing
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
-
-// Create model if it doesn't exist
-let User;
-try {
-  User = mongoose.model('user');
-} catch (error) {
-  User = mongoose.model('user', UserSchema);
-}
-
 // @route   POST api/auth
 // @desc    Login user & get token
 // @access  Public
@@ -74,21 +21,55 @@ router.post('/', async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // Enhanced logging for debugging
+    console.log(`Login attempt for email: ${email}`);
+    
     // Basic validation
     if (!email || !password) {
+      console.log('Login failed: Missing email or password');
       return res.status(400).json({ msg: 'Please enter all fields' });
     }
 
     // Check for existing user
     const user = await User.findOne({ email });
     if (!user) {
+      console.log(`Login failed: User with email ${email} not found`);
       return res.status(400).json({ msg: 'User does not exist' });
     }
 
     // Validate password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log(`Login failed: Invalid password for ${email}`);
       return res.status(400).json({ msg: 'Invalid credentials' });
+    }
+
+    // Ensure user has balances object with all required fields
+    if (!user.balances) {
+      console.log(`Fixing missing balances for user: ${user.id}`);
+      user.balances = {
+        btc: 0,
+        eth: 0,
+        usdt: 0,
+        ubt: 100 // Default starting balance
+      };
+      await user.save();
+    } else {
+      // Ensure all balance fields exist
+      const requiredBalances = ['btc', 'eth', 'usdt', 'ubt'];
+      let balanceUpdated = false;
+      
+      for (const currency of requiredBalances) {
+        if (user.balances[currency] === undefined) {
+          console.log(`Adding missing ${currency} balance for user: ${user.id}`);
+          user.balances[currency] = currency === 'ubt' ? 100 : 0; // Default UBT to 100, others to 0
+          balanceUpdated = true;
+        }
+      }
+      
+      if (balanceUpdated) {
+        await user.save();
+      }
     }
 
     // Create token payload
@@ -105,6 +86,8 @@ router.post('/', async (req, res) => {
       .setExpirationTime(JWT_EXPIRE)
       .sign(JWT_SECRET);
 
+    console.log(`Login successful for user: ${user.id}`);
+    
     res.json({
       token,
       user: {
@@ -117,7 +100,7 @@ router.post('/', async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err.message);
+    console.error('Login error details:', err);
     res.status(500).send('Server Error');
   }
 });
@@ -140,9 +123,37 @@ router.get('/', async (req, res) => {
       return res.status(404).json({ msg: 'User not found' });
     }
     
+    // Ensure user has balances object with all required fields
+    if (!user.balances) {
+      console.log(`Fixing missing balances for user: ${user.id}`);
+      user.balances = {
+        btc: 0,
+        eth: 0,
+        usdt: 0,
+        ubt: 100 // Default starting balance
+      };
+      await user.save();
+    } else {
+      // Ensure all balance fields exist
+      const requiredBalances = ['btc', 'eth', 'usdt', 'ubt'];
+      let balanceUpdated = false;
+      
+      for (const currency of requiredBalances) {
+        if (user.balances[currency] === undefined) {
+          console.log(`Adding missing ${currency} balance for user: ${user.id}`);
+          user.balances[currency] = currency === 'ubt' ? 100 : 0; // Default UBT to 100, others to 0
+          balanceUpdated = true;
+        }
+      }
+      
+      if (balanceUpdated) {
+        await user.save();
+      }
+    }
+    
     res.json(user);
   } catch (err) {
-    console.error('Token verification failed:', err.message);
+    console.error('Token verification failed:', err);
     if (err.code === 'ERR_JWT_EXPIRED') {
         return res.status(401).json({ msg: 'Token is expired' });
     } else if (err.code === 'ERR_JWS_INVALID' || err.code === 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED') {
@@ -160,32 +171,40 @@ router.post('/register', async (req, res) => {
   const { username, email, password, phone, invitationCode } = req.body; 
 
   try {
+    console.log(`Registration attempt for email: ${email}, username: ${username}`);
+    
     // Check for existing user
     let user = await User.findOne({ email });
     if (user) {
+      console.log(`Registration failed: Email ${email} already exists`);
       return res.status(400).json({ msg: 'User already exists' });
     }
 
     user = await User.findOne({ username });
     if (user) {
+      console.log(`Registration failed: Username ${username} already taken`);
       return res.status(400).json({ msg: 'Username already taken' });
     }
 
-    // Create new user object
+    // Create new user object with all required fields
     const newUserFields = {
       username,
       email,
       password,
-      phoneNumber: phone, // Use the 'phone' value from req.body for the 'phoneNumber' field in the schema
-      phoneVerificationCode: Math.floor(100000 + Math.random() * 900000).toString()
+      phoneNumber: phone || '', // Ensure phoneNumber is never undefined
+      phoneVerificationCode: Math.floor(100000 + Math.random() * 900000).toString(),
+      balances: {
+        btc: 0,
+        eth: 0,
+        usdt: 0,
+        ubt: 100 // Default starting balance
+      }
     };
 
     // Only add invitationCode to the fields if it's provided and not an empty string
     if (invitationCode && invitationCode.trim() !== '') {
       newUserFields.invitationCode = invitationCode.trim();
     }
-    // If invitationCode is not provided or is empty, it will NOT be added to newUserFields,
-    // and Mongoose will not attempt to set it (and will not use a default if none is specified in schema).
 
     user = new User(newUserFields);
 
@@ -195,6 +214,7 @@ router.post('/register', async (req, res) => {
 
     // Save user
     await user.save();
+    console.log(`Registration successful for user: ${user.id}`);
 
     // Create token payload
     const payload = {
@@ -216,12 +236,13 @@ router.post('/register', async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        phoneVerificationCode: user.phoneVerificationCode 
+        phoneVerificationCode: user.phoneVerificationCode,
+        balances: user.balances
       }
     });
 
   } catch (err) {
-    console.error('Registration Error:', err.message);
+    console.error('Registration Error details:', err);
     if (err.code === 11000) { 
         return res.status(400).json({ msg: 'Duplicate key error. This might be due to the invitation code, username, or email already being in use.' });
     }
@@ -230,4 +251,3 @@ router.post('/register', async (req, res) => {
 });
 
 export default router;
-
