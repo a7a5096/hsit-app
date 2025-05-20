@@ -7,13 +7,61 @@ import DailySignIn from '../models/DailySignIn.js';
 const router = express.Router();
 
 /**
+ * @route   GET /api/daily-signin/status
+ * @desc    Check if user has already signed in today
+ * @access  Private
+ */
+router.get('/status', auth, async (req, res) => {
+  try {
+    // Get user from database
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+    
+    // Check if user has already signed in today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const existingSignIn = await DailySignIn.findOne({
+      userId: user._id,
+      date: {
+        $gte: today,
+        $lt: tomorrow
+      }
+    });
+    
+    return res.json({
+      success: true,
+      hasSignedInToday: !!existingSignIn,
+      lastSignIn: existingSignIn ? existingSignIn.date : null,
+      consecutiveDays: existingSignIn ? existingSignIn.consecutiveDays : 0
+    });
+    
+  } catch (error) {
+    console.error('Error checking daily sign-in status:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while checking sign-in status.' 
+    });
+  }
+});
+
+/**
  * @route   POST /api/daily-signin
  * @desc    Process daily sign-in and award UBT
  * @access  Private
  */
 router.post('/', auth, async (req, res) => {
   try {
-    const { reward, consecutiveDays } = req.body;
+    const { reward } = req.body;
     
     // Validate reward amount
     const validatedReward = parseFloat(reward);
@@ -56,12 +104,35 @@ router.post('/', auth, async (req, res) => {
       });
     }
     
+    // Check for previous day's sign-in to calculate consecutive days
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const dayBefore = new Date(yesterday);
+    dayBefore.setDate(dayBefore.getDate() - 1);
+    
+    const previousSignIn = await DailySignIn.findOne({
+      userId: user._id,
+      date: {
+        $gte: dayBefore,
+        $lt: today
+      }
+    }).sort({ date: -1 });
+    
+    let consecutiveDays = 1;
+    if (previousSignIn) {
+      // If previous sign-in was yesterday, increment consecutive days
+      if (previousSignIn.date >= yesterday) {
+        consecutiveDays = previousSignIn.consecutiveDays + 1;
+      }
+    }
+    
     // Create new sign-in record
     const newSignIn = new DailySignIn({
       userId: user._id,
       date: Date.now(),
       reward: validatedReward,
-      consecutiveDays: consecutiveDays || 1
+      consecutiveDays: consecutiveDays
     });
     
     await newSignIn.save();
@@ -72,7 +143,7 @@ router.post('/', auth, async (req, res) => {
       type: 'reward',
       amount: validatedReward,
       currency: 'ubt',
-      description: `Daily sign-in reward (Day ${consecutiveDays || 1})`,
+      description: `Daily sign-in reward (Day ${consecutiveDays})`,
       status: 'completed',
       date: Date.now()
     });
