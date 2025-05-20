@@ -1,16 +1,19 @@
 import mongoose from 'mongoose';
-const Schema = mongoose.Schema;
+import bcrypt from 'bcryptjs';
 
-const UserSchema = new Schema({
+const UserSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true
   },
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true,
+    lowercase: true
   },
   password: {
     type: String,
@@ -18,93 +21,61 @@ const UserSchema = new Schema({
   },
   phoneNumber: {
     type: String,
-    required: false
+    required: true,
+    unique: true,
+    trim: true
   },
-  isPhoneVerified: {
+  phoneVerified: {
     type: Boolean,
     default: false
   },
-  phoneVerificationCode: {
-    type: String
-  },
-  phoneVerificationExpires: {
-    type: Date
-  },
-  isEmailVerified: {
-    type: Boolean,
-    default: false
-  },
-  emailVerificationCode: {
-    type: String
-  },
-  emailVerificationExpires: {
-    type: Date
-  },
-  verificationMethod: {
-    type: String,
-    enum: ['phone', 'email', 'none'],
-    default: 'none'
-  },
-  btcAddress: {
-    type: String,
-    unique: true,
-    sparse: true
-  },
-  ethAddress: {
-    type: String,
-    unique: true,
-    sparse: true
-  },
-  balances: {
-    btc: {
-      type: Number,
-      default: 0
+  walletAddresses: {
+    bitcoin: {
+      type: String,
+      default: ''
     },
-    eth: {
-      type: Number,
-      default: 0
-    },
-    usdt: {
-      type: Number,
-      default: 0
+    ethereum: {
+      type: String,
+      default: ''
     },
     ubt: {
-      type: Number,
-      default: 0
+      type: String,
+      default: ''
     }
   },
-  invitationCode: {
-    type: String,
-    unique: true
-  },
-  invitedBy: {
-    type: Schema.Types.ObjectId,
-    ref: 'user'
-  },
-  invitedUsers: [{
-    type: Schema.Types.ObjectId,
-    ref: 'user'
-  }],
-  ubtBonusEarned: {
-    type: Number,
-    default: 0
-  },
-  botsPurchased: [{
-    type: String,
-    enum: ['100', '300', '500', '1000']
-  }],
-  qualifiedInvites: {
+  cryptoBalance: {
     type: Number,
     default: 0
   },
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  lastLogin: {
+    type: Date
   }
 });
 
-// Check if the model already exists before defining it
-const User = mongoose.models.user || mongoose.model('user', UserSchema);
+// Password hash middleware
+UserSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) {
+    return next();
+  }
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Method to compare passwords
+UserSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
+const User = mongoose.model('User', UserSchema);
 
 export default User;
-

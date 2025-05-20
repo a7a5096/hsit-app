@@ -30,7 +30,7 @@ function displayUserBalances() {
                     const listItem = document.createElement("li");
                     listItem.innerHTML = `
                         <div class="balance-item">
-                            <span class="currency-name">UBT (Utility Balance Token)</span>
+                            <span class="currency-name">UBT (Un-Buyable Token)</span>
                             <span class="currency-amount">${ubtBalance.toFixed(2)} UBT</span>
                         </div>
                     `;
@@ -43,7 +43,7 @@ function displayUserBalances() {
                      const listItem = document.createElement("li");
                     listItem.innerHTML = `
                         <div class="balance-item">
-                            <span class="currency-name">UBT (Utility Balance Token)</span>
+                            <span class="currency-name">UBT (Un-Buyable Token)</span>
                             <span class="currency-amount">N/A</span>
                         </div>
                     `;

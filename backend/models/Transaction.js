@@ -1,51 +1,45 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+import mongoose from 'mongoose';
 
-const TransactionSchema = new Schema({
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: 'user',
+const TransactionSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true
   },
-  type: {
+  txHash: {
     type: String,
-    enum: ['deposit', 'withdrawal', 'purchase', 'bonus', 'exchange'],
-    required: true
+    required: true,
+    unique: true
   },
-  currency: {
+  fromAddress: {
     type: String,
-    enum: ['BTC', 'ETH', 'USDT', 'UBT'],
     required: true
   },
   amount: {
     type: Number,
     required: true
   },
+  currency: {
+    type: String,
+    required: true,
+    enum: ['BTC', 'ETH', 'UBT']
+  },
+  ubtAmount: {
+    type: Number,
+    required: true
+  },
   status: {
     type: String,
-    enum: ['pending', 'completed', 'failed', 'cancelled'],
+    required: true,
+    enum: ['pending', 'completed', 'failed'],
     default: 'pending'
   },
-  walletAddress: {
-    type: String
-  },
-  txHash: {
-    type: String
-  },
-  exchangeRate: {
-    type: Number
-  },
-  description: {
-    type: String
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
+  timestamp: {
     type: Date,
     default: Date.now
   }
 });
 
-module.exports = mongoose.model('transaction', TransactionSchema);
+const Transaction = mongoose.model('Transaction', TransactionSchema);
+
+export default Transaction;

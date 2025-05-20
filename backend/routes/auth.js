@@ -1,49 +1,371 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import * as jose from 'jose'; // Changed import for jose
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import User from '../models/User.js'; // Import User model directly
+import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+import csv from 'csv-parser';
 
-dotenv.config();
+// Models
+import User from '../models/User.js';
+import Transaction from '../models/Transaction.js';
 
 const router = express.Router();
 
-// JWT Secret for token signing - must be a Uint8Array for jose
-const JWT_SECRET_STRING = process.env.JWT_SECRET || 'hsit-secret-key';
-const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
+// Environment variables
+const JWT_SECRET = process.env.JWT_SECRET || 'hsit_jwt_secret_key_2025';
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
+const UBT_INITIAL_EXCHANGE_RATE = process.env.UBT_INITIAL_EXCHANGE_RATE || 1;
 
-// @route   POST api/auth
-// @desc    Login user & get token
-// @access  Public
-router.post('/', async (req, res) => {
-  const { email, password } = req.body;
-
+// Helper functions
+const sendVerificationCode = async (phoneNumber) => {
   try {
-    // Enhanced logging for debugging
+    // Twilio integration
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+    
+    const client = require('twilio')(accountSid, authToken);
+    
+    // Generate a random 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Store the code in memory (in production, use Redis or similar)
+    // This is a simplified version for demonstration
+    if (!global.verificationCodes) {
+      global.verificationCodes = {};
+    }
+    
+    global.verificationCodes[phoneNumber] = {
+      code,
+      expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
+    };
+    
+    // Send SMS
+    await client.messages.create({
+      body: `Your HSIT verification code is: ${code}`,
+      from: twilioPhone,
+      to: phoneNumber
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('SMS sending error:', error);
+    return false;
+  }
+};
+
+const verifyCode = (phoneNumber, code) => {
+  // Check if we have a verification code for this phone number
+  if (!global.verificationCodes || !global.verificationCodes[phoneNumber]) {
+    return { valid: false, message: 'No verification code found' };
+  }
+  
+  const verification = global.verificationCodes[phoneNumber];
+  
+  // Check if code has expired
+  if (Date.now() > verification.expiresAt) {
+    delete global.verificationCodes[phoneNumber];
+    return { valid: false, message: 'Verification code has expired' };
+  }
+  
+  // Check if code matches
+  if (verification.code !== code) {
+    return { valid: false, message: 'Invalid verification code' };
+  }
+  
+  // Code is valid, clean up
+  delete global.verificationCodes[phoneNumber];
+  
+  return { valid: true };
+};
+
+const getAvailableCryptoAddresses = async () => {
+  const addresses = {
+    bitcoin: null,
+    ethereum: null,
+    ubt: null
+  };
+  
+  try {
+    // Path to CSV files
+    const bitcoinCsvPath = path.join(process.cwd(), '../csv/bitcoin.csv');
+    const ethereumCsvPath = path.join(process.cwd(), '../csv/ethereum.csv');
+    
+    // Read Bitcoin addresses
+    const bitcoinAddresses = [];
+    if (fs.existsSync(bitcoinCsvPath)) {
+      await new Promise((resolve) => {
+        fs.createReadStream(bitcoinCsvPath)
+          .pipe(csv())
+          .on('data', (row) => {
+            if (row.used === 'false' || row.used === '0') {
+              bitcoinAddresses.push({
+                address: row.address,
+                privateKey: row.privateKey
+              });
+            }
+          })
+          .on('end', resolve);
+      });
+    } else {
+      console.warn('Bitcoin CSV file not found at:', bitcoinCsvPath);
+    }
+    
+    // Read Ethereum addresses
+    const ethereumAddresses = [];
+    if (fs.existsSync(ethereumCsvPath)) {
+      await new Promise((resolve) => {
+        fs.createReadStream(ethereumCsvPath)
+          .pipe(csv())
+          .on('data', (row) => {
+            if (row.used === 'false' || row.used === '0') {
+              ethereumAddresses.push({
+                address: row.address,
+                privateKey: row.privateKey
+              });
+            }
+          })
+          .on('end', resolve);
+      });
+    } else {
+      console.warn('Ethereum CSV file not found at:', ethereumCsvPath);
+    }
+    
+    // Assign addresses if available
+    if (bitcoinAddresses.length > 0) {
+      addresses.bitcoin = bitcoinAddresses[0];
+    }
+    
+    if (ethereumAddresses.length > 0) {
+      addresses.ethereum = ethereumAddresses[0];
+    }
+    
+    // For UBT, we'll use the Ethereum address as well
+    if (addresses.ethereum) {
+      addresses.ubt = {
+        address: addresses.ethereum.address,
+        privateKey: addresses.ethereum.privateKey
+      };
+    }
+  } catch (error) {
+    console.error('Error getting crypto addresses:', error);
+  }
+  
+  return addresses;
+};
+
+const markAddressAsAssigned = async (currency, address) => {
+  try {
+    let csvPath;
+    
+    if (currency === 'bitcoin') {
+      csvPath = path.join(process.cwd(), '../csv/bitcoin.csv');
+    } else if (currency === 'ethereum' || currency === 'ubt') {
+      csvPath = path.join(process.cwd(), '../csv/ethereum.csv');
+    } else {
+      throw new Error('Invalid currency');
+    }
+    
+    if (!fs.existsSync(csvPath)) {
+      console.warn(`CSV file for ${currency} not found at: ${csvPath}`);
+      return false;
+    }
+    
+    // Read the CSV file
+    const rows = [];
+    await new Promise((resolve) => {
+      fs.createReadStream(csvPath)
+        .pipe(csv())
+        .on('data', (row) => {
+          rows.push(row);
+        })
+        .on('end', resolve);
+    });
+    
+    // Update the row with the matching address
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].address === address) {
+        rows[i].used = 'true';
+        break;
+      }
+    }
+    
+    // Write back to the CSV file
+    const csvWriter = require('csv-writer').createObjectCsvWriter({
+      path: csvPath,
+      header: Object.keys(rows[0]).map(key => ({ id: key, title: key }))
+    });
+    
+    await csvWriter.writeRecords(rows);
+    
+    // Also update the used.csv file for tracking
+    const usedCsvPath = path.join(process.cwd(), '../csv/used.csv');
+    const usedRow = {
+      address,
+      currency,
+      assignedAt: new Date().toISOString()
+    };
+    
+    const usedCsvWriter = require('csv-writer').createObjectCsvWriter({
+      path: usedCsvPath,
+      header: [
+        { id: 'address', title: 'address' },
+        { id: 'currency', title: 'currency' },
+        { id: 'assignedAt', title: 'assignedAt' }
+      ],
+      append: true
+    });
+    
+    await usedCsvWriter.writeRecords([usedRow]);
+    
+    return true;
+  } catch (error) {
+    console.error('Error marking address as assigned:', error);
+    return false;
+  }
+};
+
+// Routes
+
+// GET endpoint to retrieve authenticated user data
+router.get('/', async (req, res) => {
+  try {
+    // Get token from header
+    const token = req.header('x-auth-token');
+    
+    // Check if token exists
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'No authentication token, authorization denied' 
+      });
+    }
+    
+    // Verify token
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      
+      // Find user by id from decoded token
+      const user = await User.findById(decoded.id).select('-password');
+      
+      if (!user) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'User not found' 
+        });
+      }
+      
+      // Ensure user has balances object with all required fields
+      if (!user.balances) {
+        console.log(`Fixing missing balances for user: ${user.id}`);
+        user.balances = {
+          btc: 0,
+          eth: 0,
+          usdt: 0,
+          ubt: 100 // Default starting balance
+        };
+        await user.save();
+      } else {
+        // Ensure all balance fields exist
+        const requiredBalances = ['btc', 'eth', 'usdt', 'ubt'];
+        let balanceUpdated = false;
+        
+        for (const currency of requiredBalances) {
+          if (user.balances[currency] === undefined) {
+            console.log(`Adding missing ${currency} balance for user: ${user.id}`);
+            user.balances[currency] = currency === 'ubt' ? 100 : 0; // Default UBT to 100, others to 0
+            balanceUpdated = true;
+          }
+        }
+        
+        if (balanceUpdated) {
+          await user.save();
+        }
+      }
+      
+      // Get user's transactions
+      const transactions = await Transaction.find({ 
+        userId: user._id 
+      }).sort({ date: -1 }).limit(10);
+      
+      // Calculate balances
+      const balances = {
+        bitcoin: 0,
+        ethereum: 0,
+        ubt: 0
+      };
+      
+      // Process transactions to calculate balances
+      transactions.forEach(transaction => {
+        if (transaction.type === 'deposit') {
+          balances[transaction.currency] += transaction.amount;
+        } else if (transaction.type === 'withdrawal') {
+          balances[transaction.currency] -= transaction.amount;
+        }
+      });
+      
+      // Return user data with balances and recent transactions
+      res.json({
+        success: true,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          walletAddresses: user.walletAddresses,
+          isVerified: user.isVerified,
+          lastLogin: user.lastLogin,
+          createdAt: user.createdAt,
+          balances: user.balances // Include the user's balances from the model
+        },
+        balances, // Include calculated balances from transactions
+        recentTransactions: transactions
+      });
+    } catch (err) {
+      console.error('Token verification error:', err);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Token is not valid' 
+      });
+    }
+  } catch (error) {
+    console.error('GET /api/auth error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error' 
+    });
+  }
+});
+
+// Add the root POST endpoint to match frontend login expectations
+router.post('/', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
     console.log(`Login attempt for email: ${email}`);
     
-    // Basic validation
+    // Validate inputs
     if (!email || !password) {
       console.log('Login failed: Missing email or password');
-      return res.status(400).json({ msg: 'Please enter all fields' });
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
-
-    // Check for existing user
+    
+    // Find user by email
     const user = await User.findOne({ email });
+    
     if (!user) {
       console.log(`Login failed: User with email ${email} not found`);
-      return res.status(400).json({ msg: 'User does not exist' });
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
-
-    // Validate password
+    
+    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
+    
     if (!isMatch) {
       console.log(`Login failed: Invalid password for ${email}`);
-      return res.status(400).json({ msg: 'Invalid credentials' });
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
-
+    
     // Ensure user has balances object with all required fields
     if (!user.balances) {
       console.log(`Fixing missing balances for user: ${user.id}`);
@@ -53,7 +375,6 @@ router.post('/', async (req, res) => {
         usdt: 0,
         ubt: 100 // Default starting balance
       };
-      await user.save();
     } else {
       // Ensure all balance fields exist
       const requiredBalances = ['btc', 'eth', 'usdt', 'ubt'];
@@ -66,187 +387,194 @@ router.post('/', async (req, res) => {
           balanceUpdated = true;
         }
       }
-      
-      if (balanceUpdated) {
-        await user.save();
-      }
     }
-
-    // Create token payload
-    const payload = {
-      user: {
-        id: user.id
-      }
-    };
-
-    // Sign token using jose
-    const token = await new jose.SignJWT(payload)
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime(JWT_EXPIRE)
-      .sign(JWT_SECRET);
-
+    
+    // Update last login
+    user.lastLogin = Date.now();
+    await user.save();
+    
     console.log(`Login successful for user: ${user.id}`);
     
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, username: user.username },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRE }
+    );
+    
     res.json({
+      success: true,
       token,
       user: {
-        id: user.id,
+        id: user._id,
         username: user.username,
         email: user.email,
-        isVerified: user.isPhoneVerified,
-        balances: user.balances
+        phoneNumber: user.phoneNumber,
+        walletAddresses: user.walletAddresses,
+        cryptoBalance: user.cryptoBalance,
+        balances: user.balances // Include the user's balances
       }
     });
-
-  } catch (err) {
-    console.error('Login error details:', err);
-    res.status(500).send('Server Error');
+  } catch (error) {
+    console.error('Login error details:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
-// @route   GET api/auth
-// @desc    Get user data (Protected Route - example)
-// @access  Private
-router.get('/', async (req, res) => {
-  const token = req.header('x-auth-token');
-
-  if (!token) {
-    return res.status(401).json({ msg: 'No token, authorization denied' });
-  }
-
+// Initial registration - collect user info and send verification code
+router.post('/register/initial', async (req, res) => {
   try {
-    const { payload } = await jose.jwtVerify(token, JWT_SECRET);
-    const user = await User.findById(payload.user.id).select('-password');
+    const { username, email, password, phoneNumber } = req.body;
     
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+    // Validate inputs
+    if (!username || !email || !password || !phoneNumber) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
     }
     
-    // Ensure user has balances object with all required fields
-    if (!user.balances) {
-      console.log(`Fixing missing balances for user: ${user.id}`);
-      user.balances = {
-        btc: 0,
-        eth: 0,
-        usdt: 0,
-        ubt: 100 // Default starting balance
-      };
-      await user.save();
-    } else {
-      // Ensure all balance fields exist
-      const requiredBalances = ['btc', 'eth', 'usdt', 'ubt'];
-      let balanceUpdated = false;
-      
-      for (const currency of requiredBalances) {
-        if (user.balances[currency] === undefined) {
-          console.log(`Adding missing ${currency} balance for user: ${user.id}`);
-          user.balances[currency] = currency === 'ubt' ? 100 : 0; // Default UBT to 100, others to 0
-          balanceUpdated = true;
-        }
-      }
-      
-      if (balanceUpdated) {
-        await user.save();
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      $or: [
+        { email },
+        { username }
+      ]
+    });
+    
+    if (existingUser) {
+      if (existingUser.email === email) {
+        return res.status(400).json({ success: false, message: 'Email already in use' });
+      } else {
+        return res.status(400).json({ success: false, message: 'Username already taken' });
       }
     }
     
-    res.json(user);
-  } catch (err) {
-    console.error('Token verification failed:', err);
-    if (err.code === 'ERR_JWT_EXPIRED') {
-        return res.status(401).json({ msg: 'Token is expired' });
-    } else if (err.code === 'ERR_JWS_INVALID' || err.code === 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED') {
-        return res.status(401).json({ msg: 'Token is not valid' });
-    }
-    res.status(500).send('Server Error');
-  }
-});
-
-
-// @route   POST api/auth/register
-// @desc    Register a new user
-// @access  Public
-router.post('/register', async (req, res) => {
-  const { username, email, password, phone, invitationCode } = req.body; 
-
-  try {
-    console.log(`Registration attempt for email: ${email}, username: ${username}`);
+    // Send verification code
+    const smsSent = await sendVerificationCode(phoneNumber);
     
-    // Check for existing user
-    let user = await User.findOne({ email });
-    if (user) {
-      console.log(`Registration failed: Email ${email} already exists`);
-      return res.status(400).json({ msg: 'User already exists' });
+    if (!smsSent) {
+      return res.status(500).json({ success: false, message: 'Failed to send verification code' });
     }
-
-    user = await User.findOne({ username });
-    if (user) {
-      console.log(`Registration failed: Username ${username} already taken`);
-      return res.status(400).json({ msg: 'Username already taken' });
+    
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    
+    // Store user data in session or temporary storage
+    // For simplicity, we'll use a global object (in production, use Redis or similar)
+    if (!global.pendingRegistrations) {
+      global.pendingRegistrations = {};
     }
-
-    // Create new user object with all required fields
-    const newUserFields = {
+    
+    global.pendingRegistrations[phoneNumber] = {
       username,
       email,
-      password,
-      phoneNumber: phone || '', // Ensure phoneNumber is never undefined
-      phoneVerificationCode: Math.floor(100000 + Math.random() * 900000).toString(),
+      password: hashedPassword,
+      phoneNumber,
+      expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
+    };
+    
+    res.json({
+      success: true,
+      message: 'Verification code sent',
+      phoneNumber
+    });
+  } catch (error) {
+    console.error('Registration initial error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Complete registration - verify code and create user
+router.post('/register/complete', async (req, res) => {
+  try {
+    const { phoneNumber, code } = req.body;
+    
+    // Validate inputs
+    if (!phoneNumber || !code) {
+      return res.status(400).json({ success: false, message: 'Phone number and verification code are required' });
+    }
+    
+    // Verify the code
+    const verification = verifyCode(phoneNumber, code);
+    
+    if (!verification.valid) {
+      return res.status(400).json({ success: false, message: verification.message });
+    }
+    
+    // Get pending registration data
+    if (!global.pendingRegistrations || !global.pendingRegistrations[phoneNumber]) {
+      return res.status(400).json({ success: false, message: 'Registration session expired or not found' });
+    }
+    
+    const userData = global.pendingRegistrations[phoneNumber];
+    
+    // Check if registration session has expired
+    if (Date.now() > userData.expiresAt) {
+      delete global.pendingRegistrations[phoneNumber];
+      return res.status(400).json({ success: false, message: 'Registration session expired' });
+    }
+    
+    // Get crypto addresses
+    const addresses = await getAvailableCryptoAddresses();
+    
+    // Create new user
+    const newUser = new User({
+      username: userData.username,
+      email: userData.email,
+      password: userData.password,
+      phoneNumber: userData.phoneNumber,
+      isVerified: true,
+      walletAddresses: {
+        bitcoin: addresses.bitcoin ? addresses.bitcoin.address : null,
+        ethereum: addresses.ethereum ? addresses.ethereum.address : null,
+        ubt: addresses.ubt ? addresses.ubt.address : null
+      },
       balances: {
         btc: 0,
         eth: 0,
         usdt: 0,
         ubt: 100 // Default starting balance
-      }
-    };
-
-    // Only add invitationCode to the fields if it's provided and not an empty string
-    if (invitationCode && invitationCode.trim() !== '') {
-      newUserFields.invitationCode = invitationCode.trim();
+      },
+      lastLogin: Date.now()
+    });
+    
+    await newUser.save();
+    
+    // Mark addresses as assigned
+    if (addresses.bitcoin) {
+      await markAddressAsAssigned('bitcoin', addresses.bitcoin.address);
     }
-
-    user = new User(newUserFields);
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-
-    // Save user
-    await user.save();
-    console.log(`Registration successful for user: ${user.id}`);
-
-    // Create token payload
-    const payload = {
-      user: {
-        id: user.id
-      }
-    };
-
-    // Sign token using jose
-    const token = await new jose.SignJWT(payload)
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime(JWT_EXPIRE)
-      .sign(JWT_SECRET);
-
+    
+    if (addresses.ethereum) {
+      await markAddressAsAssigned('ethereum', addresses.ethereum.address);
+    }
+    
+    // Clean up
+    delete global.pendingRegistrations[phoneNumber];
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: newUser._id, username: newUser.username },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRE }
+    );
+    
     res.json({
+      success: true,
+      message: 'Registration successful',
       token,
       user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        phoneVerificationCode: user.phoneVerificationCode,
-        balances: user.balances
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+        phoneNumber: newUser.phoneNumber,
+        walletAddresses: newUser.walletAddresses,
+        isVerified: newUser.isVerified,
+        balances: newUser.balances
       }
     });
-
-  } catch (err) {
-    console.error('Registration Error details:', err);
-    if (err.code === 11000) { 
-        return res.status(400).json({ msg: 'Duplicate key error. This might be due to the invitation code, username, or email already being in use.' });
-    }
-    res.status(500).send('Server Error');
+  } catch (error) {
+    console.error('Registration complete error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

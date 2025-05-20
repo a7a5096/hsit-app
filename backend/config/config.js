@@ -1,6 +1,9 @@
-require('dotenv').config();
+import dotenv from 'dotenv';
 
-module.exports = {
+// Load environment variables
+dotenv.config();
+
+const config = {
   PORT: process.env.PORT || 5000,
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb+srv://a7a5096:MM00nngg2@cluster0hsit.xelat83.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0HSIT',
   JWT_SECRET: process.env.JWT_SECRET || 'hsit-secret-key',
@@ -17,3 +20,5 @@ module.exports = {
   SECOND_LEVEL_INVITE_BONUS: 15, // 15 UBT for second-level invites
   QUALIFIED_INVITES_FOR_FREE_BOT: 10 // Number of qualified invites needed for free bot
 };
+
+export default config;

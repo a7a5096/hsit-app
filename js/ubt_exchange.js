@@ -2,7 +2,7 @@
 const API_URL = 'https://hsit-backend.onrender.com';
 
 
-// Script to handle UBT exchange functionality
+// Script to handle Un-Buyable Token exchange functionality
 document.addEventListener('DOMContentLoaded', function() {
   // Check if user is logged in
   const token = localStorage.getItem('token');
@@ -14,16 +14,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // Get user data
   const userData = JSON.parse(localStorage.getItem('userData') || '{}');
   
-  // Create UBT exchange section
+  // Create Un-Buyable Token exchange section
   const mainElement = document.querySelector('.page-main');
   if (mainElement) {
-    // Create UBT exchange section
+    // Create Un-Buyable Token exchange section
     const exchangeSection = document.createElement('section');
     exchangeSection.className = 'content-section card-style';
     exchangeSection.innerHTML = `
-      <h2>UBT Exchange</h2>
+      <h2>Un-Buyable Token Exchange</h2>
       <div class="exchange-info">
-        <p>Exchange your crypto for UBT tokens or convert UBT back to USDT.</p>
+        <p>Exchange your crypto for Un-Buyable Tokens or convert Un-Buyable Token back to USDT.</p>
         <div class="exchange-rates">
           <div class="rate-item">
             <span class="rate-label">Current Buy Rate:</span>
@@ -39,8 +39,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="form-group">
           <label for="exchange-type">Exchange Type</label>
           <select id="exchange-type">
-            <option value="buy">Buy UBT</option>
-            <option value="sell">Sell UBT</option>
+            <option value="buy">Buy Un-Buyable Token</option>
+            <option value="sell">Sell Un-Buyable Token</option>
           </select>
         </div>
         <div id="buy-options">
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="form-group">
           <label>You will receive:</label>
-          <div class="exchange-result" id="exchange-result">0.00 UBT</div>
+          <div class="exchange-result" id="exchange-result">0.00 Un-Buyable Token</div>
         </div>
         <button class="btn btn-primary" id="execute-exchange">Execute Exchange</button>
       </div>
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch exchange rates
     async function fetchExchangeRates() {
       try {
-        const response = await fetch('${API_BASE_URL}/api/transactions/exchange-rates');
+        const response = await fetch(`${API_URL}/api/transactions/exchange-rates`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch exchange rates');
@@ -92,8 +92,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const rates = await response.json();
         
         // Update UI
-        buyRateSpan.textContent = `${rates.buyRate.toFixed(4)} USDT per UBT`;
-        sellRateSpan.textContent = `${rates.sellRate.toFixed(4)} USDT per UBT`;
+        buyRateSpan.textContent = `${rates.buyRate.toFixed(4)} USDT per Un-Buyable Token`;
+        sellRateSpan.textContent = `${rates.sellRate.toFixed(4)} USDT per Un-Buyable Token`;
         
         // Store rates
         window.exchangeRates = rates;
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch user data
     async function fetchUserData() {
       try {
-        const response = await fetch('${API_BASE_URL}/api/auth', {
+        const response = await fetch(`${API_URL}/api/auth`, {
           headers: {
             'x-auth-token': token
           }
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (exchangeTypeSelect.value === 'buy') {
         currency = sourceCurrencySelect.value;
       } else {
-        currency = 'UBT';
+        currency = 'Un-Buyable Token';
       }
       
       const balance = balances[currency.toLowerCase()] || 0;
@@ -161,11 +161,11 @@ document.addEventListener('DOMContentLoaded', function() {
       
       let result = 0;
       if (exchangeType === 'buy') {
-        // Buy UBT with crypto
+        // Buy Un-Buyable Token with crypto
         result = amount / window.exchangeRates.buyRate;
-        resultDiv.textContent = `${result.toFixed(2)} UBT`;
+        resultDiv.textContent = `${result.toFixed(2)} Un-Buyable Token`;
       } else {
-        // Sell UBT for USDT
+        // Sell Un-Buyable Token for USDT
         result = amount * window.exchangeRates.sellRate;
         resultDiv.textContent = `${result.toFixed(2)} USDT`;
       }
@@ -185,8 +185,8 @@ document.addEventListener('DOMContentLoaded', function() {
         let response;
         
         if (exchangeType === 'buy') {
-          // Buy UBT with crypto
-          response = await fetch('${API_BASE_URL}/api/transactions/buy-ubt', {
+          // Buy Un-Buyable Token with crypto
+          response = await fetch(`${API_URL}/api/transactions/buy-ubt`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -198,15 +198,15 @@ document.addEventListener('DOMContentLoaded', function() {
             })
           });
         } else {
-          // Sell UBT for USDT
-          response = await fetch('${API_BASE_URL}/api/transactions/withdraw', {
+          // Sell Un-Buyable Token for USDT
+          response = await fetch(`${API_URL}/api/transactions/withdraw`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'x-auth-token': token
             },
             body: JSON.stringify({
-              currency: 'UBT',
+              currency: 'Un-Buyable Token',
               amount,
               walletAddress: 'INTERNAL_EXCHANGE' // Special marker for internal exchange
             })
@@ -219,11 +219,11 @@ document.addEventListener('DOMContentLoaded', function() {
           throw new Error(data.msg || 'Exchange failed');
         }
         
-        showMessage(exchangeType === 'buy' ? 'UBT purchase successful!' : 'UBT exchange request submitted!', 'success');
+        showMessage(exchangeType === 'buy' ? 'Un-Buyable Token purchase successful!' : 'Un-Buyable Token exchange request submitted!', 'success');
         
         // Reset form
         amountInput.value = '';
-        resultDiv.textContent = '0.00 ' + (exchangeType === 'buy' ? 'UBT' : 'USDT');
+        resultDiv.textContent = '0.00 ' + (exchangeType === 'buy' ? 'Un-Buyable Token' : 'USDT');
         
         // Refresh user data
         fetchUserData();
@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
     exchangeTypeSelect.addEventListener('change', function() {
       if (this.value === 'buy') {
         buyOptionsDiv.style.display = 'block';
-        resultDiv.textContent = '0.00 UBT';
+        resultDiv.textContent = '0.00 Un-Buyable Token';
       } else {
         buyOptionsDiv.style.display = 'none';
         resultDiv.textContent = '0.00 USDT';

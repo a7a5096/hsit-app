@@ -166,6 +166,12 @@ function handleSignup(event) {
         return;
     }
 
+    // Validate phone number format (must include country code)
+    if (!phone.startsWith('+')) {
+        showStatus("Phone number must include country code (e.g., +1234567890)", "error");
+        return;
+    }
+
     showStatus("Creating account...", "info");
 
     var xhr = new XMLHttpRequest();
@@ -176,16 +182,15 @@ function handleSignup(event) {
             if (xhr.status === 201 || xhr.status === 200) {
                 try {
                     var data = JSON.parse(xhr.responseText);
-                    showStatus(data.message || "Signup successful! Please log in.", "success");
+                    showStatus(data.message || "Account created! Proceeding to verification...", "success");
+                    
+                    // Redirect to phone verification page instead of login
                     setTimeout(function() {
-                        window.location.href = "index.html";
+                        window.location.href = `verify-phone.html?userId=${data.userId}&phone=${encodeURIComponent(phone)}`;
                     }, 2000);
                 } catch (e) {
                     console.error("Error parsing signup response:", e);
-                    showStatus("Account created, but there was an issue processing the response. Please try logging in.", "warning");
-                     setTimeout(function() {
-                        window.location.href = "index.html";
-                    }, 2000);
+                    showStatus("Account created, but there was an issue processing the response. Please contact support.", "warning");
                 }
             } else {
                 try {
@@ -202,7 +207,8 @@ function handleSignup(event) {
         email: email,
         phone: phone,
         password: password,
-        invitationCode: invitationCode || null
+        invitationCode: invitationCode || null,
+        requirePhoneVerification: true // Signal to backend that we want to use phone verification
     }));
 }
 

@@ -1,5 +1,5 @@
-const nodemailer = require('nodemailer');
-const config = require('../config/config');
+import nodemailer from 'nodemailer';
+import config from '../config/config.js';
 
 // Create reusable transporter
 const transporter = nodemailer.createTransport({
@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
  * @param {string} verificationCode - Verification code to send
  * @returns {Promise} - Email sending response
  */
-const sendVerificationEmail = async (email, verificationCode) => {
+export const sendVerificationEmail = async (email, verificationCode) => {
   try {
     const mailOptions = {
       from: config.ADMIN_EMAIL,
@@ -48,7 +48,7 @@ const sendVerificationEmail = async (email, verificationCode) => {
  * @param {Object} withdrawalData - Withdrawal details
  * @returns {Promise} - Email sending response
  */
-const sendWithdrawalNotificationEmail = async (withdrawalData) => {
+export const sendWithdrawalNotificationEmail = async (withdrawalData) => {
   try {
     const { userId, username, amount, currency, walletAddress } = withdrawalData;
     
@@ -79,7 +79,37 @@ const sendWithdrawalNotificationEmail = async (withdrawalData) => {
   }
 };
 
-module.exports = {
-  sendVerificationEmail,
-  sendWithdrawalNotificationEmail
+/**
+ * Send exchange notification to admin
+ * @param {Object} exchangeData - Exchange details
+ * @returns {Promise} - Email sending response
+ */
+export const sendExchangeNotificationEmail = async (exchangeData) => {
+  try {
+    const { userId, username, fromAmount, fromCurrency, toAmount, toCurrency } = exchangeData;
+    
+    const mailOptions = {
+      from: config.ADMIN_EMAIL,
+      to: config.ADMIN_EMAIL,
+      subject: 'HSIT Exchange Request',
+      html: `
+        <h1>New Exchange Request</h1>
+        <p><strong>User:</strong> ${username} (ID: ${userId})</p>
+        <p><strong>Exchange:</strong> ${fromAmount} ${fromCurrency} to ${toAmount} ${toCurrency}</p>
+        <p>Please process this exchange request at your earliest convenience.</p>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    return {
+      success: true,
+      messageId: info.messageId
+    };
+  } catch (error) {
+    console.error('Error sending exchange notification email:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 };

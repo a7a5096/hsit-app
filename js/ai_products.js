@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
       lockPeriod: 2,
       dailyPayment: 10,
       bonuses: [],
-      principalReturn: false,
+      principalReturn: true,
       description: "Our entry-level AI trading bot is perfect for new users looking to experience the benefits of automated trading with minimal commitment."
     },
     {
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     try {
       // Make purchase API call
-      const response = await fetch('${API_BASE_URL}/api/bots/purchase', {
+      const response = await fetch(`${API_URL}/api/bots/purchase`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

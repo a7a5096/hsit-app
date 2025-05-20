@@ -1,10 +1,11 @@
-// Spinning wheel logic script
+// spinning_wheel.js
+
 const prizes = [
     { text: "10 UBT", color: "#FFC300", value: 10 },
     { text: "Try Again", color: "#C70039", value: 0 },
     { text: "5 UBT", color: "#900C3F", value: 5 },
     { text: "20 UBT", color: "#581845", value: 20 },
-    { text: "Bonus Spin", color: "#FF5733", value: "bonus" }, 
+    { text: "Bonus Spin", color: "#FF5733", value: "bonus" }, // UNCOMMENTED for 8 segments
     { text: "2 UBT", color: "#DAF7A6", value: 2 },
     { text: "50 UBT", color: "#3498DB", value: 50 },
     { text: "Jackpot!", color: "#2ECC71", value: 100 }
@@ -15,13 +16,61 @@ const spinButton = document.getElementById("spin-button");
 const resultMessage = document.getElementById("result-message");
 const winningsAmount = document.getElementById("winnings-amount");
 const newUbtBalanceElement = document.getElementById("new-ubt-balance");
+const ubtBalanceElement = document.getElementById("ubt-balance"); // Added for convenience
 
 let isSpinning = false;
 let currentRotation = 0;
 
-document.addEventListener("DOMContentLoaded", () => {
+// --- API Interaction Functions (Hypothetical Backend) ---
+const API_URL = "https://hsit-backend.onrender.com"; // Correct backend URL
+
+async function fetchUserBalanceAPI() {
+    try {
+        const response = await fetch(`${API_URL}/api/ubt/balance`); // GET request
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: `Server error: ${response.status}` }));
+            throw new Error(errorData.message || `Failed to fetch balance.`);
+        }
+        const data = await response.json();
+        return data.balance; // Expects { "balance": 123.45 }
+    } catch (error) {
+        console.error("API Error (fetchUserBalanceAPI):", error);
+        throw error;
+    }
+}
+
+async function placeBetAndDetermineOutcomeAPI(wagerAmount) {
+    try {
+        const response = await fetch(`${API_URL}/api/ubt/spin`, { // POST request
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wager: wagerAmount })
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: `Server error: ${response.status}` }));
+            throw new Error(errorData.message || `Failed to place bet.`);
+        }
+        const data = await response.json();
+        // Expects e.g.:
+        // {
+        //   "winningSegmentIndex": 3,
+        //   "prizeText": "20 UBT",
+        //   "prizeValue": 20,
+        //   "balanceAfterWager": 82.67, (balance after wager, before win)
+        //   "finalBalance": 102.67       (balance after win is applied)
+        // }
+        return data;
+    } catch (error) {
+        console.error("API Error (placeBetAndDetermineOutcomeAPI):", error);
+        throw error;
+    }
+}
+
+// --- Game Logic ---
+
+document.addEventListener("DOMContentLoaded", async () => {
     console.log("Spinning wheel page loaded.");
-    displayUBTBalance();
+    await displayUBTBalance(); // Load initial balance from server
     createWheelSegments();
 
     if (spinButton) {
@@ -30,71 +79,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const homeLink = document.querySelector("header nav a[href=\"index.html\"]");
     if (homeLink) {
-        homeLink.href = "dashboard.html";
+        homeLink.href = "dashboard.html"; // As per original script
     }
 });
 
 function createWheelSegments() {
     const numSegments = prizes.length;
     const segmentAngleDegrees = 360 / numSegments;
-    wheelElement.innerHTML = 
+    wheelElement.innerHTML = ""; // Clear wheel for fresh segment creation
+
     prizes.forEach((prize, index) => {
         const segment = document.createElement("div");
         segment.className = "wheel-segment";
         segment.style.backgroundColor = prize.color;
-        // Rotate the segment container
         segment.style.transform = `rotate(${index * segmentAngleDegrees}deg)`;
-        // Use clip-path to create the wedge shape for each segment
-        // This requires calculating points for a polygon
-        // For 8 segments, each segment is 45 degrees.
-        // Clip-path: polygon(center_x center_y, point1_x point1_y, point2_x point2_y)
-        // Using a simpler approach with skewed divs was problematic for text.
-        // Let's use a common technique: create a div for each segment, rotate it, and place text inside.
-        // The CSS already has .wheel-segment with transform-origin: 0% 100%; (center of wheel)
-        // and width: 50%, height: 50%.
-        // The text element needs to be positioned and rotated carefully.
 
         const textSpan = document.createElement("span");
         textSpan.textContent = prize.text;
-        textSpan.style.color = isLight(prize.color) ? "#111111" : "#FFFFFF"; // Ensure high contrast
-        // Position text within the segment. This is tricky due to segment rotation.
-        // We want text to appear radially, but upright.
-        // Let's position text absolutely within the segment, then rotate the text itself.
-        // The segment is already rotated. Text needs to be placed towards the outer edge.
-        textSpan.style.transform = `translate(-50%, -50%) rotate(${segmentAngleDegrees / 1.5}deg)`;
-        // The above transform for text was part of the old jumbled approach.
-        // New approach for text: Position it within the segment div, then rotate the segment div.
-        // The CSS for .wheel-segment span will handle the base styling.
-        // The JS will set the rotation for the text to be upright relative to the user.
-        // Each segment is a 50%x50% div, rotated from the center (0,100) of its own coordinate system.
-        // The text needs to be placed within this 50x50 box, then the whole box is rotated.
-        // The text itself should be rotated to be upright.
-        // The segment is rotated by (index * segmentAngleDegrees). Text needs to counter-rotate this, plus align radially.
-        
-        // Resetting text transform and relying on CSS, then adjusting
-        textSpan.style.transform = `rotate(${segmentAngleDegrees / 2}deg) translate(60px)`; // Move text outward, rotate to align with segment center
-        // The CSS for .wheel-segment span already has some transform. Let JS control it fully for clarity.
-        // textSpan.style.transform = `translate(70px, 0) rotate(90deg)`; // Example: move out, then rotate to be perpendicular
-        // This needs to be dynamic based on segmentAngleDegrees
-        const textRotation = - (index * segmentAngleDegrees) - (segmentAngleDegrees / 2) + 90;
-        // textSpan.style.transform = `rotate(${textRotation}deg) translateX(60px) rotate(-90deg)`;
-        // The CSS has: transform: rotate(45deg); padding-left: 20px;
-        // Let's simplify: position text, then rotate the segment. Text will rotate with segment.
-        // Then, counter-rotate the text span itself.
-        segment.style.transform = `rotate(${index * segmentAngleDegrees}deg)`;
-        textSpan.style.transform = `translateY(25%) rotate(${segmentAngleDegrees / 2}deg)`; // Position text within segment, then rotate it slightly
+        textSpan.style.color = isLight(prize.color) ? "#111111" : "#FFFFFF";
 
-        // Final attempt at text orientation for clarity:
-        // The segment is rotated. Text is a child. We need to position text near the outer edge of the segment
-        // and rotate it so it's upright and readable.
-        const textAngle = segmentAngleDegrees / 2; // Angle to center text in segment
+        // Improved text styling:
+        // Leverage CSS for base (font-size, weight via .wheel-segment span)
+        // JS provides dynamic rotation and precise positioning.
         textSpan.style.position = "absolute";
-        textSpan.style.left = "65%"; // Push towards outer edge (percentage of segment width)
         textSpan.style.top = "50%";
-        textSpan.style.transform = `translate(-50%, -50%) rotate(${textAngle}deg)`;
-        textSpan.style.textAlign = "center"; // Ensure text itself is centered if it wraps
-        textSpan.style.width = "100px"; // Give some width to the text span
+        // Start text further from the center. 10-15% of segment width (which is 50% of wheel diameter)
+        // Effectively 5-7.5% of wheel diameter from the center point.
+        textSpan.style.left = "12%"; // Pushes text start point further from center than "5px"
+        textSpan.style.width = "auto"; // Let text define its own width to prevent premature wrap
+        textSpan.style.whiteSpace = "nowrap"; // Ensure text stays on one line
+        textSpan.style.textAlign = "left"; // Align text from the starting point
+        textSpan.style.transformOrigin = "0% 50%"; // Rotate around the (new) left-center of the text span
 
+        const textVisualRotation = (segmentAngleDegrees / 2) + 90; // To make text perpendicular to segment's radial center
+        textSpan.style.transform = `translateY(-50%) rotate(${textVisualRotation}deg)`;
+        
         segment.appendChild(textSpan);
         wheelElement.appendChild(segment);
     });
@@ -106,101 +125,96 @@ function isLight(color) {
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    return brightness > 150; // Adjusted threshold for better contrast, ensure text is visible
+    return brightness > 155; // Slightly adjusted threshold for very dark colors
 }
 
-function displayUBTBalance() {
-    const ubtBalanceElement = document.getElementById("ubt-balance");
+async function displayUBTBalance() {
     if (ubtBalanceElement) {
+        ubtBalanceElement.textContent = "Loading...";
         try {
-            const userDataString = localStorage.getItem("userData");
-            if (userDataString) {
-                const userData = JSON.parse(userDataString);
-                if (userData && userData.balances && typeof userData.balances.ubt !== "undefined") {
-                    ubtBalanceElement.textContent = userData.balances.ubt.toFixed(2);
-                } else {
-                    ubtBalanceElement.textContent = "N/A";
-                }
-            } else {
-                ubtBalanceElement.textContent = "N/A";
-            }
+            const balance = await fetchUserBalanceAPI();
+            ubtBalanceElement.textContent = balance.toFixed(2);
         } catch (error) {
             ubtBalanceElement.textContent = "Error";
-            console.error("Error displaying UBT balance:", error);
+            // Optionally, display error.message to the user in a more friendly way
+            console.error("Failed to display UBT balance:", error.message);
         }
     }
 }
 
-function handleSpin() {
+async function handleSpin() {
     if (isSpinning) return;
 
     const wagerAmountElement = document.getElementById("wager-amount");
     const wagerAmount = parseInt(wagerAmountElement.value);
 
-    if (isNaN(wagerAmount) || wagerAmount <= 0) {
-        alert("Please enter a valid wager amount.");
-        return;
-    }
-
-    const userDataString = localStorage.getItem("userData");
-    if (!userDataString) {
-        alert("Please log in to play.");
-        return;
-    }
-    const userData = JSON.parse(userDataString);
-    if (userData.balances.ubt < wagerAmount) {
-        alert("Insufficient UBT balance for this wager.");
+    if (isNaN(wagerAmount) || wagerAmount < 1 || wagerAmount > 100) { // Validate against min/max too
+        alert("Please enter a valid wager amount (1-100 UBT).");
         return;
     }
 
     isSpinning = true;
     spinButton.disabled = true;
-    if(resultMessage) resultMessage.textContent = "Spinning...";
-    if(winningsAmount) winningsAmount.textContent = "0.00";
-    if(newUbtBalanceElement) newUbtBalanceElement.textContent = "N/A";
+    resultMessage.textContent = "Placing bet...";
+    winningsAmount.textContent = "0.00";
+    newUbtBalanceElement.textContent = "N/A";
 
-    userData.balances.ubt -= wagerAmount;
-    localStorage.setItem("userData", JSON.stringify(userData));
-    displayUBTBalance();
+    try {
+        // Server deducts wager, determines outcome, and returns new balances + winning segment
+        const spinOutcome = await placeBetAndDetermineOutcomeAPI(wagerAmount);
 
-    const totalSpins = 4 + Math.floor(Math.random() * 3);
-    const winningSegmentIndex = Math.floor(Math.random() * prizes.length);
-    const segmentAngle = 360 / prizes.length;
-    // Adjust targetRotation to align the center of the segment with the pointer (top)
-    const pointerOffset = segmentAngle / 2; // To center the segment under the pointer
-    const targetRotation = (360 * totalSpins) - (winningSegmentIndex * segmentAngle) - pointerOffset;
-    
-    currentRotation = targetRotation;
-    wheelElement.style.transform = `rotate(${currentRotation}deg)`;
+        // Update balance display to reflect amount after wager (before win applied)
+        ubtBalanceElement.textContent = spinOutcome.balanceAfterWager.toFixed(2);
+        resultMessage.textContent = "Spinning...";
 
-    setTimeout(() => {
+        const numSegments = prizes.length;
+        const segmentAngle = 360 / numSegments;
+        const winningSegmentIndex = spinOutcome.winningSegmentIndex; // Outcome from server
+
+        // Calculate visual rotation
+        const totalFullSpins = 4 + Math.floor(Math.random() * 2); // 4-5 full visual spins
+        const pointerVisualOffset = segmentAngle / 2; // To center the middle of the segment under the pointer
+        const targetRotationValue = (360 * totalFullSpins) - (winningSegmentIndex * segmentAngle) - pointerVisualOffset;
+        
+        currentRotation = targetRotationValue; // Though currentRotation isn't strictly used after this set
+        wheelElement.style.transform = `rotate(${targetRotationValue}deg)`;
+
+        setTimeout(() => {
+            isSpinning = false;
+            spinButton.disabled = false;
+            
+            const prizeWonText = spinOutcome.prizeText;
+            const prizeWonValue = spinOutcome.prizeValue; // This is the actual value/multiplier of the prize
+
+            let displayWinnings = 0;
+            let displayResultText = "";
+
+            if (prizeWonValue === "bonus") {
+                displayResultText = "Bonus Spin!"; // Server should handle bonus logic
+                // Winnings for a "bonus" outcome might be 0 or a fixed amount, determined by server
+                // For now, assume 0 direct UBT winnings from "bonus" segment itself
+                alert("You won a Bonus Spin! (Feature to be implemented by server)");
+            } else if (typeof prizeWonValue === 'number') {
+                displayWinnings = prizeWonValue; // The prize array value is the direct UBT amount
+                displayResultText = `You won: ${displayWinnings.toFixed(2)} UBT!`;
+            } else { // e.g. "Try Again"
+                displayResultText = prizeWonText;
+            }
+            
+            resultMessage.textContent = displayResultText;
+            winningsAmount.textContent = displayWinnings.toFixed(2);
+
+            // Update balances with final amount from server
+            ubtBalanceElement.textContent = spinOutcome.finalBalance.toFixed(2);
+            newUbtBalanceElement.textContent = spinOutcome.finalBalance.toFixed(2);
+
+        }, 4100); // Match CSS transition time (4s) + small buffer
+
+    } catch (error) {
         isSpinning = false;
         spinButton.disabled = false;
-        const winningPrize = prizes[winningSegmentIndex];
-        
-        let actualWinnings = 0;
-        let resultText = "";
-
-        if (winningPrize.value === "bonus") {
-            actualWinnings = 0; 
-            resultText = "Bonus Spin!";
-            alert("Bonus Spin! Feature not yet implemented."); 
-        } else if (typeof winningPrize.value === "number") {
-            actualWinnings = winningPrize.value;
-            resultText = `You won: ${actualWinnings.toFixed(2)} UBT!`;
-        } else { 
-            actualWinnings = 0;
-            resultText = winningPrize.text; 
-        }
-        
-        if(resultMessage) resultMessage.textContent = resultText;
-        if(winningsAmount) winningsAmount.textContent = actualWinnings.toFixed(2);
-
-        userData.balances.ubt += actualWinnings;
-        localStorage.setItem("userData", JSON.stringify(userData));
-        displayUBTBalance();
-        if(newUbtBalanceElement) newUbtBalanceElement.textContent = userData.balances.ubt.toFixed(2);
-
-    }, 4100); 
+        resultMessage.textContent = "Spin Failed.";
+        alert(`Error: ${error.message}`); // Show error message from API
+        await displayUBTBalance(); // Refresh balance from server in case of error
+    }
 }
-

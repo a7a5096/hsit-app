@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add each balance to the list
     const currencies = [
       { key: 'usdt', name: 'USDT', fullName: 'Tether', icon: 'icon_usdt.svg' },
-      { key: 'ubt', name: 'UBT', fullName: 'UBT Token', icon: 'icon_usdt.svg', special: true },
+      { key: 'ubt', name: 'UBT', fullName: 'Un-Buyable Token', icon: 'icon_usdt.svg', special: true },
       { key: 'btc', name: 'BTC', fullName: 'Bitcoin', icon: 'icon_btc.svg' },
       { key: 'eth', name: 'ETH', fullName: 'Ethereum', icon: 'icon_eth.svg' }
     ];
@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <option value="BTC">Bitcoin (BTC)</option>
               <option value="ETH">Ethereum (ETH)</option>
               <option value="USDT">Tether (USDT)</option>
-              <option value="UBT">UBT Token</option>
+              <option value="UBT">Un-Buyable Token</option>
             </select>
           </div>
           <div class="form-group">
