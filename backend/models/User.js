@@ -43,9 +43,31 @@ const UserSchema = new mongoose.Schema({
       default: ''
     }
   },
+  balances: {
+    btc: {
+      type: Number,
+      default: 0
+    },
+    eth: {
+      type: Number,
+      default: 0
+    },
+    usdt: {
+      type: Number,
+      default: 0
+    },
+    ubt: {
+      type: Number,
+      default: 100
+    }
+  },
   cryptoBalance: {
     type: Number,
     default: 0
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
   },
   createdAt: {
     type: Date,
@@ -53,6 +75,13 @@ const UserSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  lastSignIn: {
+    type: Date
+  },
+  consecutiveDays: {
+    type: Number,
+    default: 0
   }
 });
 

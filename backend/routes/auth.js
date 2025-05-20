@@ -16,6 +16,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'hsit_jwt_secret_key_2025';
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
 const UBT_INITIAL_EXCHANGE_RATE = process.env.UBT_INITIAL_EXCHANGE_RATE || 1;
 
+// Import models
+import VerificationCode from '../models/VerificationCode.js';
+import PendingRegistration from '../models/PendingRegistration.js';
+
+// Import migration utility
+import { migrateCryptoAddressesFromCsv } from '../utils/cryptoMigration.js';
+
 // Helper functions
 const sendVerificationCode = async (phoneNumber) => {
   try {
@@ -29,16 +36,18 @@ const sendVerificationCode = async (phoneNumber) => {
     // Generate a random 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Store the code in memory (in production, use Redis or similar)
-    // This is a simplified version for demonstration
-    if (!global.verificationCodes) {
-      global.verificationCodes = {};
-    }
+    // Store the code in database
+    // First, delete any existing codes for this phone number
+    await VerificationCode.deleteMany({ phoneNumber });
     
-    global.verificationCodes[phoneNumber] = {
+    // Create new verification code document
+    const verificationCode = new VerificationCode({
+      phoneNumber,
       code,
-      expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
-    };
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+    });
+    
+    await verificationCode.save();
     
     // Send SMS
     await client.messages.create({
@@ -54,30 +63,39 @@ const sendVerificationCode = async (phoneNumber) => {
   }
 };
 
-const verifyCode = (phoneNumber, code) => {
-  // Check if we have a verification code for this phone number
-  if (!global.verificationCodes || !global.verificationCodes[phoneNumber]) {
-    return { valid: false, message: 'No verification code found' };
+const verifyCode = async (phoneNumber, code) => {
+  try {
+    // Find verification code in database
+    const verification = await VerificationCode.findOne({ phoneNumber });
+    
+    // Check if we have a verification code for this phone number
+    if (!verification) {
+      return { valid: false, message: 'No verification code found' };
+    }
+    
+    // Check if code has expired
+    if (Date.now() > verification.expiresAt) {
+      await VerificationCode.deleteOne({ phoneNumber });
+      return { valid: false, message: 'Verification code has expired' };
+    }
+    
+    // Check if code matches
+    if (verification.code !== code) {
+      return { valid: false, message: 'Invalid verification code' };
+    }
+    
+    // Code is valid, clean up
+    await VerificationCode.deleteOne({ phoneNumber });
+    
+    return { valid: true };
+  } catch (error) {
+    console.error('Verification error:', error);
+    return { valid: false, message: 'Server error during verification' };
   }
-  
-  const verification = global.verificationCodes[phoneNumber];
-  
-  // Check if code has expired
-  if (Date.now() > verification.expiresAt) {
-    delete global.verificationCodes[phoneNumber];
-    return { valid: false, message: 'Verification code has expired' };
-  }
-  
-  // Check if code matches
-  if (verification.code !== code) {
-    return { valid: false, message: 'Invalid verification code' };
-  }
-  
-  // Code is valid, clean up
-  delete global.verificationCodes[phoneNumber];
-  
-  return { valid: true };
 };
+
+// Import crypto address model
+import CryptoAddress from '../models/CryptoAddress.js';
 
 const getAvailableCryptoAddresses = async () => {
   const addresses = {
@@ -87,65 +105,76 @@ const getAvailableCryptoAddresses = async () => {
   };
   
   try {
-    // Path to CSV files
-    const bitcoinCsvPath = path.join(process.cwd(), '../csv/bitcoin.csv');
-    const ethereumCsvPath = path.join(process.cwd(), '../csv/ethereum.csv');
+    // Find available Bitcoin address
+    const bitcoinAddress = await CryptoAddress.findOne({ 
+      currency: 'bitcoin', 
+      used: false 
+    });
     
-    // Read Bitcoin addresses
-    const bitcoinAddresses = [];
-    if (fs.existsSync(bitcoinCsvPath)) {
-      await new Promise((resolve) => {
-        fs.createReadStream(bitcoinCsvPath)
-          .pipe(csv())
-          .on('data', (row) => {
-            if (row.used === 'false' || row.used === '0') {
-              bitcoinAddresses.push({
-                address: row.address,
-                privateKey: row.privateKey
-              });
-            }
-          })
-          .on('end', resolve);
-      });
-    } else {
-      console.warn('Bitcoin CSV file not found at:', bitcoinCsvPath);
-    }
-    
-    // Read Ethereum addresses
-    const ethereumAddresses = [];
-    if (fs.existsSync(ethereumCsvPath)) {
-      await new Promise((resolve) => {
-        fs.createReadStream(ethereumCsvPath)
-          .pipe(csv())
-          .on('data', (row) => {
-            if (row.used === 'false' || row.used === '0') {
-              ethereumAddresses.push({
-                address: row.address,
-                privateKey: row.privateKey
-              });
-            }
-          })
-          .on('end', resolve);
-      });
-    } else {
-      console.warn('Ethereum CSV file not found at:', ethereumCsvPath);
-    }
-    
-    // Assign addresses if available
-    if (bitcoinAddresses.length > 0) {
-      addresses.bitcoin = bitcoinAddresses[0];
-    }
-    
-    if (ethereumAddresses.length > 0) {
-      addresses.ethereum = ethereumAddresses[0];
-    }
-    
-    // For UBT, we'll use the Ethereum address as well
-    if (addresses.ethereum) {
-      addresses.ubt = {
-        address: addresses.ethereum.address,
-        privateKey: addresses.ethereum.privateKey
+    if (bitcoinAddress) {
+      addresses.bitcoin = {
+        address: bitcoinAddress.address,
+        privateKey: bitcoinAddress.privateKey
       };
+    }
+    
+    // Find available Ethereum address
+    const ethereumAddress = await CryptoAddress.findOne({ 
+      currency: 'ethereum', 
+      used: false 
+    });
+    
+    if (ethereumAddress) {
+      addresses.ethereum = {
+        address: ethereumAddress.address,
+        privateKey: ethereumAddress.privateKey
+      };
+      
+      // For UBT, we'll use the Ethereum address as well
+      addresses.ubt = {
+        address: ethereumAddress.address,
+        privateKey: ethereumAddress.privateKey
+      };
+    }
+    
+    // If we don't have addresses in the database yet, try to migrate from CSV files
+    if (!addresses.bitcoin || !addresses.ethereum) {
+      await migrateCryptoAddressesFromCsv();
+      
+      // Try again after migration
+      if (!addresses.bitcoin) {
+        const bitcoinAddress = await CryptoAddress.findOne({ 
+          currency: 'bitcoin', 
+          used: false 
+        });
+        
+        if (bitcoinAddress) {
+          addresses.bitcoin = {
+            address: bitcoinAddress.address,
+            privateKey: bitcoinAddress.privateKey
+          };
+        }
+      }
+      
+      if (!addresses.ethereum) {
+        const ethereumAddress = await CryptoAddress.findOne({ 
+          currency: 'ethereum', 
+          used: false 
+        });
+        
+        if (ethereumAddress) {
+          addresses.ethereum = {
+            address: ethereumAddress.address,
+            privateKey: ethereumAddress.privateKey
+          };
+          
+          // For UBT, we'll use the Ethereum address as well
+          addresses.ubt = {
+            address: ethereumAddress.address,
+            privateKey: ethereumAddress.privateKey
+          };
+        }
+      }
     }
   } catch (error) {
     console.error('Error getting crypto addresses:', error);
@@ -156,68 +185,20 @@ const getAvailableCryptoAddresses = async () => {
 
 const markAddressAsAssigned = async (currency, address) => {
   try {
-    let csvPath;
+    // Find the address in the database
+    const cryptoAddress = await CryptoAddress.findOne({ address });
     
-    if (currency === 'bitcoin') {
-      csvPath = path.join(process.cwd(), '../csv/bitcoin.csv');
-    } else if (currency === 'ethereum' || currency === 'ubt') {
-      csvPath = path.join(process.cwd(), '../csv/ethereum.csv');
-    } else {
-      throw new Error('Invalid currency');
-    }
-    
-    if (!fs.existsSync(csvPath)) {
-      console.warn(`CSV file for ${currency} not found at: ${csvPath}`);
+    if (!cryptoAddress) {
+      console.warn(`Crypto address ${address} not found in database`);
       return false;
     }
     
-    // Read the CSV file
-    const rows = [];
-    await new Promise((resolve) => {
-      fs.createReadStream(csvPath)
-        .pipe(csv())
-        .on('data', (row) => {
-          rows.push(row);
-        })
-        .on('end', resolve);
-    });
+    // Mark as used and save
+    cryptoAddress.used = true;
+    cryptoAddress.assignedAt = new Date();
+    await cryptoAddress.save();
     
-    // Update the row with the matching address
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i].address === address) {
-        rows[i].used = 'true';
-        break;
-      }
-    }
-    
-    // Write back to the CSV file
-    const csvWriter = require('csv-writer').createObjectCsvWriter({
-      path: csvPath,
-      header: Object.keys(rows[0]).map(key => ({ id: key, title: key }))
-    });
-    
-    await csvWriter.writeRecords(rows);
-    
-    // Also update the used.csv file for tracking
-    const usedCsvPath = path.join(process.cwd(), '../csv/used.csv');
-    const usedRow = {
-      address,
-      currency,
-      assignedAt: new Date().toISOString()
-    };
-    
-    const usedCsvWriter = require('csv-writer').createObjectCsvWriter({
-      path: usedCsvPath,
-      header: [
-        { id: 'address', title: 'address' },
-        { id: 'currency', title: 'currency' },
-        { id: 'assignedAt', title: 'assignedAt' }
-      ],
-      append: true
-    });
-    
-    await usedCsvWriter.writeRecords([usedRow]);
-    
+    console.log(`Marked ${currency} address ${address} as assigned in database`);
     return true;
   } catch (error) {
     console.error('Error marking address as assigned:', error);
@@ -458,19 +439,20 @@ router.post('/register/initial', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     
-    // Store user data in session or temporary storage
-    // For simplicity, we'll use a global object (in production, use Redis or similar)
-    if (!global.pendingRegistrations) {
-      global.pendingRegistrations = {};
-    }
+    // Store user data in database
+    // First, delete any existing pending registrations for this phone number
+    await PendingRegistration.deleteMany({ phoneNumber });
     
-    global.pendingRegistrations[phoneNumber] = {
+    // Create new pending registration
+    const pendingRegistration = new PendingRegistration({
       username,
       email,
       password: hashedPassword,
       phoneNumber,
-      expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
-    };
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+    });
+    
+    await pendingRegistration.save();
     
     res.json({
       success: true,
@@ -494,22 +476,22 @@ router.post('/register/complete', async (req, res) => {
     }
     
     // Verify the code
-    const verification = verifyCode(phoneNumber, code);
+    const verification = await verifyCode(phoneNumber, code);
     
     if (!verification.valid) {
       return res.status(400).json({ success: false, message: verification.message });
     }
     
-    // Get pending registration data
-    if (!global.pendingRegistrations || !global.pendingRegistrations[phoneNumber]) {
+    // Get pending registration data from database
+    const pendingRegistration = await PendingRegistration.findOne({ phoneNumber });
+    
+    if (!pendingRegistration) {
       return res.status(400).json({ success: false, message: 'Registration session expired or not found' });
     }
     
-    const userData = global.pendingRegistrations[phoneNumber];
-    
     // Check if registration session has expired
-    if (Date.now() > userData.expiresAt) {
-      delete global.pendingRegistrations[phoneNumber];
+    if (Date.now() > pendingRegistration.expiresAt) {
+      await PendingRegistration.deleteOne({ phoneNumber });
       return res.status(400).json({ success: false, message: 'Registration session expired' });
     }
     
@@ -518,10 +500,10 @@ router.post('/register/complete', async (req, res) => {
     
     // Create new user
     const newUser = new User({
-      username: userData.username,
-      email: userData.email,
-      password: userData.password,
-      phoneNumber: userData.phoneNumber,
+      username: pendingRegistration.username,
+      email: pendingRegistration.email,
+      password: pendingRegistration.password,
+      phoneNumber: pendingRegistration.phoneNumber,
       isVerified: true,
       walletAddresses: {
         bitcoin: addresses.bitcoin ? addresses.bitcoin.address : null,
@@ -536,10 +518,9 @@ router.post('/register/complete', async (req, res) => {
       },
       lastLogin: Date.now()
     });
+     await newUser.save();
     
-    await newUser.save();
-    
-    // Mark addresses as assigned
+    // Mark crypto addresses as assigned
     if (addresses.bitcoin) {
       await markAddressAsAssigned('bitcoin', addresses.bitcoin.address);
     }
@@ -548,16 +529,15 @@ router.post('/register/complete', async (req, res) => {
       await markAddressAsAssigned('ethereum', addresses.ethereum.address);
     }
     
-    // Clean up
-    delete global.pendingRegistrations[phoneNumber];
+    // Clean up pending registration
+    await PendingRegistration.deleteOne({ phoneNumber });
     
     // Generate JWT token
     const token = jwt.sign(
       { id: newUser._id, username: newUser.username },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRE }
-    );
-    
+    );  
     res.json({
       success: true,
       message: 'Registration successful',
