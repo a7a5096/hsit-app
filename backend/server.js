@@ -12,6 +12,7 @@ import dailySignInRoutes from './routes/dailySignInRoutes.js'; // Added daily si
 import transactionsRoutes from './routes/transactions.js'; // Import transactions routes
 import botsRoutes from './routes/bots.js'; // Import bots routes
 import usersRoutes from './routes/users.js'; // Import users routes with SMS verification
+import teamRoutes from './routes/team.js'; // Import team routes for team page
 
 // Load environment variables
 dotenv.config();
@@ -53,6 +54,7 @@ app.use('/api/daily-signin', dailySignInRoutes); // Use daily sign-in routes
 app.use('/api/transactions', transactionsRoutes); // Use transactions routes
 app.use('/api/bots', botsRoutes); // Use bots routes
 app.use('/api/users', usersRoutes); // Use users routes with SMS verification
+app.use('/api/team', teamRoutes); // Use team routes for team page
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

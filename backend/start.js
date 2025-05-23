@@ -1,7 +1,14 @@
 // Script to run the import addresses script and start the server
-require('dotenv').config();
-const { spawn } = require('child_process');
-const path = require('path');
+import dotenv from 'dotenv';
+import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ES Module equivalent for __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config();
 
 console.log('Starting the application...');
 
