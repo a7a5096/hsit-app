@@ -11,10 +11,15 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
+  // Debug: Log token presence to help diagnose issues
+  console.log("Token found in localStorage:", !!token);
+
   // Get user data from localStorage
   let userData = null;
   try {
       userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      // Debug: Log userData to help diagnose issues
+      console.log("userData from localStorage:", userData ? "Found" : "Not found");
   } catch (e) {
       console.error("Error parsing user data from localStorage:", e);
       // Handle error, maybe redirect to login or show error message
@@ -44,18 +49,36 @@ document.addEventListener('DOMContentLoaded', function() {
 // Helper function to fetch fresh user data
 async function fetchFreshUserData(token) {
     try {
-        const response = await fetch(`${API_URL}/api/auth`, { // Assuming /api/auth returns user data
-            headers: {
-                'x-auth-token': token,
-                'Origin': window.location.origin
-            },
+        // Debug: Log the request being made
+        console.log("Fetching fresh user data from:", `${API_URL}/api/auth`);
+        console.log("Using token:", token.substring(0, 10) + "...");
+
+        // FIXED: Ensure headers are properly set and CORS issues are addressed
+        const headers = new Headers();
+        headers.append('x-auth-token', token);
+        headers.append('Content-Type', 'application/json');
+        headers.append('Origin', window.location.origin);
+
+        const response = await fetch(`${API_URL}/api/auth`, {
+            method: 'GET',
+            headers: headers,
             credentials: 'include',
-            mode: 'cors'
+            mode: 'cors',
+            cache: 'no-cache' // Prevent caching issues
         });
+
+        // Debug: Log response status
+        console.log("Auth API response status:", response.status);
+        
         if (!response.ok) {
-            throw new Error('Failed to fetch user data');
+            const errorText = await response.text();
+            console.error("Auth API error response:", errorText);
+            throw new Error(`Failed to fetch user data: ${response.status} ${errorText}`);
         }
+        
         const freshUserData = await response.json();
+        console.log("Fresh user data received:", freshUserData);
+        
         // Update local storage
         localStorage.setItem('userData', JSON.stringify(freshUserData)); 
         return freshUserData;
@@ -118,19 +141,31 @@ async function fetchTeamData(token, bonusInfoSection, teamTable) {
     }
 
     try {
+        // Debug: Log the request being made
+        console.log("Fetching team data from:", `${API_URL}/api/team/data`);
+        
+        // FIXED: Ensure headers are properly set and CORS issues are addressed
+        const headers = new Headers();
+        headers.append('x-auth-token', token);
+        headers.append('Content-Type', 'application/json');
+        headers.append('Origin', window.location.origin);
+
         // Fetch team data (assuming one endpoint provides all necessary info)
-        const teamResponse = await fetch(`${API_URL}/api/team/data`, { // Adjusted API endpoint assumption
-            headers: {
-                'x-auth-token': token,
-                'Origin': window.location.origin
-            },
+        const teamResponse = await fetch(`${API_URL}/api/team/data`, {
+            method: 'GET',
+            headers: headers,
             credentials: 'include',
-            mode: 'cors'
+            mode: 'cors',
+            cache: 'no-cache' // Prevent caching issues
         });
 
+        // Debug: Log response status
+        console.log("Team API response status:", teamResponse.status);
+
         if (!teamResponse.ok) {
-            const errorData = await teamResponse.json().catch(() => ({}));
-            throw new Error(errorData.message || `Failed to fetch team data (Status: ${teamResponse.status})`);
+            const errorText = await teamResponse.text();
+            console.error("Team API error response:", errorText);
+            throw new Error(`Failed to fetch team data: ${teamResponse.status} ${errorText}`);
         }
 
         const teamData = await teamResponse.json();
@@ -392,6 +427,36 @@ function ensureBonusInfoSection() {
     return bonusSection;
 }
 
+// FIXED: Add a function to check if token is valid and refresh if needed
+async function checkAndRefreshToken() {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    
+    try {
+        // Make a lightweight request to verify token
+        const response = await fetch(`${API_URL}/api/auth`, {
+            method: 'HEAD',
+            headers: {
+                'x-auth-token': token
+            }
+        });
+        
+        return response.ok;
+    } catch (error) {
+        console.error('Error checking token validity:', error);
+        return false;
+    }
+}
+
 // Ensure the bonus section exists when initializing
 document.addEventListener('DOMContentLoaded', ensureBonusInfoSection);
 
+// FIXED: Add token validation on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkAndRefreshToken().then(isValid => {
+        if (!isValid) {
+            console.warn('Token validation failed, redirecting to login');
+            logout();
+        }
+    });
+});
