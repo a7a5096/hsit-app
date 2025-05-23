@@ -25,7 +25,19 @@ const authMiddleware = async (req, res, next) => {
   // Verify token using jose
   try {
     const { payload } = await jose.jwtVerify(token, JWT_SECRET);
-    req.user = payload.user; // Attach user information to request object
+    
+    // FIXED: Handle both token formats to ensure compatibility
+    // If payload contains 'id' directly (from jsonwebtoken), use that
+    // If payload contains 'user' object (from jose), use that
+    if (payload.id) {
+      req.user = { id: payload.id };
+    } else if (payload.user) {
+      req.user = payload.user;
+    } else {
+      // If neither format is found, token is invalid
+      return res.status(401).json({ msg: "Token payload is invalid" });
+    }
+    
     next();
   } catch (err) {
     console.error("Auth Middleware - Token verification failed:", err.message); // Log the error
@@ -40,4 +52,3 @@ const authMiddleware = async (req, res, next) => {
 };
 
 export default authMiddleware; // Changed to ES6 export to match routes/auth.js style
-
