@@ -1,5 +1,5 @@
-// Global balance component implementation
-// This module provides a consistent balance display across all pages
+// Global authentication and user data utilities
+// This module provides centralized functions for authentication and user data
 
 // API configuration
 const API_URL = 'https://hsit-backend.onrender.com';
@@ -43,6 +43,10 @@ async function fetchUserData() {
     }
     
     const userData = await response.json();
+    
+    // Log for debugging
+    console.log("User data from API:", userData);
+    
     return userData;
   } catch (error) {
     console.error('Error fetching user data:', error);
@@ -50,7 +54,7 @@ async function fetchUserData() {
   }
 }
 
-// Get user balance for specific currency
+// Fetch user balance for specific currency
 async function getUserBalance(currency = 'ubt') {
   const userData = await fetchUserData();
   if (!userData || !userData.balances) {
