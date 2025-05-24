@@ -20,5 +20,6 @@
 - [x] Verify MongoDB connection string includes correct database (hsit_app)
 - [x] Update server.js to ensure connection to correct database
 - [x] Update .env file with correct database in connection strings
-- [ ] Test login functionality
-- [ ] Commit and push changes to GitHub
+- [x] Test login functionality
+- [x] Commit changes to GitHub
+- [ ] Resolve git push conflict (remote has changes not present locally)
