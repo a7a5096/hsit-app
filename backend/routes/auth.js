@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 import csv from 'csv-parser';
+import { createObjectCsvWriter } from 'csv-writer';
+import twilio from 'twilio';
 
 // Models
 import User from '../models/User.js';
@@ -24,7 +26,8 @@ const sendVerificationCode = async (phoneNumber) => {
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
     
-    const client = require('twilio')(accountSid, authToken);
+    // Use ES module import for twilio
+    const client = twilio(accountSid, authToken);
     
     // Generate a random 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -190,8 +193,8 @@ const markAddressAsAssigned = async (currency, address) => {
       }
     }
     
-    // Write back to the CSV file
-    const csvWriter = require('csv-writer').createObjectCsvWriter({
+    // Write back to the CSV file using ES module import
+    const csvWriter = createObjectCsvWriter({
       path: csvPath,
       header: Object.keys(rows[0]).map(key => ({ id: key, title: key }))
     });
@@ -206,7 +209,7 @@ const markAddressAsAssigned = async (currency, address) => {
       assignedAt: new Date().toISOString()
     };
     
-    const usedCsvWriter = require('csv-writer').createObjectCsvWriter({
+    const usedCsvWriter = createObjectCsvWriter({
       path: usedCsvPath,
       header: [
         { id: 'address', title: 'address' },
