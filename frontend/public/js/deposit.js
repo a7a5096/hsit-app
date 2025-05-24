@@ -1,25 +1,17 @@
-// API configuration directly integrated into this file
-const API_URL = 'https://hsit-backend.onrender.com';
-
-// Script to handle deposit functionality
-document.addEventListener('DOMContentLoaded', function() {
-  // Check if user is logged in
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/index.html';
-    return;
-  }
-
-  // Get user data
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-  
-  // Elements
+document.addEventListener('DOMContentLoaded', () => {
+  // Get DOM elements
   const coinRadios = document.querySelectorAll('input[name="crypto"]');
-  const addressInput = document.getElementById('deposit-address');
-  const copyButton = document.getElementById('copy-button');
-  const selectedCoinName = document.getElementById('selected-coin-name');
-  const minDepositSpan = document.getElementById('min-deposit');
-  const qrCodeArea = document.getElementById('qr-code-area');
+  const addressInput = document.getElementById('cryptoAddress');
+  const copyButton = document.getElementById('copyAddressBtn');
+  const qrCodeArea = document.getElementById('qrCodeArea');
+  const selectedCoinName = document.getElementById('selectedCoinName');
+  const minDepositSpan = document.getElementById('minDeposit');
+  
+  // Get auth token from localStorage
+  const token = localStorage.getItem('token');
+  
+  // Define API base URL
+  const API_BASE_URL = window.location.hostname.includes('localhost') ? 'http://localhost:5000' : '';
   
   // Coin details
   const coinDetailsBase = {
@@ -44,7 +36,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const data = await response.json();
       return {
         btc_address: data.btcAddress,
-        eth_address: data.ethAddress
+        eth_address: data.ethAddress,
+        usdt_address: data.usdtAddress
       };
     } catch (error) {
       console.error('Error fetching addresses:', error);
@@ -98,8 +91,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (selectedValue === 'BTC') {
       currentAddress = window.userAddresses.btc_address;
-    } else if (selectedValue === 'ETH' || selectedValue === 'USDT') {
+    } else if (selectedValue === 'ETH') {
       currentAddress = window.userAddresses.eth_address;
+    } else if (selectedValue === 'USDT') {
+      currentAddress = window.userAddresses.usdt_address;
     }
     
     if (detailsBase && currentAddress) {
@@ -169,7 +164,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
-
 // Show message function
 function showMessage(message, type = 'info') {
   // Check if status message element exists
