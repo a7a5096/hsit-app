@@ -1,7 +1,6 @@
 // API configuration directly integrated into this file
 const API_URL = 'https://hsit-backend.onrender.com';
 
-
 // Script to handle AI products functionality
 document.addEventListener('DOMContentLoaded', function() {
   // Check if user is logged in
@@ -11,9 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // Get user data
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-  
   // Bot definitions
   const bots = [
     {
@@ -82,9 +78,56 @@ document.addEventListener('DOMContentLoaded', function() {
   const confirmPurchaseBtn = document.getElementById('confirmPurchase');
   const cancelPurchaseBtn = document.getElementById('cancelPurchase');
   
+  // Add UBT balance display to the page
+  const productsMain = document.querySelector('.products-main');
+  if (productsMain) {
+    const balanceDisplay = document.createElement('div');
+    balanceDisplay.className = 'balance-display';
+    balanceDisplay.innerHTML = `
+      <div class="balance-container">
+        <h3>Your UBT Balance: <span id="ubt-balance">Loading...</span></h3>
+      </div>
+    `;
+    productsMain.insertBefore(balanceDisplay, productsMain.firstChild);
+  }
+  
+  // Function to fetch user data from the server
+  async function fetchUserData() {
+    try {
+      const response = await fetch(`${API_URL}/api/auth`, {
+        headers: {
+          'x-auth-token': token
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+      
+      const userData = await response.json();
+      
+      // Update the balance display
+      updateBalanceDisplay(userData.balances?.ubt || 0);
+      
+      return userData;
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      showMessage('Failed to fetch user data. Please refresh the page.', 'error');
+      return null;
+    }
+  }
+  
+  // Function to update the balance display
+  function updateBalanceDisplay(balance) {
+    const balanceElement = document.getElementById('ubt-balance');
+    if (balanceElement) {
+      balanceElement.textContent = `${balance.toFixed(2)} UBT`;
+    }
+  }
+  
   // Add event listeners to buy buttons
   buyButtons.forEach(button => {
-    button.addEventListener('click', function(e) {
+    button.addEventListener('click', async function(e) {
       e.preventDefault();
       
       const botId = parseInt(this.getAttribute('data-bot-id'));
@@ -95,13 +138,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      // Show purchase modal
-      showPurchaseModal(bot);
+      // Fetch latest user data before showing purchase modal
+      const userData = await fetchUserData();
+      if (!userData) {
+        return;
+      }
+      
+      // Show purchase modal with latest data
+      showPurchaseModal(bot, userData);
     });
   });
   
   // Show purchase modal
-  function showPurchaseModal(bot) {
+  function showPurchaseModal(bot, userData) {
     if (!purchaseModal || !purchaseDetails) return;
     
     // Calculate total return
@@ -185,6 +234,10 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
+    // Update button state to show processing
+    confirmPurchaseBtn.disabled = true;
+    confirmPurchaseBtn.textContent = 'Processing purchase...';
+    
     try {
       // Make purchase API call
       const response = await fetch(`${API_URL}/api/bots/purchase`, {
@@ -202,11 +255,8 @@ document.addEventListener('DOMContentLoaded', function() {
         throw new Error(data.msg || 'Purchase failed');
       }
       
-      // Update user data
-      if (userData.balances) {
-        userData.balances.ubt = (userData.balances.ubt || 0) - bot.cost;
-      }
-      localStorage.setItem('userData', JSON.stringify(userData));
+      // Fetch updated user data from server
+      const updatedUserData = await fetchUserData();
       
       // Show success message
       showMessage(`Successfully purchased ${bot.name}!`, 'success');
@@ -214,10 +264,8 @@ document.addEventListener('DOMContentLoaded', function() {
       // Close modal
       purchaseModal.style.display = 'none';
       
-      // If this is the starter bot linked to dashboard promotion, update dashboard
-      if (botId === 1) {
-        localStorage.setItem('promotionClaimed', 'true');
-      }
+      // Reset button state
+      confirmPurchaseBtn.textContent = 'Confirm Purchase';
       
       // If this is the elite bot, show VIP message
       if (botId === 5) {
@@ -226,6 +274,10 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
       console.error('Error purchasing bot:', error);
       showMessage(error.message, 'error');
+      
+      // Reset button state
+      confirmPurchaseBtn.disabled = false;
+      confirmPurchaseBtn.textContent = 'Confirm Purchase';
     }
   });
   
@@ -287,7 +339,16 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Initialize
-  linkStarterBotToDashboardPromotion();
+  async function init() {
+    // Fetch user data on page load
+    await fetchUserData();
+    
+    // Link starter bot to dashboard promotion
+    linkStarterBotToDashboardPromotion();
+  }
+  
+  // Start initialization
+  init();
 });
 
 // Show message function
