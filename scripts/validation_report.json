@@ -1,0 +1,15 @@
+{
+  "totalUsers": 2,
+  "usersWithMissingAddresses": [],
+  "duplicateAddresses": {
+    "bitcoin": [],
+    "ethereum": [],
+    "usdt": []
+  },
+  "uniqueAddressCounts": {
+    "bitcoin": 2,
+    "ethereum": 2,
+    "usdt": 2
+  },
+  "isValid": true
+}
