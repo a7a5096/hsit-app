@@ -11,7 +11,7 @@
     <header>
         <h1>Spin to Win UBT!</h1>
         <nav>
-            <a href="index.html">Home</a>
+            <a href="dashboard.html">Home</a>
         </nav>
     </header>
     <main>
@@ -23,14 +23,21 @@
                 <input type="number" id="wager-amount" name="wager-amount" min="1" max="100" value="10">
             </div>
             <div class="wheel-container">
-                <div id="wheel"><div class="spinner"></div><div class="pointer">▼</div></div>
+                <div id="wheel">
+                    <!-- Segments will be added by JavaScript -->
+                    <!-- Center circle will be added by JavaScript -->
+                </div>
+                <div class="pointer">▼</div>
                 <button id="spin-button">Spin Now!</button>
             </div>
-            <div id="result-area">
+            <div id="result-area" class="result-area">
                 <h3>Result:</h3>
                 <p id="result-message"></p>
                 <p>Winnings: <span id="winnings-amount">0</span> UBT</p>
                 <p>New Balance: <span id="new-ubt-balance">N/A</span></p>
+            </div>
+            <div id="prize-legend">
+                <!-- Legend will be added by JavaScript -->
             </div>
         </section>
     </main>

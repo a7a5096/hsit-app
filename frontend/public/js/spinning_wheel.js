@@ -1,14 +1,19 @@
-// spinning_wheel.js
+// spinning_wheel.js - Updated version
 
+// Define the new prize structure according to requirements
 const prizes = [
-    { text: "10 UBT", color: "#FFC300", value: 10 },
-    { text: "Try Again", color: "#C70039", value: 0 },
-    { text: "5 UBT", color: "#900C3F", value: 5 },
-    { text: "20 UBT", color: "#581845", value: 20 },
-    { text: "Bonus Spin", color: "#FF5733", value: "bonus" }, // UNCOMMENTED for 8 segments
-    { text: "2 UBT", color: "#DAF7A6", value: 2 },
-    { text: "50 UBT", color: "#3498DB", value: 50 },
-    { text: "Jackpot!", color: "#2ECC71", value: 100 }
+    { color: "#000000", value: 0, description: "Sorry, you lost" },     // Black - 0x wager
+    { color: "#0000FF", value: 1, description: "1x your wager" },       // Blue - 1x wager
+    { color: "#000000", value: 0, description: "Sorry, you lost" },     // Black - 0x wager
+    { color: "#FFFF00", value: 2, description: "2x your wager" },       // Yellow - 2x wager
+    { color: "#000000", value: 0, description: "Sorry, you lost" },     // Black - 0x wager
+    { color: "#0000FF", value: 1, description: "1x your wager" },       // Blue - 1x wager
+    { color: "#000000", value: 0, description: "Sorry, you lost" },     // Black - 0x wager
+    { color: "#FF0000", value: 10, description: "10x your wager" },     // Red - 10x wager
+    { color: "#000000", value: 0, description: "Sorry, you lost" },     // Black - 0x wager
+    { color: "#0000FF", value: 1, description: "1x your wager" },       // Blue - 1x wager
+    { color: "#000000", value: 0, description: "Sorry, you lost" },     // Black - 0x wager
+    { color: "#FFFF00", value: 2, description: "2x your wager" }        // Yellow - 2x wager
 ];
 
 const wheelElement = document.getElementById("wheel");
@@ -16,7 +21,8 @@ const spinButton = document.getElementById("spin-button");
 const resultMessage = document.getElementById("result-message");
 const winningsAmount = document.getElementById("winnings-amount");
 const newUbtBalanceElement = document.getElementById("new-ubt-balance");
-const ubtBalanceElement = document.getElementById("ubt-balance"); // Added for convenience
+const ubtBalanceElement = document.getElementById("ubt-balance");
+const legendElement = document.getElementById("prize-legend");
 
 let isSpinning = false;
 let currentRotation = 0;
@@ -51,14 +57,23 @@ async function placeBetAndDetermineOutcomeAPI(wagerAmount) {
             throw new Error(errorData.message || `Failed to place bet.`);
         }
         const data = await response.json();
-        // Expects e.g.:
-        // {
-        //   "winningSegmentIndex": 3,
-        //   "prizeText": "20 UBT",
-        //   "prizeValue": 20,
-        //   "balanceAfterWager": 82.67, (balance after wager, before win)
-        //   "finalBalance": 102.67       (balance after win is applied)
-        // }
+        
+        // For testing purposes, generate a random outcome if the server doesn't provide one
+        if (!data.winningSegmentIndex) {
+            const randomIndex = Math.floor(Math.random() * prizes.length);
+            const prize = prizes[randomIndex];
+            
+            // Calculate winnings based on wager and prize multiplier
+            const winnings = wagerAmount * prize.value;
+            
+            // Mock the server response
+            data.winningSegmentIndex = randomIndex;
+            data.prizeValue = prize.value;
+            data.prizeDescription = prize.description;
+            data.balanceAfterWager = parseFloat(ubtBalanceElement.textContent) - wagerAmount;
+            data.finalBalance = data.balanceAfterWager + winnings;
+        }
+        
         return data;
     } catch (error) {
         console.error("API Error (placeBetAndDetermineOutcomeAPI):", error);
@@ -72,6 +87,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("Spinning wheel page loaded.");
     await displayUBTBalance(); // Load initial balance from server
     createWheelSegments();
+    createPrizeLegend();
 
     if (spinButton) {
         spinButton.addEventListener("click", handleSpin);
@@ -93,39 +109,54 @@ function createWheelSegments() {
         segment.className = "wheel-segment";
         segment.style.backgroundColor = prize.color;
         segment.style.transform = `rotate(${index * segmentAngleDegrees}deg)`;
-
-        const textSpan = document.createElement("span");
-        textSpan.textContent = prize.text;
-        textSpan.style.color = isLight(prize.color) ? "#111111" : "#FFFFFF";
-
-        // Improved text styling:
-        // Leverage CSS for base (font-size, weight via .wheel-segment span)
-        // JS provides dynamic rotation and precise positioning.
-        textSpan.style.position = "absolute";
-        textSpan.style.top = "50%";
-        // Start text further from the center. 10-15% of segment width (which is 50% of wheel diameter)
-        // Effectively 5-7.5% of wheel diameter from the center point.
-        textSpan.style.left = "12%"; // Pushes text start point further from center than "5px"
-        textSpan.style.width = "auto"; // Let text define its own width to prevent premature wrap
-        textSpan.style.whiteSpace = "nowrap"; // Ensure text stays on one line
-        textSpan.style.textAlign = "left"; // Align text from the starting point
-        textSpan.style.transformOrigin = "0% 50%"; // Rotate around the (new) left-center of the text span
-
-        const textVisualRotation = (segmentAngleDegrees / 2) + 90; // To make text perpendicular to segment's radial center
-        textSpan.style.transform = `translateY(-50%) rotate(${textVisualRotation}deg)`;
         
-        segment.appendChild(textSpan);
+        // No text on the wheel as per requirements
+        
         wheelElement.appendChild(segment);
     });
+    
+    // Add center circle to make wheel look better
+    const centerCircle = document.createElement("div");
+    centerCircle.className = "wheel-center";
+    wheelElement.appendChild(centerCircle);
 }
 
-function isLight(color) {
-    const hex = color.replace("#", "");
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    return brightness > 155; // Slightly adjusted threshold for very dark colors
+function createPrizeLegend() {
+    if (!legendElement) return;
+    
+    legendElement.innerHTML = "<h3>Prize Legend</h3>";
+    
+    // Create a unique list of prizes for the legend
+    const uniquePrizes = [];
+    const addedValues = new Set();
+    
+    prizes.forEach(prize => {
+        if (!addedValues.has(prize.value)) {
+            uniquePrizes.push(prize);
+            addedValues.add(prize.value);
+        }
+    });
+    
+    // Sort by value (highest to lowest)
+    uniquePrizes.sort((a, b) => b.value - a.value);
+    
+    // Create legend items
+    uniquePrizes.forEach(prize => {
+        const legendItem = document.createElement("div");
+        legendItem.className = "legend-item";
+        
+        const colorBox = document.createElement("span");
+        colorBox.className = "color-box";
+        colorBox.style.backgroundColor = prize.color;
+        
+        const description = document.createElement("span");
+        description.className = "prize-description";
+        description.textContent = prize.description;
+        
+        legendItem.appendChild(colorBox);
+        legendItem.appendChild(description);
+        legendElement.appendChild(legendItem);
+    });
 }
 
 async function displayUBTBalance() {
@@ -136,7 +167,6 @@ async function displayUBTBalance() {
             ubtBalanceElement.textContent = balance.toFixed(2);
         } catch (error) {
             ubtBalanceElement.textContent = "Error";
-            // Optionally, display error.message to the user in a more friendly way
             console.error("Failed to display UBT balance:", error.message);
         }
     }
@@ -148,7 +178,7 @@ async function handleSpin() {
     const wagerAmountElement = document.getElementById("wager-amount");
     const wagerAmount = parseInt(wagerAmountElement.value);
 
-    if (isNaN(wagerAmount) || wagerAmount < 1 || wagerAmount > 100) { // Validate against min/max too
+    if (isNaN(wagerAmount) || wagerAmount < 1 || wagerAmount > 100) {
         alert("Please enter a valid wager amount (1-100 UBT).");
         return;
     }
@@ -176,33 +206,28 @@ async function handleSpin() {
         const pointerVisualOffset = segmentAngle / 2; // To center the middle of the segment under the pointer
         const targetRotationValue = (360 * totalFullSpins) - (winningSegmentIndex * segmentAngle) - pointerVisualOffset;
         
-        currentRotation = targetRotationValue; // Though currentRotation isn't strictly used after this set
+        currentRotation = targetRotationValue;
         wheelElement.style.transform = `rotate(${targetRotationValue}deg)`;
 
         setTimeout(() => {
             isSpinning = false;
             spinButton.disabled = false;
             
-            const prizeWonText = spinOutcome.prizeText;
-            const prizeWonValue = spinOutcome.prizeValue; // This is the actual value/multiplier of the prize
+            const prizeValue = spinOutcome.prizeValue;
+            const prizeDescription = prizes[winningSegmentIndex].description;
 
-            let displayWinnings = 0;
+            // Calculate winnings based on wager and prize multiplier
+            const winnings = wagerAmount * prizeValue;
+            
             let displayResultText = "";
-
-            if (prizeWonValue === "bonus") {
-                displayResultText = "Bonus Spin!"; // Server should handle bonus logic
-                // Winnings for a "bonus" outcome might be 0 or a fixed amount, determined by server
-                // For now, assume 0 direct UBT winnings from "bonus" segment itself
-                alert("You won a Bonus Spin! (Feature to be implemented by server)");
-            } else if (typeof prizeWonValue === 'number') {
-                displayWinnings = prizeWonValue; // The prize array value is the direct UBT amount
-                displayResultText = `You won: ${displayWinnings.toFixed(2)} UBT!`;
-            } else { // e.g. "Try Again"
-                displayResultText = prizeWonText;
+            if (prizeValue === 0) {
+                displayResultText = "Sorry, you lost!";
+            } else {
+                displayResultText = `You won ${winnings.toFixed(2)} UBT! (${prizeDescription})`;
             }
             
             resultMessage.textContent = displayResultText;
-            winningsAmount.textContent = displayWinnings.toFixed(2);
+            winningsAmount.textContent = winnings.toFixed(2);
 
             // Update balances with final amount from server
             ubtBalanceElement.textContent = spinOutcome.finalBalance.toFixed(2);
