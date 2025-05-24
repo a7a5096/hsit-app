@@ -13,6 +13,7 @@ import transactionsRoutes from './routes/transactions.js'; // Import transaction
 import botsRoutes from './routes/bots.js'; // Import bots routes
 import usersRoutes from './routes/users.js'; // Import users routes with SMS verification
 import teamRoutes from './routes/team.js'; // Import team routes for team page
+import depositPageRoutes from './routes/depositPage.js'; // Import server-side deposit page routes
 
 // Load environment variables
 dotenv.config();
@@ -55,6 +56,7 @@ app.use('/api/transactions', transactionsRoutes); // Use transactions routes
 app.use('/api/bots', botsRoutes); // Use bots routes
 app.use('/api/users', usersRoutes); // Use users routes with SMS verification
 app.use('/api/team', teamRoutes); // Use team routes for team page
+app.use('/deposit', depositPageRoutes); // Use server-side deposit page routes
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
