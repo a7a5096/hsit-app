@@ -1,15 +1,19 @@
+// Refactored AI Products page script
+// Uses centralized auth_utils.js for all user data and balance operations
+
+import { requireAuth, fetchUserData, updateGlobalBalanceDisplay, initGlobalBalanceDisplay } from './auth_utils.js';
+
 // API configuration directly integrated into this file
 const API_URL = 'https://hsit-backend.onrender.com';
 
 // Script to handle AI products functionality
-document.addEventListener('DOMContentLoaded', function() {
-  // Check if user is logged in
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/index.html';
-    return;
-  }
+document.addEventListener('DOMContentLoaded', async function() {
+  // Check if user is logged in and redirect if not
+  if (!requireAuth()) return;
 
+  // Initialize global balance display
+  await initGlobalBalanceDisplay();
+  
   // Bot definitions
   const bots = [
     {
@@ -89,40 +93,23 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     `;
     productsMain.insertBefore(balanceDisplay, productsMain.firstChild);
-  }
-  
-  // Function to fetch user data from the server
-  async function fetchUserData() {
-    try {
-      const response = await fetch(`${API_URL}/api/auth`, {
-        headers: {
-          'x-auth-token': token
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-      
-      const userData = await response.json();
-      
-      // Update the balance display
-      updateBalanceDisplay(userData.balances?.ubt || 0);
-      
-      return userData;
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      showMessage('Failed to fetch user data. Please refresh the page.', 'error');
-      return null;
-    }
+    
+    // Update the balance display
+    updateBalanceDisplay();
   }
   
   // Function to update the balance display
-  function updateBalanceDisplay(balance) {
+  async function updateBalanceDisplay() {
+    const userData = await fetchUserData();
     const balanceElement = document.getElementById('ubt-balance');
-    if (balanceElement) {
-      balanceElement.textContent = `${balance.toFixed(2)} UBT`;
+    if (balanceElement && userData && userData.balances) {
+      balanceElement.textContent = `${userData.balances.ubt.toFixed(2)} UBT`;
+    } else if (balanceElement) {
+      balanceElement.textContent = 'Error loading balance';
     }
+    
+    // Also update global balance
+    updateGlobalBalanceDisplay();
   }
   
   // Add event listeners to buy buttons
@@ -141,6 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Fetch latest user data before showing purchase modal
       const userData = await fetchUserData();
       if (!userData) {
+        showMessage('Failed to fetch user data. Please refresh the page.', 'error');
         return;
       }
       
@@ -239,6 +227,9 @@ document.addEventListener('DOMContentLoaded', function() {
     confirmPurchaseBtn.textContent = 'Processing purchase...';
     
     try {
+      // Get auth token
+      const token = localStorage.getItem('token');
+      
       // Make purchase API call
       const response = await fetch(`${API_URL}/api/bots/purchase`, {
         method: 'POST',
@@ -255,8 +246,8 @@ document.addEventListener('DOMContentLoaded', function() {
         throw new Error(data.msg || 'Purchase failed');
       }
       
-      // Fetch updated user data from server
-      const updatedUserData = await fetchUserData();
+      // Update balance displays with fresh data
+      await updateBalanceDisplay();
       
       // Show success message
       showMessage(`Successfully purchased ${bot.name}!`, 'success');
@@ -339,16 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Initialize
-  async function init() {
-    // Fetch user data on page load
-    await fetchUserData();
-    
-    // Link starter bot to dashboard promotion
-    linkStarterBotToDashboardPromotion();
-  }
-  
-  // Start initialization
-  init();
+  linkStarterBotToDashboardPromotion();
 });
 
 // Show message function

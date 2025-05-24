@@ -1,264 +1,247 @@
+// Refactored UBT Exchange page script
+// Uses centralized auth_utils.js for all user data and balance operations
+
+import { requireAuth, fetchUserData, updateGlobalBalanceDisplay, initGlobalBalanceDisplay } from './auth_utils.js';
+
 // API configuration directly integrated into this file
 const API_URL = 'https://hsit-backend.onrender.com';
 
+document.addEventListener('DOMContentLoaded', async function() {
+  // Check if user is logged in and redirect if not
+  if (!requireAuth()) return;
 
-// Script to handle Un-Buyable Token exchange functionality
-document.addEventListener('DOMContentLoaded', function() {
-  // Check if user is logged in
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/index.html';
-    return;
-  }
-
-  // Get user data
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+  // Initialize global balance display
+  await initGlobalBalanceDisplay();
   
-  // Create Un-Buyable Token exchange section
-  const mainElement = document.querySelector('.page-main');
-  if (mainElement) {
-    // Create Un-Buyable Token exchange section
-    const exchangeSection = document.createElement('section');
-    exchangeSection.className = 'content-section card-style';
-    exchangeSection.innerHTML = `
-      <h2>Un-Buyable Token Exchange</h2>
-      <div class="exchange-info">
-        <p>Exchange your crypto for Un-Buyable Tokens or convert Un-Buyable Token back to USDT.</p>
-        <div class="exchange-rates">
-          <div class="rate-item">
-            <span class="rate-label">Current Buy Rate:</span>
-            <span class="rate-value" id="buy-rate">Loading...</span>
-          </div>
-          <div class="rate-item">
-            <span class="rate-label">Current Sell Rate:</span>
-            <span class="rate-value" id="sell-rate">Loading...</span>
-          </div>
-        </div>
-      </div>
-      <div class="exchange-form">
-        <div class="form-group">
-          <label for="exchange-type">Exchange Type</label>
-          <select id="exchange-type">
-            <option value="buy">Buy Un-Buyable Token</option>
-            <option value="sell">Sell Un-Buyable Token</option>
-          </select>
-        </div>
-        <div id="buy-options">
-          <div class="form-group">
-            <label for="source-currency">Source Currency</label>
-            <select id="source-currency">
-              <option value="USDT">USDT</option>
-              <option value="BTC">BTC</option>
-              <option value="ETH">ETH</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="exchange-amount">Amount</label>
-          <input type="number" id="exchange-amount" step="0.01" min="0" placeholder="0.00">
-          <span id="max-amount"></span>
-        </div>
-        <div class="form-group">
-          <label>You will receive:</label>
-          <div class="exchange-result" id="exchange-result">0.00 Un-Buyable Token</div>
-        </div>
-        <button class="btn btn-primary" id="execute-exchange">Execute Exchange</button>
-      </div>
-    `;
-    
-    // Add to main
-    mainElement.appendChild(exchangeSection);
-    
-    // Get elements
-    const exchangeTypeSelect = document.getElementById('exchange-type');
-    const sourceCurrencySelect = document.getElementById('source-currency');
-    const buyOptionsDiv = document.getElementById('buy-options');
-    const amountInput = document.getElementById('exchange-amount');
-    const maxAmountSpan = document.getElementById('max-amount');
-    const resultDiv = document.getElementById('exchange-result');
-    const executeButton = document.getElementById('execute-exchange');
-    const buyRateSpan = document.getElementById('buy-rate');
-    const sellRateSpan = document.getElementById('sell-rate');
-    
-    // Fetch exchange rates
-    async function fetchExchangeRates() {
-      try {
-        const response = await fetch(`${API_URL}/api/transactions/exchange-rates`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch exchange rates');
-        }
-        
-        const rates = await response.json();
-        
-        // Update UI
-        buyRateSpan.textContent = `${rates.buyRate.toFixed(4)} USDT per Un-Buyable Token`;
-        sellRateSpan.textContent = `${rates.sellRate.toFixed(4)} USDT per Un-Buyable Token`;
-        
-        // Store rates
-        window.exchangeRates = rates;
-        
-        return rates;
-      } catch (error) {
-        console.error('Error fetching exchange rates:', error);
-        showMessage('Error loading exchange rates. Please try again later.', 'error');
-        return null;
+  // Elements
+  const exchangeForm = document.getElementById('exchange-form');
+  const fromCurrencySelect = document.getElementById('from-currency');
+  const toCurrencySelect = document.getElementById('to-currency');
+  const amountInput = document.getElementById('exchange-amount');
+  const estimatedOutput = document.getElementById('estimated-output');
+  const exchangeRateDisplay = document.getElementById('exchange-rate');
+  const balanceDisplay = document.getElementById('balance-display');
+  const submitButton = document.getElementById('submit-exchange');
+  
+  // Exchange rates (in a real app, these would be fetched from an API)
+  let exchangeRates = {
+    buyRate: 0.01,  // Rate to buy UBT with USDT (1 USDT = 100 UBT)
+    sellRate: 0.008 // Rate to sell UBT for USDT (1 UBT = 0.008 USDT)
+  };
+  
+  // Fetch exchange rates from API
+  async function fetchExchangeRates() {
+    try {
+      const response = await fetch(`${API_URL}/api/transactions/exchange-rates`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch exchange rates');
       }
+      
+      const data = await response.json();
+      exchangeRates = data;
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching exchange rates:', error);
+      showMessage('Error loading exchange rates. Using default values.', 'error');
+      return exchangeRates;
     }
-    
-    // Fetch user data
-    async function fetchUserData() {
-      try {
-        const response = await fetch(`${API_URL}/api/auth`, {
-          headers: {
-            'x-auth-token': token
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data');
-        }
-        
-        const userData = await response.json();
-        
-        // Store user data
-        localStorage.setItem('userData', JSON.stringify(userData));
-        
-        // Update max amount
-        updateMaxAmount();
-        
-        return userData;
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        showMessage('Error loading your account data. Please try again later.', 'error');
-        return null;
-      }
-    }
-    
-    // Update max amount based on selected currency
-    function updateMaxAmount() {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const balances = userData.balances || {};
-      
-      let currency;
-      if (exchangeTypeSelect.value === 'buy') {
-        currency = sourceCurrencySelect.value;
-      } else {
-        currency = 'Un-Buyable Token';
-      }
-      
-      const balance = balances[currency.toLowerCase()] || 0;
-      maxAmountSpan.textContent = `Max: ${balance}`;
-      amountInput.max = balance;
-    }
-    
-    // Calculate exchange result
-    function calculateExchangeResult() {
-      if (!window.exchangeRates) return;
-      
-      const amount = parseFloat(amountInput.value) || 0;
-      const exchangeType = exchangeTypeSelect.value;
-      
-      let result = 0;
-      if (exchangeType === 'buy') {
-        // Buy Un-Buyable Token with crypto
-        result = amount / window.exchangeRates.buyRate;
-        resultDiv.textContent = `${result.toFixed(2)} Un-Buyable Token`;
-      } else {
-        // Sell Un-Buyable Token for USDT
-        result = amount * window.exchangeRates.sellRate;
-        resultDiv.textContent = `${result.toFixed(2)} USDT`;
-      }
-    }
-    
-    // Execute exchange
-    async function executeExchange() {
-      const amount = parseFloat(amountInput.value) || 0;
-      if (amount <= 0) {
-        showMessage('Please enter a valid amount', 'error');
-        return;
-      }
-      
-      const exchangeType = exchangeTypeSelect.value;
-      
-      try {
-        let response;
-        
-        if (exchangeType === 'buy') {
-          // Buy Un-Buyable Token with crypto
-          response = await fetch(`${API_URL}/api/transactions/buy-ubt`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-auth-token': token
-            },
-            body: JSON.stringify({
-              sourceCurrency: sourceCurrencySelect.value,
-              amount
-            })
-          });
-        } else {
-          // Sell Un-Buyable Token for USDT
-          response = await fetch(`${API_URL}/api/transactions/withdraw`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-auth-token': token
-            },
-            body: JSON.stringify({
-              currency: 'Un-Buyable Token',
-              amount,
-              walletAddress: 'INTERNAL_EXCHANGE' // Special marker for internal exchange
-            })
-          });
-        }
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.msg || 'Exchange failed');
-        }
-        
-        showMessage(exchangeType === 'buy' ? 'Un-Buyable Token purchase successful!' : 'Un-Buyable Token exchange request submitted!', 'success');
-        
-        // Reset form
-        amountInput.value = '';
-        resultDiv.textContent = '0.00 ' + (exchangeType === 'buy' ? 'Un-Buyable Token' : 'USDT');
-        
-        // Refresh user data
-        fetchUserData();
-      } catch (error) {
-        showMessage(error.message, 'error');
-      }
-    }
-    
-    // Add event listeners
-    exchangeTypeSelect.addEventListener('change', function() {
-      if (this.value === 'buy') {
-        buyOptionsDiv.style.display = 'block';
-        resultDiv.textContent = '0.00 Un-Buyable Token';
-      } else {
-        buyOptionsDiv.style.display = 'none';
-        resultDiv.textContent = '0.00 USDT';
-      }
-      
-      updateMaxAmount();
-      calculateExchangeResult();
-    });
-    
-    sourceCurrencySelect.addEventListener('change', function() {
-      updateMaxAmount();
-      calculateExchangeResult();
-    });
-    
-    amountInput.addEventListener('input', calculateExchangeResult);
-    
-    executeButton.addEventListener('click', executeExchange);
-    
-    // Initialize
-    fetchExchangeRates();
-    fetchUserData();
   }
+  
+  // Update balance display
+  async function updateBalanceDisplay() {
+    try {
+      const userData = await fetchUserData();
+      
+      if (!userData || !userData.balances) {
+        throw new Error('Failed to fetch user balances');
+      }
+      
+      const balances = userData.balances;
+      
+      // Update balance display
+      balanceDisplay.innerHTML = `
+        <div class="balance-item">
+          <span class="balance-label">USDT:</span>
+          <span class="balance-value">${balances.usdt?.toFixed(2) || '0.00'}</span>
+        </div>
+        <div class="balance-item">
+          <span class="balance-label">UBT:</span>
+          <span class="balance-value">${balances.ubt?.toFixed(2) || '0.00'}</span>
+        </div>
+      `;
+      
+      // Also update global balance
+      updateGlobalBalanceDisplay();
+      
+      return balances;
+    } catch (error) {
+      console.error('Error updating balance display:', error);
+      balanceDisplay.innerHTML = `
+        <div class="balance-item">
+          <span class="balance-label">Error loading balances</span>
+        </div>
+      `;
+      return null;
+    }
+  }
+  
+  // Calculate exchange output
+  function calculateExchangeOutput(fromCurrency, toCurrency, amount) {
+    if (fromCurrency === 'USDT' && toCurrency === 'UBT') {
+      // Buying UBT with USDT
+      return amount / exchangeRates.buyRate;
+    } else if (fromCurrency === 'UBT' && toCurrency === 'USDT') {
+      // Selling UBT for USDT
+      return amount * exchangeRates.sellRate;
+    } else {
+      // Same currency, no exchange
+      return amount;
+    }
+  }
+  
+  // Update exchange rate display
+  function updateExchangeRateDisplay(fromCurrency, toCurrency) {
+    if (fromCurrency === 'USDT' && toCurrency === 'UBT') {
+      // Buying UBT with USDT
+      exchangeRateDisplay.textContent = `1 USDT = ${(1 / exchangeRates.buyRate).toFixed(2)} UBT`;
+    } else if (fromCurrency === 'UBT' && toCurrency === 'USDT') {
+      // Selling UBT for USDT
+      exchangeRateDisplay.textContent = `1 UBT = ${exchangeRates.sellRate.toFixed(4)} USDT`;
+    } else {
+      // Same currency, no exchange
+      exchangeRateDisplay.textContent = '1:1';
+    }
+  }
+  
+  // Update estimated output
+  function updateEstimatedOutput() {
+    const fromCurrency = fromCurrencySelect.value;
+    const toCurrency = toCurrencySelect.value;
+    const amount = parseFloat(amountInput.value) || 0;
+    
+    const output = calculateExchangeOutput(fromCurrency, toCurrency, amount);
+    estimatedOutput.textContent = `${output.toFixed(2)} ${toCurrency}`;
+    
+    // Update exchange rate display
+    updateExchangeRateDisplay(fromCurrency, toCurrency);
+  }
+  
+  // Handle form submission
+  async function handleExchangeSubmit(e) {
+    e.preventDefault();
+    
+    const fromCurrency = fromCurrencySelect.value;
+    const toCurrency = toCurrencySelect.value;
+    const amount = parseFloat(amountInput.value) || 0;
+    
+    if (amount <= 0) {
+      showMessage('Please enter a valid amount', 'error');
+      return;
+    }
+    
+    if (fromCurrency === toCurrency) {
+      showMessage('Cannot exchange to the same currency', 'error');
+      return;
+    }
+    
+    // Disable submit button
+    submitButton.disabled = true;
+    submitButton.textContent = 'Processing...';
+    
+    try {
+      // Get user balances
+      const userData = await fetchUserData();
+      const balances = userData?.balances || {};
+      
+      // Check if user has enough balance
+      const fromBalance = balances[fromCurrency.toLowerCase()] || 0;
+      if (fromBalance < amount) {
+        throw new Error(`Insufficient ${fromCurrency} balance`);
+      }
+      
+      // Calculate output amount
+      const outputAmount = calculateExchangeOutput(fromCurrency, toCurrency, amount);
+      
+      // Make exchange API call
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/transactions/exchange`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({
+          fromCurrency,
+          toCurrency,
+          amount,
+          expectedOutput: outputAmount
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.msg || 'Exchange failed');
+      }
+      
+      // Show success message
+      showMessage(`Successfully exchanged ${amount} ${fromCurrency} to ${outputAmount.toFixed(2)} ${toCurrency}`, 'success');
+      
+      // Update balance display
+      await updateBalanceDisplay();
+      
+      // Reset form
+      amountInput.value = '';
+      estimatedOutput.textContent = '0.00 ' + toCurrency;
+      
+    } catch (error) {
+      console.error('Error processing exchange:', error);
+      showMessage(error.message, 'error');
+    } finally {
+      // Re-enable submit button
+      submitButton.disabled = false;
+      submitButton.textContent = 'Exchange';
+    }
+  }
+  
+  // Add event listeners
+  fromCurrencySelect.addEventListener('change', function() {
+    // Update to currency options
+    const fromCurrency = this.value;
+    
+    // Clear to currency options
+    toCurrencySelect.innerHTML = '';
+    
+    // Add options based on from currency
+    if (fromCurrency === 'USDT') {
+      toCurrencySelect.innerHTML = '<option value="UBT">UBT</option>';
+    } else if (fromCurrency === 'UBT') {
+      toCurrencySelect.innerHTML = '<option value="USDT">USDT</option>';
+    }
+    
+    // Update estimated output
+    updateEstimatedOutput();
+  });
+  
+  toCurrencySelect.addEventListener('change', updateEstimatedOutput);
+  amountInput.addEventListener('input', updateEstimatedOutput);
+  exchangeForm.addEventListener('submit', handleExchangeSubmit);
+  
+  // Initialize
+  async function initialize() {
+    // Fetch exchange rates
+    await fetchExchangeRates();
+    
+    // Update balance display
+    await updateBalanceDisplay();
+    
+    // Initialize estimated output
+    updateEstimatedOutput();
+  }
+  
+  initialize();
 });
 
 // Show message function
