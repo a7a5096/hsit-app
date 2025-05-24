@@ -43,6 +43,26 @@ const UserSchema = new mongoose.Schema({
       default: ''
     }
   },
+  balances: {
+    ubt: {
+      type: Number,
+      default: 0
+    }
+  },
+  dailySignIn: {
+    lastSignInDate: {
+      type: Date,
+      default: null
+    },
+    consecutiveDays: {
+      type: Number,
+      default: 0
+    },
+    totalRewards: {
+      type: Number,
+      default: 0
+    }
+  },
   cryptoBalance: {
     type: Number,
     default: 0
