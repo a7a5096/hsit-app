@@ -1,37 +1,28 @@
+// Refactored Transactions page script
+// Uses centralized auth_utils.js for all user data and balance operations
+
+import { requireAuth, fetchUserData, updateGlobalBalanceDisplay, initGlobalBalanceDisplay } from './auth_utils.js';
+
 // API configuration directly integrated into this file
 const API_URL = 'https://hsit-backend.onrender.com';
 
+document.addEventListener('DOMContentLoaded', async function() {
+  // Check if user is logged in and redirect if not
+  if (!requireAuth()) return;
 
-// Script to handle transaction history functionality
-document.addEventListener('DOMContentLoaded', function() {
-  // Check if user is logged in
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/index.html';
-    return;
-  }
-
-  // Elements
-  const transactionsList = document.createElement('div');
-  transactionsList.className = 'transactions-list';
+  // Initialize global balance display
+  await initGlobalBalanceDisplay();
   
-  // Add to page
-  const mainElement = document.querySelector('.page-main');
-  if (mainElement) {
-    // Create transactions section
-    const transactionsSection = document.createElement('section');
-    transactionsSection.className = 'content-section card-style';
-    transactionsSection.innerHTML = '<h2>Transaction History</h2>';
-    transactionsSection.appendChild(transactionsList);
-    
-    // Add to main
-    mainElement.appendChild(transactionsSection);
-  }
+  // Elements
+  const transactionsList = document.getElementById('transactions-list');
+  const filterSelect = document.getElementById('filter-transactions');
+  const noTransactionsMessage = document.getElementById('no-transactions-message');
   
   // Fetch transactions
-  async function fetchTransactions() {
+  async function fetchTransactions(filter = 'all') {
     try {
-      const response = await fetch('${API_BASE_URL}/api/transactions', {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/transactions?filter=${filter}`, {
         headers: {
           'x-auth-token': token
         }
@@ -41,89 +32,122 @@ document.addEventListener('DOMContentLoaded', function() {
         throw new Error('Failed to fetch transactions');
       }
       
-      const transactions = await response.json();
-      displayTransactions(transactions);
+      const data = await response.json();
+      return data.transactions;
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      showMessage('Error loading your transactions. Please try again later.', 'error');
+      showMessage('Error loading transactions. Please try again later.', 'error');
+      return [];
     }
   }
   
-  // Display transactions
-  function displayTransactions(transactions) {
-    if (!transactions || !transactions.length) {
-      transactionsList.innerHTML = '<p class="info-text">No transactions found.</p>';
-      return;
-    }
+  // Update transactions UI
+  function updateTransactionsUI(transactions) {
+    if (!transactionsList) return;
     
     // Clear existing transactions
     transactionsList.innerHTML = '';
     
-    // Create table
-    const table = document.createElement('table');
-    table.className = 'transactions-table';
+    // Show/hide no transactions message
+    if (transactions.length === 0) {
+      if (noTransactionsMessage) {
+        noTransactionsMessage.style.display = 'block';
+      }
+      return;
+    } else if (noTransactionsMessage) {
+      noTransactionsMessage.style.display = 'none';
+    }
     
-    // Add header
-    const thead = document.createElement('thead');
-    thead.innerHTML = `
-      <tr>
-        <th>Date</th>
-        <th>Type</th>
-        <th>Currency</th>
-        <th>Amount</th>
-        <th>Status</th>
-      </tr>
-    `;
-    table.appendChild(thead);
-    
-    // Add body
-    const tbody = document.createElement('tbody');
-    
-    // Sort transactions by date (newest first)
-    transactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    // Add each transaction
+    // Add each transaction to the list
     transactions.forEach(transaction => {
-      const tr = document.createElement('tr');
+      const transactionItem = document.createElement('li');
+      transactionItem.className = `transaction-item ${transaction.type.toLowerCase()}`;
       
       // Format date
-      const date = new Date(transaction.createdAt);
-      const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+      const date = new Date(transaction.date);
+      const formattedDate = date.toLocaleDateString();
+      const formattedTime = date.toLocaleTimeString();
       
-      // Format amount with sign
-      let amountWithSign = transaction.amount;
-      if (transaction.type === 'withdrawal' || 
-          (transaction.type === 'exchange' && transaction.amount < 0)) {
-        amountWithSign = transaction.amount; // Already negative
-      } else if (transaction.type === 'deposit' || transaction.type === 'bonus') {
-        amountWithSign = `+${transaction.amount}`;
+      // Determine transaction icon and sign
+      let icon = '';
+      let sign = '';
+      
+      switch (transaction.type) {
+        case 'DEPOSIT':
+          icon = 'arrow_downward';
+          sign = '+';
+          break;
+        case 'WITHDRAWAL':
+          icon = 'arrow_upward';
+          sign = '-';
+          break;
+        case 'EXCHANGE':
+          icon = 'swap_horiz';
+          sign = transaction.isReceiving ? '+' : '-';
+          break;
+        case 'BOT_PURCHASE':
+          icon = 'shopping_cart';
+          sign = '-';
+          break;
+        case 'BOT_REWARD':
+          icon = 'paid';
+          sign = '+';
+          break;
+        case 'REFERRAL_BONUS':
+          icon = 'people';
+          sign = '+';
+          break;
+        case 'DAILY_SIGNIN':
+          icon = 'calendar_today';
+          sign = '+';
+          break;
+        default:
+          icon = 'receipt_long';
+          sign = transaction.amount >= 0 ? '+' : '';
       }
       
-      // Set row class based on status
-      tr.className = `transaction-${transaction.status}`;
-      
-      tr.innerHTML = `
-        <td>${formattedDate}</td>
-        <td>${capitalizeFirstLetter(transaction.type)}</td>
-        <td>${transaction.currency}</td>
-        <td class="${transaction.amount < 0 ? 'negative' : 'positive'}">${amountWithSign}</td>
-        <td>${capitalizeFirstLetter(transaction.status)}</td>
+      transactionItem.innerHTML = `
+        <div class="transaction-icon">
+          <span class="material-icons">${icon}</span>
+        </div>
+        <div class="transaction-details">
+          <div class="transaction-title">${transaction.description}</div>
+          <div class="transaction-date">${formattedDate} at ${formattedTime}</div>
+        </div>
+        <div class="transaction-amount ${transaction.amount >= 0 ? 'positive' : 'negative'}">
+          ${sign}${Math.abs(transaction.amount).toFixed(2)} ${transaction.currency}
+        </div>
       `;
       
-      tbody.appendChild(tr);
+      transactionsList.appendChild(transactionItem);
     });
-    
-    table.appendChild(tbody);
-    transactionsList.appendChild(table);
   }
   
-  // Helper function to capitalize first letter
-  function capitalizeFirstLetter(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
+  // Handle filter change
+  async function handleFilterChange() {
+    const filter = filterSelect.value;
+    const transactions = await fetchTransactions(filter);
+    updateTransactionsUI(transactions);
+  }
+  
+  // Add event listeners
+  if (filterSelect) {
+    filterSelect.addEventListener('change', handleFilterChange);
   }
   
   // Initialize
-  fetchTransactions();
+  async function initialize() {
+    // Fetch initial transactions
+    const transactions = await fetchTransactions('all');
+    
+    // Update transactions UI
+    updateTransactionsUI(transactions);
+    
+    // Update user data and balance display
+    await updateGlobalBalanceDisplay();
+  }
+  
+  initialize();
 });
 
 // Show message function

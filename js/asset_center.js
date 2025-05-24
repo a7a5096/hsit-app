@@ -1,17 +1,18 @@
+// Refactored Asset Center page script
+// Uses centralized auth_utils.js for all user data and balance operations
+
+import { requireAuth, fetchUserData, updateGlobalBalanceDisplay, initGlobalBalanceDisplay } from './auth_utils.js';
+
 // API configuration directly integrated into this file
 const API_URL = 'https://hsit-backend.onrender.com';
 
 // Script to handle asset center functionality
-document.addEventListener('DOMContentLoaded', function() {
-  // Check if user is logged in
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/index.html';
-    return;
-  }
+document.addEventListener('DOMContentLoaded', async function() {
+  // Check if user is logged in and redirect if not
+  if (!requireAuth()) return;
 
-  // Get user data
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+  // Initialize global balance display
+  await initGlobalBalanceDisplay();
   
   // Elements
   const totalValueElement = document.querySelector('.total-value');
@@ -35,30 +36,24 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Fetch user balances, transactions, and purchased bots
-  async function fetchUserData() {
+  async function fetchAssetData() {
     try {
-      // Fetch user data
-      const userResponse = await fetch('${API_BASE_URL}/api/auth', {
-        headers: {
-          'x-auth-token': token
-        }
-      });
-      
-      if (!userResponse.ok) {
+      // Fetch user data from centralized utility
+      const userData = await fetchUserData();
+      if (!userData) {
         throw new Error('Failed to fetch user data');
       }
       
-      const userData = await userResponse.json();
-      
       // Fetch exchange rates
-      const ratesResponse = await fetch('${API_BASE_URL}/api/transactions/exchange-rates');
+      const ratesResponse = await fetch(`${API_URL}/api/transactions/exchange-rates`);
       const rates = await ratesResponse.json();
       
       // Update UI with user balances
       updateBalances(userData.balances, rates);
       
       // Fetch purchased bots
-      const botsResponse = await fetch('${API_BASE_URL}/api/bots/purchased', {
+      const token = localStorage.getItem('token');
+      const botsResponse = await fetch(`${API_URL}/api/bots/purchased`, {
         headers: {
           'x-auth-token': token
         }
@@ -73,12 +68,9 @@ document.addEventListener('DOMContentLoaded', function() {
       // Update UI with purchased bots
       updatePurchasedBots(botsData.bots);
       
-      // Store updated user data
-      localStorage.setItem('userData', JSON.stringify(userData));
-      
       return userData;
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error fetching asset data:', error);
       showMessage('Error loading your account data. Please try again later.', 'error');
       
       // For demo purposes, create mock data if API fails
@@ -140,6 +132,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (totalValueElement) {
       totalValueElement.textContent = `$ ${totalValue.toFixed(2)} USD`;
     }
+    
+    // Also update global balance
+    updateGlobalBalanceDisplay();
   }
   
   // Update purchased bots UI
@@ -419,11 +414,12 @@ document.addEventListener('DOMContentLoaded', function() {
     modal.style.display = 'flex';
     
     // Handle currency change
-    currencySelect.addEventListener('change', () => {
-      const currency = currencySelect.value;
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const balances = userData.balances || {};
-      const balance = balances[currency.toLowerCase()] || 0;
+    currencySelect.addEventListener('change', async () => {
+      const currency = currencySelect.value.toLowerCase();
+      // Get fresh balance data from API
+      const userData = await fetchUserData();
+      const balances = userData?.balances || {};
+      const balance = balances[currency] || 0;
       
       amountInput.max = balance;
       amountInput.placeholder = `Max: ${balance}`;
@@ -449,7 +445,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       try {
-        const response = await fetch('${API_BASE_URL}/api/transactions/withdraw', {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/transactions/withdraw`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -472,7 +469,9 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.remove();
         
         // Refresh user data
-        fetchUserData();
+        await fetchAssetData();
+        // Update global balance
+        await updateGlobalBalanceDisplay();
       } catch (error) {
         showMessage(error.message, 'error');
       }
@@ -485,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Initialize
-  fetchUserData();
+  fetchAssetData();
 });
 
 // Show message function
