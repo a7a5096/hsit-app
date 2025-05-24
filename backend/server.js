@@ -104,9 +104,12 @@ app.use((req, res) => {
 
 // Connect to MongoDB
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb+srv://a7a5096:MM00nngg2@cluster0hsit.xelat83.mongodb.net/hsit_app?retryWrites=true&w=majority&appName=Cluster0HSIT';
+// Ensure database name is explicitly set to hsit_app
+const dbURI = MONGO_URI.includes('/hsit_app?') ? MONGO_URI : MONGO_URI.replace('/?', '/hsit_app?');
 const PORT = process.env.PORT || 5000;
 
-mongoose.connect(MONGO_URI)
+console.log('Connecting to MongoDB with URI:', dbURI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')); // Log sanitized URI
+mongoose.connect(dbURI)
   .then(() => {
     console.log('MongoDB Connected Successfully');
     app.listen(PORT, '0.0.0.0', () => {
