@@ -1,7 +1,7 @@
 // Refactored Asset Center page script
 // Uses centralized auth_utils.js for all user data and balance operations
 
-import { requireAuth, fetchUserData, updateGlobalBalanceDisplay, initGlobalBalanceDisplay } from './auth_utils.js';
+import { requireAuth, fetchUserData, updateGlobalBalanceDisplay, initGlobalBalanceDisplay, getAuthToken } from './auth_utils.js';
 
 // API configuration directly integrated into this file
 const API_URL = 'https://hsit-backend.onrender.com';
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       updateBalances(userData.balances, rates);
       
       // Fetch purchased bots
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const botsResponse = await fetch(`${API_URL}/api/bots/purchased`, {
         headers: {
           'x-auth-token': token
@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
       
       try {
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         const response = await fetch(`${API_URL}/api/transactions/withdraw`, {
           method: 'POST',
           headers: {
@@ -481,34 +481,53 @@ document.addEventListener('DOMContentLoaded', async function() {
     cancelBtn.addEventListener('click', () => {
       modal.remove();
     });
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+  }
+  
+  // Show message function
+  function showMessage(message, type = 'info') {
+    // Check if status message element exists
+    let statusElement = document.getElementById('statusMessage');
+    
+    // If not, create one
+    if (!statusElement) {
+      statusElement = document.createElement('div');
+      statusElement.id = 'statusMessage';
+      statusElement.className = 'status-message';
+      document.body.prepend(statusElement);
+    }
+    
+    // Set message and class
+    statusElement.textContent = message;
+    statusElement.className = `status-message ${type}`;
+    
+    // Show message
+    statusElement.style.display = 'block';
+    
+    // Hide after 5 seconds
+    setTimeout(() => {
+      statusElement.style.display = 'none';
+    }, 5000);
   }
   
   // Initialize
   fetchAssetData();
-});
-
-// Show message function
-function showMessage(message, type = 'info') {
-  // Check if status message element exists
-  let statusElement = document.getElementById('statusMessage');
   
-  // If not, create one
-  if (!statusElement) {
-    statusElement = document.createElement('div');
-    statusElement.id = 'statusMessage';
-    statusElement.className = 'status-message';
-    document.body.prepend(statusElement);
+  // Add console logging for debugging
+  console.log("Asset Center page loaded.");
+  
+  // Debug function to check balance
+  async function debugCheckBalance() {
+    const userData = await fetchUserData();
+    console.log("UBT Balance displayed:", userData?.balances?.ubt || 0);
   }
   
-  // Set message and class
-  statusElement.textContent = message;
-  statusElement.className = `status-message ${type}`;
-  
-  // Show message
-  statusElement.style.display = 'block';
-  
-  // Hide after 5 seconds
-  setTimeout(() => {
-    statusElement.style.display = 'none';
-  }, 5000);
-}
+  // Run debug check
+  debugCheckBalance();
+});
