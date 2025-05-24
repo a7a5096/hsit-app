@@ -208,10 +208,22 @@ function handleSignup(event) {
     .then(data => {
         console.log("auth.js: Signup API success, data:", data); // DEBUG
         
-        showStatus(data.message || "Signup successful! Please log in.", "success");
-        setTimeout(function() {
-            window.location.href = "index.html";
-        }, 2000);
+        // Store token and user data immediately if available
+        if (data.token && data.user) {
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("userData", JSON.stringify(data.user));
+            
+            showStatus("Account created successfully! Redirecting to dashboard...", "success");
+            setTimeout(function() {
+                window.location.href = "dashboard.html";
+            }, 2000);
+        } else {
+            // Fall back to original behavior if token not available
+            showStatus(data.message || "Signup successful! Please log in.", "success");
+            setTimeout(function() {
+                window.location.href = "index.html";
+            }, 2000);
+        }
     })
     .catch(error => {
         console.error("auth.js: Signup error:", error.message); // DEBUG
