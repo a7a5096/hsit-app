@@ -1,10 +1,7 @@
 /**
- * Deposit handling logic
- * 
- * This file handles the deposit process, including crypto address assignment
- * and automatic conversion to UBT.
+ * Updated deposit route to use the correct wallet address fields
+ * from the User model's walletAddresses object
  */
-
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
@@ -21,17 +18,20 @@ router.get('/addresses', auth, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
-    // Check if user has addresses assigned
-    if (!user.btcAddress || !user.ethAddress || !user.usdtAddress) {
+    
+    // Check if user has addresses assigned in the walletAddresses object
+    if (!user.walletAddresses || 
+        !user.walletAddresses.bitcoin || 
+        !user.walletAddresses.ethereum || 
+        !user.walletAddresses.ubt) {
       return res.status(400).json({ message: 'Crypto addresses not assigned to user' });
     }
-
-    // Return addresses
+    
+    // Return addresses from the walletAddresses object
     return res.json({
-      btcAddress: user.btcAddress,
-      ethAddress: user.ethAddress,
-      usdtAddress: user.usdtAddress
+      btcAddress: user.walletAddresses.bitcoin,
+      ethAddress: user.walletAddresses.ethereum,
+      usdtAddress: user.walletAddresses.ubt
     });
   } catch (err) {
     console.error(err.message);
@@ -48,10 +48,10 @@ router.get('/balance', auth, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
+    
     // Get current UBT rate
     const currentRate = await getCurrentUBTRate();
-
+    
     // Return only UBT balance, not individual crypto balances
     return res.json({
       ubtBalance: user.balances.ubt,
@@ -68,20 +68,20 @@ router.get('/balance', auth, async (req, res) => {
 // @access  Private
 router.post('/simulate', auth, async (req, res) => {
   const { cryptoType, amount } = req.body;
-
+  
   // Validate input
   if (!cryptoType || !amount) {
     return res.status(400).json({ message: 'Please provide crypto type and amount' });
   }
-
+  
   if (!['BTC', 'ETH', 'USDT'].includes(cryptoType.toUpperCase())) {
     return res.status(400).json({ message: 'Invalid crypto type' });
   }
-
+  
   if (isNaN(amount) || amount <= 0) {
     return res.status(400).json({ message: 'Amount must be a positive number' });
   }
-
+  
   try {
     // Process deposit
     const { ubtAmount, newBalance, newRate } = await processDeposit(
@@ -89,7 +89,7 @@ router.post('/simulate', auth, async (req, res) => {
       cryptoType,
       parseFloat(amount)
     );
-
+    
     // Create transaction record
     const transaction = new Transaction({
       user: req.user.id,
@@ -100,8 +100,9 @@ router.post('/simulate', auth, async (req, res) => {
       ubtRate: newRate,
       status: 'completed'
     });
+    
     await transaction.save();
-
+    
     return res.json({
       message: `Deposit of ${amount} ${cryptoType.toUpperCase()} converted to ${ubtAmount.toFixed(2)} UBT`,
       ubtAmount,
