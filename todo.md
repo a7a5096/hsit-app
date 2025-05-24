@@ -10,4 +10,15 @@
 - [x] Implement address assignment for existing users
 - [x] Validate address assignment functionality
 - [x] Test the implementation
+- [x] Commit and push changes to GitHub
+
+# Login Page Fix
+
+## Tasks
+- [x] Investigate login page issue
+- [x] Check backend authentication endpoints
+- [x] Verify MongoDB connection string includes correct database (hsit_app)
+- [x] Update server.js to ensure connection to correct database
+- [x] Update .env file with correct database in connection strings
+- [ ] Test login functionality
 - [ ] Commit and push changes to GitHub
