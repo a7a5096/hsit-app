@@ -1,13 +1,15 @@
 // Refactored Asset Center page script
 // Uses centralized auth_utils.js for all user data and balance operations
 
-import { requireAuth, fetchUserData, updateGlobalBalanceDisplay, initGlobalBalanceDisplay, getAuthToken } from './auth_utils.js';
+import { requireAuth, fetchUserData, updateGlobalBalanceDisplay, initGlobalBalanceDisplay, getAuthToken, getUserBalance } from './auth_utils.js';
 
 // API configuration directly integrated into this file
 const API_URL = 'https://hsit-backend.onrender.com';
 
 // Script to handle asset center functionality
 document.addEventListener('DOMContentLoaded', async function() {
+  console.log("Asset Center page initializing...");
+  
   // Check if user is logged in and redirect if not
   if (!requireAuth()) return;
 
@@ -36,17 +38,32 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
   
   // Fetch user balances, transactions, and purchased bots
-  async function fetchAssetData() {
+  async function fetchAssetData(forceRefresh = true) {
     try {
-      // Fetch user data from centralized utility
-      const userData = await fetchUserData();
+      console.log("Fetching asset data from backend...");
+      
+      // Fetch user data from centralized utility with force refresh
+      const userData = await fetchUserData(forceRefresh);
       if (!userData) {
         throw new Error('Failed to fetch user data');
       }
       
+      // Log for debugging
+      console.log("User data received:", userData);
+      
       // Fetch exchange rates
-      const ratesResponse = await fetch(`${API_URL}/api/transactions/exchange-rates`);
+      const ratesResponse = await fetch(`${API_URL}/api/transactions/exchange-rates`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+      });
+      
+      if (!ratesResponse.ok) {
+        throw new Error('Failed to fetch exchange rates');
+      }
+      
       const rates = await ratesResponse.json();
+      console.log("Exchange rates received:", rates);
       
       // Update UI with user balances
       updateBalances(userData.balances, rates);
@@ -55,7 +72,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       const token = getAuthToken();
       const botsResponse = await fetch(`${API_URL}/api/bots/purchased`, {
         headers: {
-          'x-auth-token': token
+          'x-auth-token': token,
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         }
       });
       
@@ -64,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
       
       const botsData = await botsResponse.json();
+      console.log("Bots data received:", botsData);
       
       // Update UI with purchased bots
       updatePurchasedBots(botsData.bots);
@@ -82,7 +101,12 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   // Update balances UI
   function updateBalances(balances, rates) {
-    if (!balances || !balancesList) return;
+    if (!balances || !balancesList) {
+      console.error("Missing balances or balancesList element");
+      return;
+    }
+    
+    console.log("Updating balances UI with:", balances);
     
     // Clear existing balances
     balancesList.innerHTML = '';
@@ -95,7 +119,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       btc: 70000, // Example price in USD
       eth: 3500,  // Example price in USD
       usdt: 1,    // USDT is pegged to USD
-      ubt: rates.sellRate // UBT price from exchange rate
+      ubt: rates.sellRate || 0.1 // UBT price from exchange rate
     };
     
     // Add each balance to the list
@@ -131,10 +155,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Update total value
     if (totalValueElement) {
       totalValueElement.textContent = `$ ${totalValue.toFixed(2)} USD`;
+      console.log("Updated total value:", totalValue.toFixed(2));
     }
     
     // Also update global balance
-    updateGlobalBalanceDisplay();
+    updateGlobalBalanceDisplay(true);
   }
   
   // Update purchased bots UI
@@ -417,9 +442,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     currencySelect.addEventListener('change', async () => {
       const currency = currencySelect.value.toLowerCase();
       // Get fresh balance data from API
-      const userData = await fetchUserData();
-      const balances = userData?.balances || {};
-      const balance = balances[currency] || 0;
+      const balance = await getUserBalance(currency, true);
       
       amountInput.max = balance;
       amountInput.placeholder = `Max: ${balance}`;
@@ -469,9 +492,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         modal.remove();
         
         // Refresh user data
-        await fetchAssetData();
-        // Update global balance
-        await updateGlobalBalanceDisplay();
+        await fetchAssetData(true);
       } catch (error) {
         showMessage(error.message, 'error');
       }
@@ -517,17 +538,40 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
   
   // Initialize
-  fetchAssetData();
+  console.log("Fetching initial asset data...");
+  await fetchAssetData(true);
   
   // Add console logging for debugging
   console.log("Asset Center page loaded.");
   
   // Debug function to check balance
   async function debugCheckBalance() {
-    const userData = await fetchUserData();
-    console.log("UBT Balance displayed:", userData?.balances?.ubt || 0);
+    const balance = await getUserBalance('ubt', true);
+    console.log("UBT Balance from API:", balance);
   }
   
   // Run debug check
-  debugCheckBalance();
+  await debugCheckBalance();
+  
+  // Add refresh button for testing
+  const refreshButton = document.createElement('button');
+  refreshButton.textContent = 'Refresh Data';
+  refreshButton.style.position = 'fixed';
+  refreshButton.style.bottom = '20px';
+  refreshButton.style.right = '20px';
+  refreshButton.style.zIndex = '1000';
+  refreshButton.style.padding = '10px 15px';
+  refreshButton.style.backgroundColor = '#4CAF50';
+  refreshButton.style.color = 'white';
+  refreshButton.style.border = 'none';
+  refreshButton.style.borderRadius = '5px';
+  refreshButton.style.cursor = 'pointer';
+  
+  refreshButton.addEventListener('click', async () => {
+    console.log("Manual refresh triggered");
+    await fetchAssetData(true);
+    showMessage('Data refreshed from server', 'info');
+  });
+  
+  document.body.appendChild(refreshButton);
 });
