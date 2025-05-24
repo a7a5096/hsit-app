@@ -27,7 +27,7 @@ const UserSchema = new mongoose.Schema({
   },
   phoneVerified: {
     type: Boolean,
-    default: false
+    default: true // Changed default to true to make SMS verification optional
   },
   walletAddresses: {
     bitcoin: {

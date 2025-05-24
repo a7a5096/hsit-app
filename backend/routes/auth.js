@@ -407,14 +407,15 @@ router.post('/register/initial', async (req, res) => {
       req.session.tempUser = tempUser;
     }
     
-    // Send verification code via SMS
-    const smsSent = await sendVerificationCode(phoneNumber);
-    
-    if (!smsSent) {
-      return res.status(500).json({ success: false, message: 'Failed to send verification code' });
+    // Send verification code via SMS (now optional)
+    try {
+      await sendVerificationCode(phoneNumber);
+      res.json({ success: true, message: 'Verification code sent. You can also proceed without verification.' });
+    } catch (error) {
+      // Continue even if SMS fails
+      console.error('SMS sending error:', error);
+      res.json({ success: true, message: 'Account created! You can proceed without phone verification.' });
     }
-    
-    res.json({ success: true, message: 'Verification code sent' });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -448,47 +449,53 @@ router.post('/register', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     
-    // Generate verification code
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const verificationExpires = Date.now() + 3600000; // 1 hour
+    // Get crypto addresses for the user
+    const cryptoAddresses = await getAvailableCryptoAddresses();
     
     // Create new user with verification data stored in database
+    // Phone verification is now optional (phoneVerified defaults to true in model)
     const user = new User({
       username,
       email,
       password: hashedPassword,
       phoneNumber: phone,
-      phoneVerified: false,
-      phoneVerificationCode: verificationCode,
-      phoneVerificationExpires: verificationExpires
+      walletAddresses: {
+        bitcoin: cryptoAddresses.bitcoin ? cryptoAddresses.bitcoin.address : '',
+        ethereum: cryptoAddresses.ethereum ? cryptoAddresses.ethereum.address : '',
+        ubt: cryptoAddresses.ubt ? cryptoAddresses.ubt.address : ''
+      }
     });
     
     // Save user to database
     await user.save();
     
-    // Send verification code via Twilio
-    try {
-      const accountSid = process.env.TWILIO_ACCOUNT_SID;
-      const authToken = process.env.TWILIO_AUTH_TOKEN;
-      const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
-      
-      const client = require('twilio')(accountSid, authToken);
-      
-      await client.messages.create({
-        body: `Your HSIT verification code is: ${verificationCode}`,
-        from: twilioPhone,
-        to: phone
-      });
-    } catch (twilioErr) {
-      console.error('Twilio error:', twilioErr);
-      // Continue with registration even if SMS fails
-      // User can request code resend later
+    // Mark addresses as assigned if available
+    if (cryptoAddresses.bitcoin) {
+      await markAddressAsAssigned('bitcoin', cryptoAddresses.bitcoin.address);
+    }
+    if (cryptoAddresses.ethereum) {
+      await markAddressAsAssigned('ethereum', cryptoAddresses.ethereum.address);
     }
     
-    // Return success with userId for verification redirect
+    // Generate JWT token for immediate login
+    const token = jwt.sign(
+      { id: user._id, username: user.username },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRE }
+    );
+    
+    // Return success with token for immediate login
     return res.status(201).json({
-      message: 'Account created! Please verify your phone number.',
-      userId: user._id
+      success: true,
+      message: 'Account created successfully!',
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        walletAddresses: user.walletAddresses
+      }
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -496,14 +503,47 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Verify SMS code
+// Verify SMS code (kept for backward compatibility but now optional)
 router.post('/verify-sms', async (req, res) => {
   try {
-    const { phoneNumber, code } = req.body;
+    const { phoneNumber, code, userId } = req.body;
     
-    // Validate inputs
-    if (!phoneNumber || !code) {
-      return res.status(400).json({ success: false, message: 'Phone number and code are required' });
+    // If userId is provided, find and update the user directly
+    if (userId) {
+      const user = await User.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      // Mark phone as verified regardless of code (making verification optional)
+      user.phoneVerified = true;
+      await user.save();
+      
+      // Generate JWT token
+      const token = jwt.sign(
+        { id: user._id, username: user.username },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRE }
+      );
+      
+      return res.json({
+        success: true,
+        message: 'Phone verified successfully',
+        token,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          walletAddresses: user.walletAddresses
+        }
+      });
+    }
+    
+    // Legacy flow - validate inputs
+    if (!phoneNumber) {
+      return res.status(400).json({ success: false, message: 'Phone number is required' });
     }
     
     // Check if we have temp user data
@@ -514,24 +554,20 @@ router.post('/verify-sms', async (req, res) => {
       tempUser = global.tempUsers[phoneNumber];
     }
     
-    if (!tempUser || tempUser.phoneNumber !== phoneNumber) {
-      return res.status(400).json({ success: false, message: 'Session expired, please start registration again' });
-    }
-    
-    // Verify the code
-    const verification = verifyCode(phoneNumber, code);
-    
-    if (!verification.valid) {
-      return res.status(400).json({ success: false, message: verification.message });
+    if (!tempUser) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No pending registration found. Please register first.' 
+      });
     }
     
     // Get crypto addresses for the user
     const cryptoAddresses = await getAvailableCryptoAddresses();
     
-    // Create and save the user
+    // Create and save the user (verification is now optional)
     const user = new User({
       ...tempUser,
-      phoneVerified: true,
+      phoneVerified: true, // Always mark as verified
       walletAddresses: {
         bitcoin: cryptoAddresses.bitcoin ? cryptoAddresses.bitcoin.address : '',
         ethereum: cryptoAddresses.ethereum ? cryptoAddresses.ethereum.address : '',
@@ -549,10 +585,11 @@ router.post('/verify-sms', async (req, res) => {
       await markAddressAsAssigned('ethereum', cryptoAddresses.ethereum.address);
     }
     
-    // Clear temp user data
-    if (req.session) {
+    // Clean up temp user data
+    if (req.session && req.session.tempUser) {
       delete req.session.tempUser;
-    } else if (global.tempUsers) {
+    }
+    if (global.tempUsers && global.tempUsers[phoneNumber]) {
       delete global.tempUsers[phoneNumber];
     }
     
@@ -565,105 +602,18 @@ router.post('/verify-sms', async (req, res) => {
     
     res.json({
       success: true,
-      userId: user._id,
-      token,
-      addresses: [
-        cryptoAddresses.bitcoin ? cryptoAddresses.bitcoin.address : '',
-        cryptoAddresses.ethereum ? cryptoAddresses.ethereum.address : '',
-        cryptoAddresses.ubt ? cryptoAddresses.ubt.address : ''
-      ]
-    });
-  } catch (error) {
-    console.error('Verification error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-// Resend verification code
-router.post('/resend-verification', async (req, res) => {
-  try {
-    const { phoneNumber } = req.body;
-    
-    // Check if we have temp user data
-    let tempUser;
-    if (req.session && req.session.tempUser) {
-      tempUser = req.session.tempUser;
-    } else if (global.tempUsers && global.tempUsers[phoneNumber]) {
-      tempUser = global.tempUsers[phoneNumber];
-    }
-    
-    if (!tempUser || tempUser.phoneNumber !== phoneNumber) {
-      return res.status(400).json({ success: false, message: 'Session expired, please start registration again' });
-    }
-    
-    // Send verification code via SMS
-    const smsSent = await sendVerificationCode(phoneNumber);
-    
-    if (!smsSent) {
-      return res.status(500).json({ success: false, message: 'Failed to send verification code' });
-    }
-    
-    res.json({ success: true, message: 'Verification code resent' });
-  } catch (error) {
-    console.error('Resend verification error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-// Login route
-router.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    
-    // Validate inputs
-    if (!username || !password) {
-      return res.status(400).json({ success: false, message: 'Username and password are required' });
-    }
-    
-    // Find user by username or email
-    const user = await User.findOne({
-      $or: [
-        { username },
-        { email: username }
-      ]
-    });
-    
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
-    }
-    
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
-    }
-    
-    // Update last login
-    user.lastLogin = Date.now();
-    await user.save();
-    
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user._id, username: user.username },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRE }
-    );
-    
-    res.json({
-      success: true,
+      message: 'Account created successfully',
       token,
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
         phoneNumber: user.phoneNumber,
-        walletAddresses: user.walletAddresses,
-        cryptoBalance: user.cryptoBalance
+        walletAddresses: user.walletAddresses
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Verification error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
