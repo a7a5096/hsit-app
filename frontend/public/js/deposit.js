@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Fetch user's crypto addresses
   async function fetchUserAddresses() {
     try {
-      const response = await fetch('${API_BASE_URL}/api/crypto/addresses', {
+      const response = await fetch(`${API_BASE_URL}/api/deposit/addresses`, {
         headers: {
           'x-auth-token': token
         }
