@@ -20,12 +20,12 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Coin details
   const coinDetailsBase = {
-    BTC: { name: 'Bitcoin (BTC)', min: '0.001 BTC'},
-    ETH: { name: 'Ethereum (ETH)', min: '0.01 ETH'},
-    USDT: { name: 'Tether (USDT - ERC20)', min: '10 USDT'}
+    BTC: { name: 'Bitcoin (BTC)', min: '0.001 BTC', apiName: 'bitcoin'},
+    ETH: { name: 'Ethereum (ETH)', min: '0.01 ETH', apiName: 'ethereum'},
+    USDT: { name: 'Tether (USDT - ERC20)', min: '10 USDT', apiName: 'usdt'}
   };
   
-  // Fetch user's crypto addresses
+  // Fetch user's crypto addresses - updated to use new database-driven API
   async function fetchUserAddresses() {
     try {
       const response = await fetch(`${API_URL}/api/crypto/addresses`, {
@@ -39,10 +39,17 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       const data = await response.json();
-      return {
-        btc_address: data.btcAddress,
-        eth_address: data.ethAddress
-      };
+      
+      // Handle the new response format from the database-driven API
+      if (data.success) {
+        return {
+          btc_address: data.addresses.bitcoin,
+          eth_address: data.addresses.ethereum,
+          usdt_address: data.addresses.usdt
+        };
+      } else {
+        throw new Error(data.message || 'Failed to fetch addresses');
+      }
     } catch (error) {
       console.error('Error fetching addresses:', error);
       showMessage('Error loading your deposit addresses. Please try again later.', 'error');
@@ -50,31 +57,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Assign crypto address if needed
-  async function assignCryptoAddress(currency) {
+  // Get specific crypto address - new function to use the database-driven endpoint
+  async function getCryptoAddress(currency) {
     try {
-      const response = await fetch(`${API_URL}/api/crypto/assign/${currency}`, {
+      const apiCurrency = coinDetailsBase[currency]?.apiName || currency.toLowerCase();
+      
+      const response = await fetch(`${API_URL}/api/crypto/address/${apiCurrency}`, {
         headers: {
           'x-auth-token': token
         }
       });
       
       if (!response.ok) {
-        throw new Error('Failed to assign address');
+        throw new Error('Failed to get address');
       }
       
       const data = await response.json();
-      return data.success;
+      
+      if (data.success && data.address) {
+        return data.address;
+      } else {
+        throw new Error(data.message || 'Address not available');
+      }
     } catch (error) {
-      console.error('Error assigning address:', error);
-      return false;
+      console.error(`Error getting ${currency} address:`, error);
+      return null;
     }
   }
   
-  // Generate QR code
+  // Generate QR code - updated to use new database-driven API
   async function fetchQRCode(currency) {
     try {
-      const response = await fetch(`${API_URL}/api/crypto/qrcode/${currency}`, {
+      const apiCurrency = coinDetailsBase[currency]?.apiName || currency.toLowerCase();
+      
+      const response = await fetch(`${API_URL}/api/crypto/qrcode/${apiCurrency}`, {
         headers: {
           'x-auth-token': token
         }
@@ -102,41 +118,8 @@ document.addEventListener('DOMContentLoaded', function() {
     copyButton.disabled = true;
     qrCodeArea.innerHTML = '<p>[Loading...]</p>';
     
-    // Fetch addresses if not already loaded
-    if (!window.userAddresses) {
-      window.userAddresses = await fetchUserAddresses();
-    }
-    
-    if (!window.userAddresses) {
-      addressInput.value = 'Error loading addresses';
-      return;
-    }
-    
-    let currentAddress = null;
-    
-    if (selectedValue === 'BTC') {
-      currentAddress = window.userAddresses.btc_address;
-      // If no BTC address is assigned, try to assign one
-      if (!currentAddress) {
-        const assigned = await assignCryptoAddress('BTC');
-        if (assigned) {
-          // Refresh addresses after assignment
-          window.userAddresses = await fetchUserAddresses();
-          currentAddress = window.userAddresses.btc_address;
-        }
-      }
-    } else if (selectedValue === 'ETH' || selectedValue === 'USDT') {
-      currentAddress = window.userAddresses.eth_address;
-      // If no ETH address is assigned, try to assign one
-      if (!currentAddress) {
-        const assigned = await assignCryptoAddress('ETH');
-        if (assigned) {
-          // Refresh addresses after assignment
-          window.userAddresses = await fetchUserAddresses();
-          currentAddress = window.userAddresses.eth_address;
-        }
-      }
-    }
+    // Get the specific address for the selected currency
+    const currentAddress = await getCryptoAddress(selectedValue);
     
     if (detailsBase && currentAddress) {
       addressInput.value = currentAddress;
@@ -153,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Fetch QR code
       const qrData = await fetchQRCode(selectedValue);
       if (qrData && qrData.qrPath) {
-        qrCodeArea.innerHTML = `<img src="${qrData.qrPath}" alt="${selectedValue} QR Code" class="qr-code">`;
+        qrCodeArea.innerHTML = `<img src="${API_URL}${qrData.qrPath}" alt="${selectedValue} QR Code" class="qr-code">`;
       } else {
         qrCodeArea.innerHTML = '<p>[QR Code unavailable]</p>';
       }
@@ -163,6 +146,9 @@ document.addEventListener('DOMContentLoaded', function() {
       minDepositSpan.textContent = detailsBase ? detailsBase.min : 'N/A';
       copyButton.disabled = true;
       qrCodeArea.innerHTML = '<p>[Address unavailable]</p>';
+      
+      // Show error message
+      showMessage('Failed to load deposit address. Please try again later.', 'error');
     }
   }
   
