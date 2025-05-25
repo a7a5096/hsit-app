@@ -10,9 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // Get user data
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-  
   // Elements
   const coinRadios = document.querySelectorAll('input[name="crypto"]');
   const addressInput = document.getElementById('deposit-address');
@@ -31,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Fetch user's crypto addresses
   async function fetchUserAddresses() {
     try {
-      const response = await fetch('${API_BASE_URL}/api/crypto/addresses', {
+      const response = await fetch(`${API_URL}/api/crypto/addresses`, {
         headers: {
           'x-auth-token': token
         }
@@ -53,10 +50,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
+  // Assign crypto address if needed
+  async function assignCryptoAddress(currency) {
+    try {
+      const response = await fetch(`${API_URL}/api/crypto/assign/${currency}`, {
+        headers: {
+          'x-auth-token': token
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to assign address');
+      }
+      
+      const data = await response.json();
+      return data.success;
+    } catch (error) {
+      console.error('Error assigning address:', error);
+      return false;
+    }
+  }
+  
   // Generate QR code
   async function fetchQRCode(currency) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/crypto/qrcode/${currency}`, {
+      const response = await fetch(`${API_URL}/api/crypto/qrcode/${currency}`, {
         headers: {
           'x-auth-token': token
         }
@@ -98,8 +116,26 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (selectedValue === 'BTC') {
       currentAddress = window.userAddresses.btc_address;
+      // If no BTC address is assigned, try to assign one
+      if (!currentAddress) {
+        const assigned = await assignCryptoAddress('BTC');
+        if (assigned) {
+          // Refresh addresses after assignment
+          window.userAddresses = await fetchUserAddresses();
+          currentAddress = window.userAddresses.btc_address;
+        }
+      }
     } else if (selectedValue === 'ETH' || selectedValue === 'USDT') {
       currentAddress = window.userAddresses.eth_address;
+      // If no ETH address is assigned, try to assign one
+      if (!currentAddress) {
+        const assigned = await assignCryptoAddress('ETH');
+        if (assigned) {
+          // Refresh addresses after assignment
+          window.userAddresses = await fetchUserAddresses();
+          currentAddress = window.userAddresses.eth_address;
+        }
+      }
     }
     
     if (detailsBase && currentAddress) {
