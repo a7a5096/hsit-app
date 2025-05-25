@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 const router = express.Router();
 
 /**
- * @route   GET /api/wheel/balance
+ * @route   GET /api/ubt/balance
  * @desc    Get user's UBT balance from database
  * @access  Private
  */
@@ -39,7 +39,7 @@ router.get('/balance', authMiddleware, async (req, res) => {
 });
 
 /**
- * @route   POST /api/wheel/spin
+ * @route   POST /api/ubt/spin
  * @desc    Process a wheel spin and update UBT balance
  * @access  Private
  */
