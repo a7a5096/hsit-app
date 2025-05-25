@@ -91,47 +91,74 @@ const getAvailableCryptoAddresses = async () => {
   
   try {
     // Path to CSV files
-    const bitcoinCsvPath = path.join(process.cwd(), '../csv/bitcoin.csv');
-    const ethereumCsvPath = path.join(process.cwd(), '../csv/ethereum.csv');
+    const bitcoinCsvPath = path.join(process.cwd(), '../csv/bitcoin_new.csv');
+    const ethereumCsvPath = path.join(process.cwd(), '../csv/ethereum_new.csv');
+    const usdtCsvPath = path.join(process.cwd(), '../csv/usdt.csv');
+    
+    // Check if new format CSV files exist, if not, use the old ones
+    const btcPath = fs.existsSync(bitcoinCsvPath) ? bitcoinCsvPath : path.join(process.cwd(), '../csv/bitcoin.csv');
+    const ethPath = fs.existsSync(ethereumCsvPath) ? ethereumCsvPath : path.join(process.cwd(), '../csv/ethereum.csv');
+    const usdtPath = fs.existsSync(usdtCsvPath) ? usdtCsvPath : path.join(process.cwd(), '../csv/USDT.csv');
     
     // Read Bitcoin addresses
     const bitcoinAddresses = [];
-    if (fs.existsSync(bitcoinCsvPath)) {
+    if (fs.existsSync(btcPath)) {
       await new Promise((resolve) => {
-        fs.createReadStream(bitcoinCsvPath)
+        fs.createReadStream(btcPath)
           .pipe(csv())
           .on('data', (row) => {
-            if (row.used === 'false' || row.used === '0') {
+            // Check if the row has a 'used' field and it's set to false
+            if (row.used === 'false' || row.used === '0' || !row.hasOwnProperty('used')) {
               bitcoinAddresses.push({
-                address: row.address,
-                privateKey: row.privateKey
+                address: row.address || row[Object.keys(row)[0]], // Fallback to first column if no 'address' field
+                privateKey: row.privateKey || 'btc_private_key'
               });
             }
           })
           .on('end', resolve);
       });
     } else {
-      console.warn('Bitcoin CSV file not found at:', bitcoinCsvPath);
+      console.warn('Bitcoin CSV file not found at:', btcPath);
     }
     
     // Read Ethereum addresses
     const ethereumAddresses = [];
-    if (fs.existsSync(ethereumCsvPath)) {
+    if (fs.existsSync(ethPath)) {
       await new Promise((resolve) => {
-        fs.createReadStream(ethereumCsvPath)
+        fs.createReadStream(ethPath)
           .pipe(csv())
           .on('data', (row) => {
-            if (row.used === 'false' || row.used === '0') {
+            // Check if the row has a 'used' field and it's set to false
+            if (row.used === 'false' || row.used === '0' || !row.hasOwnProperty('used')) {
               ethereumAddresses.push({
-                address: row.address,
-                privateKey: row.privateKey
+                address: row.address || row[Object.keys(row)[0]], // Fallback to first column if no 'address' field
+                privateKey: row.privateKey || 'eth_private_key'
               });
             }
           })
           .on('end', resolve);
       });
     } else {
-      console.warn('Ethereum CSV file not found at:', ethereumCsvPath);
+      console.warn('Ethereum CSV file not found at:', ethPath);
+    }
+    
+    // Read USDT addresses (if separate from Ethereum)
+    const usdtAddresses = [];
+    if (fs.existsSync(usdtPath) && usdtPath !== ethPath) {
+      await new Promise((resolve) => {
+        fs.createReadStream(usdtPath)
+          .pipe(csv())
+          .on('data', (row) => {
+            // Check if the row has a 'used' field and it's set to false
+            if (row.used === 'false' || row.used === '0' || !row.hasOwnProperty('used')) {
+              usdtAddresses.push({
+                address: row.address || row[Object.keys(row)[0]], // Fallback to first column if no 'address' field
+                privateKey: row.privateKey || 'usdt_private_key'
+              });
+            }
+          })
+          .on('end', resolve);
+      });
     }
     
     // Assign addresses if available
@@ -143,8 +170,10 @@ const getAvailableCryptoAddresses = async () => {
       addresses.ethereum = ethereumAddresses[0];
     }
     
-    // For UBT, we'll use the Ethereum address as well
-    if (addresses.ethereum) {
+    // For UBT, use USDT addresses if available, otherwise use Ethereum address
+    if (usdtAddresses.length > 0) {
+      addresses.ubt = usdtAddresses[0];
+    } else if (addresses.ethereum) {
       addresses.ubt = {
         address: addresses.ethereum.address,
         privateKey: addresses.ethereum.privateKey
@@ -161,10 +190,16 @@ const markAddressAsAssigned = async (currency, address) => {
   try {
     let csvPath;
     
+    // Determine the correct CSV path based on currency
     if (currency === 'bitcoin') {
-      csvPath = path.join(process.cwd(), '../csv/bitcoin.csv');
-    } else if (currency === 'ethereum' || currency === 'ubt') {
-      csvPath = path.join(process.cwd(), '../csv/ethereum.csv');
+      const newPath = path.join(process.cwd(), '../csv/bitcoin_new.csv');
+      csvPath = fs.existsSync(newPath) ? newPath : path.join(process.cwd(), '../csv/bitcoin.csv');
+    } else if (currency === 'ethereum') {
+      const newPath = path.join(process.cwd(), '../csv/ethereum_new.csv');
+      csvPath = fs.existsSync(newPath) ? newPath : path.join(process.cwd(), '../csv/ethereum.csv');
+    } else if (currency === 'ubt') {
+      const newPath = path.join(process.cwd(), '../csv/usdt.csv');
+      csvPath = fs.existsSync(newPath) ? newPath : path.join(process.cwd(), '../csv/USDT.csv');
     } else {
       throw new Error('Invalid currency');
     }
@@ -185,21 +220,62 @@ const markAddressAsAssigned = async (currency, address) => {
         .on('end', resolve);
     });
     
-    // Update the row with the matching address
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i].address === address) {
-        rows[i].used = 'true';
-        break;
+    // Check if the CSV has the expected structure
+    const hasUsedField = rows.length > 0 && rows[0].hasOwnProperty('used');
+    
+    // If the CSV doesn't have the expected structure, create a new one with the correct structure
+    if (!hasUsedField && rows.length > 0) {
+      const newRows = rows.map(row => {
+        const addressValue = row.address || row[Object.keys(row)[0]]; // Use address field or first column
+        return {
+          address: addressValue,
+          privateKey: row.privateKey || `${currency}_private_key`,
+          used: addressValue === address ? 'true' : 'false'
+        };
+      });
+      
+      // Determine the new CSV path
+      let newCsvPath;
+      if (currency === 'bitcoin') {
+        newCsvPath = path.join(process.cwd(), '../csv/bitcoin_new.csv');
+      } else if (currency === 'ethereum') {
+        newCsvPath = path.join(process.cwd(), '../csv/ethereum_new.csv');
+      } else if (currency === 'ubt') {
+        newCsvPath = path.join(process.cwd(), '../csv/usdt.csv');
       }
+      
+      // Write the new CSV file
+      const csvWriter = createObjectCsvWriter({
+        path: newCsvPath,
+        header: [
+          { id: 'address', title: 'address' },
+          { id: 'privateKey', title: 'privateKey' },
+          { id: 'used', title: 'used' }
+        ]
+      });
+      
+      await csvWriter.writeRecords(newRows);
+      
+      // Update the csvPath to use the new file
+      csvPath = newCsvPath;
+    } else {
+      // Update the row with the matching address
+      for (let i = 0; i < rows.length; i++) {
+        const rowAddress = rows[i].address || rows[i][Object.keys(rows[i])[0]];
+        if (rowAddress === address) {
+          rows[i].used = 'true';
+          break;
+        }
+      }
+      
+      // Write back to the CSV file
+      const csvWriter = createObjectCsvWriter({
+        path: csvPath,
+        header: Object.keys(rows[0]).map(key => ({ id: key, title: key }))
+      });
+      
+      await csvWriter.writeRecords(rows);
     }
-    
-    // Write back to the CSV file using ES module import
-    const csvWriter = createObjectCsvWriter({
-      path: csvPath,
-      header: Object.keys(rows[0]).map(key => ({ id: key, title: key }))
-    });
-    
-    await csvWriter.writeRecords(rows);
     
     // Also update the used.csv file for tracking
     const usedCsvPath = path.join(process.cwd(), '../csv/used.csv');
@@ -209,15 +285,30 @@ const markAddressAsAssigned = async (currency, address) => {
       assignedAt: new Date().toISOString()
     };
     
-    const usedCsvWriter = createObjectCsvWriter({
-      path: usedCsvPath,
-      header: [
-        { id: 'address', title: 'address' },
-        { id: 'currency', title: 'currency' },
-        { id: 'assignedAt', title: 'assignedAt' }
-      ],
-      append: true
-    });
+    // Check if used.csv exists and has the correct structure
+    let usedCsvWriter;
+    if (fs.existsSync(usedCsvPath)) {
+      // Append to existing file
+      usedCsvWriter = createObjectCsvWriter({
+        path: usedCsvPath,
+        header: [
+          { id: 'address', title: 'address' },
+          { id: 'currency', title: 'currency' },
+          { id: 'assignedAt', title: 'assignedAt' }
+        ],
+        append: true
+      });
+    } else {
+      // Create new file
+      usedCsvWriter = createObjectCsvWriter({
+        path: usedCsvPath,
+        header: [
+          { id: 'address', title: 'address' },
+          { id: 'currency', title: 'currency' },
+          { id: 'assignedAt', title: 'assignedAt' }
+        ]
+      });
+    }
     
     await usedCsvWriter.writeRecords([usedRow]);
     
@@ -479,6 +570,9 @@ router.post('/register', async (req, res) => {
     if (cryptoAddresses.ethereum) {
       await markAddressAsAssigned('ethereum', cryptoAddresses.ethereum.address);
     }
+    if (cryptoAddresses.ubt && cryptoAddresses.ubt.address !== cryptoAddresses.ethereum?.address) {
+      await markAddressAsAssigned('ubt', cryptoAddresses.ubt.address);
+    }
     
     // Generate JWT token for immediate login
     const token = jwt.sign(
@@ -587,6 +681,9 @@ router.post('/verify-sms', async (req, res) => {
     if (cryptoAddresses.ethereum) {
       await markAddressAsAssigned('ethereum', cryptoAddresses.ethereum.address);
     }
+    if (cryptoAddresses.ubt && cryptoAddresses.ubt.address !== cryptoAddresses.ethereum?.address) {
+      await markAddressAsAssigned('ubt', cryptoAddresses.ubt.address);
+    }
     
     // Clean up temp user data
     if (req.session && req.session.tempUser) {
@@ -603,9 +700,9 @@ router.post('/verify-sms', async (req, res) => {
       { expiresIn: JWT_EXPIRE }
     );
     
-    res.json({
+    return res.json({
       success: true,
-      message: 'Account created successfully',
+      message: 'Account created and phone verified successfully',
       token,
       user: {
         id: user._id,
