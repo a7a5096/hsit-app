@@ -133,6 +133,9 @@ img {
 /* Dashboard Page Styles */
 .dashboard-page {
     background-color: #121220; /* Even darker for dashboard */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .dashboard-header {
@@ -144,12 +147,9 @@ img {
     border-bottom: 1px solid #333;
 }
 
+/* Hide menu button as requested */
 .menu-btn {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 1.5rem;
-    cursor: pointer;
+    display: none;
 }
 
 .header-title {
@@ -159,19 +159,21 @@ img {
 }
 
 .dashboard-main {
-    padding: 20px;
+    padding: 15px;
     display: flex;
     flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
 }
 
-/* MODIFIED: Reduced banner height by 50% and added frame */
+/* MODIFIED: Drastically reduced banner height to match red box in reference */
 .banner {
-    margin-bottom: 15px; /* Reduced from 30px */
+    margin-bottom: 10px;
     border-radius: 8px;
     overflow: hidden;
-    max-height: 100px; /* Reduced height by 50% */
-    border: 3px solid #a678de; /* Added frame with purple accent color */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Added shadow for depth */
+    max-height: 50px; /* Significantly reduced height to match red box */
+    border: 2px solid #a678de; /* Thinner border */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Lighter shadow */
     flex: 0 0 auto; /* Don't allow banner to grow */
     max-width: 100%;
 }
@@ -183,40 +185,38 @@ img {
     object-fit: cover; /* Maintain aspect ratio while filling */
 }
 
-/* MODIFIED: Adjusted dashboard section to take more space */
+/* MODIFIED: Adjusted dashboard section to take more space and fit on single page */
 .dashboard-section {
-    margin-bottom: 30px;
+    margin-bottom: 15px; /* Reduced margin */
     background-color: #1f1f30; /* Card background */
-    padding: 20px;
+    padding: 15px; /* Reduced padding */
     border-radius: 8px;
-    flex: 1 0 auto; /* Allow section to grow */
+    flex: 0 0 auto; /* Don't allow section to grow too much */
 }
 
 .dashboard-section.common-operations {
-    flex: 1 0 65%; /* Make operations section take at least 65% of available space */
-    display: flex;
-    flex-direction: column;
+    flex: 0 0 auto; /* Don't allow section to grow too much */
 }
 
 .dashboard-section h2 {
-    margin-bottom: 20px;
+    margin-bottom: 10px; /* Reduced margin */
     color: #eee;
     border-bottom: 1px solid #444;
-    padding-bottom: 10px;
+    padding-bottom: 5px; /* Reduced padding */
+    font-size: 1.1rem; /* Slightly smaller heading */
 }
 
-/* MODIFIED: Operations Grid Styles - increased size to take more screen space */
+/* MODIFIED: Operations Grid Styles - optimized for single page view */
 .operations-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); /* Increased minimum width */
-    gap: 15px;
-    margin-top: 20px; /* Added more space at top */
-    flex: 1; /* Make grid take all available space */
+    grid-template-columns: repeat(8, 1fr); /* 8 columns for desktop */
+    gap: 10px; /* Reduced gap */
+    margin-top: 10px; /* Reduced space at top */
 }
 
 .operation-card {
     background-color: #2c2c44;
-    padding: 20px; /* Increased padding */
+    padding: 10px; /* Reduced padding */
     border-radius: 5px;
     text-align: center;
     color: #ccc;
@@ -225,98 +225,76 @@ img {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 110px; /* Ensure consistent height */
+    min-height: 80px; /* Reduced height */
 }
 
 .operation-card:hover {
     background-color: #3a3a5a;
-    transform: translateY(-3px);
+    transform: translateY(-2px); /* Reduced transform */
     text-decoration: none;
 }
 
 .operation-card .icon {
-    font-size: 1.8rem; /* Increased icon size */
-    margin-bottom: 12px; /* Increased spacing */
-    /* Use actual icons here (SVG, FontAwesome, etc.) */
+    font-size: 1.4rem; /* Reduced icon size */
+    margin-bottom: 8px; /* Reduced spacing */
     color: #a678de;
 }
 
 .operation-card .icon img {
-    width: 36px; /* Increased from 24px */
-    height: 36px; /* Increased from 24px */
+    width: 24px; /* Reduced from 36px */
+    height: 24px; /* Reduced from 36px */
     vertical-align: middle;
 }
 
 .operation-card span {
-    font-size: 1.05rem; /* Increased font size */
-    font-weight: 500; /* Made text slightly bolder */
+    font-size: 0.9rem; /* Reduced font size */
+    font-weight: 500;
 }
 
-/* Service Section Styles */
+/* Service Section Styles - optimized for single page */
 .service-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    align-items: stretch; /* Make cards same height in a row */
+    grid-template-columns: repeat(3, 1fr); /* 3 columns for services */
+    gap: 15px;
+    align-items: stretch;
 }
 
 .service-card {
     background-color: #2c2c44;
-    padding: 20px;
+    padding: 15px; /* Reduced padding */
     border-radius: 8px;
     display: flex;
     flex-direction: column;
 }
 
 .service-card.main-service {
-   background: linear-gradient(145deg, #3a3a5a, #2a2a4a); /* Subtle gradient */
-   grid-column: span 2; /* Make main card wider on larger screens if needed */
-   /* Adjust grid-column based on desired layout */
+   background: linear-gradient(145deg, #3a3a5a, #2a2a4a);
+   grid-column: span 1; /* No longer spans 2 columns */
 }
-
-@media (max-width: 768px) {
-    .service-card.main-service {
-        grid-column: span 1; /* Stack on smaller screens */
-    }
-    
-    /* Ensure buttons still take up enough space on mobile */
-    .operations-grid {
-        grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
-    }
-    
-    .operation-card {
-        min-height: 100px; /* Slightly smaller on mobile */
-    }
-    
-    .banner {
-        max-height: 80px; /* Even smaller banner on mobile */
-    }
-}
-
 
 .service-header {
-    margin-bottom: 15px;
+    margin-bottom: 10px; /* Reduced margin */
 }
 
 .service-header h3 {
     color: #fff;
-    font-size: 1.1rem;
+    font-size: 1rem; /* Reduced font size */
 }
 .service-header span {
-    font-size: 0.9rem;
+    font-size: 0.8rem; /* Reduced font size */
     color: #bbb;
 }
 
 .service-price {
-    font-size: 1.8rem;
+    font-size: 1.5rem; /* Reduced font size */
     font-weight: bold;
-    color: #50fa7b; /* Green accent for price/percentage */
-    margin-bottom: 15px;
+    color: #50fa7b;
+    margin-bottom: 10px; /* Reduced margin */
 }
 
 .service-card.side-service {
-    justify-content: center; /* Center content vertically */
-    align-items: center; /* Center content horizontally */
+    justify-content: center;
+    align-items: center;
     text-align: center;
 }
 
@@ -325,8 +303,8 @@ img {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    font-size: 0.95rem;
+    gap: 5px; /* Reduced gap */
+    font-size: 0.9rem; /* Reduced font size */
 }
 .service-card.side-service a:hover {
     color: #fff;
@@ -334,9 +312,41 @@ img {
 }
 
 .service-card.side-service .icon {
-     font-size: 1.3rem; /* Placeholder */
+     font-size: 1.2rem; /* Reduced font size */
      color: #a678de;
 }
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .operations-grid {
+        grid-template-columns: repeat(4, 1fr); /* 4 columns on medium screens */
+    }
+}
+
+@media (max-width: 768px) {
+    .operations-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+    }
+    
+    .service-grid {
+        grid-template-columns: 1fr; /* Single column on mobile */
+    }
+    
+    .operation-card {
+        min-height: 70px; /* Even smaller on mobile */
+    }
+    
+    .banner {
+        max-height: 40px; /* Even smaller banner on mobile */
+    }
+}
+
+.service-card.side-service .icon img {
+    width: 20px; /* Reduced size */
+    height: 20px; /* Reduced size */
+    vertical-align: middle;
+}
+
 /* General Page Layout Styles */
 .page-layout {
     display: flex;
@@ -467,16 +477,6 @@ img {
 }
 
 .wheel-placeholder {
-    /* If using a div instead of img: */
-    /* width: 250px;
-    height: 250px;
-    border-radius: 50%;
-    background: conic-gradient(#ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
-    margin: 20px auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 5px solid #444; */
     margin-bottom: 25px;
 }
 #wheel-status {
@@ -534,8 +534,6 @@ img {
     margin: auto; /* Centers the QR code */
     max-width: 100%; /* Ensure QR code is responsive */
     height: auto;
-    /* The library sets inline styles for width/height, */
-    /* but this ensures it doesn't overflow its container */
 }
 
 /* AI Products Page Styles */
@@ -608,19 +606,19 @@ img {
     background: linear-gradient(135deg, #ddd, #bbb); /* Default gradient */
 }
 
-/* --- Logo Color Styles (Examples - Adjust colors to match screenshots) --- */
+/* --- Logo Color Styles --- */
 .logo-finbot { background: linear-gradient(135deg, #e74c3c, #c0392b); }
 .logo-c { background: linear-gradient(135deg, #5dade2, #3498db); }
-.logo-charity { background: linear-gradient(135deg, #e74c3c, #e67e22); } /* Red/Orange for charity */
-.logo-n { background: linear-gradient(135deg, #f1c40f, #f39c12); } /* Gold/Orange for N/Bitcoin */
-.logo-q { background: linear-gradient(135deg, #a678de, #8e44ad); } /* Purple gradient for Q */
-.logo-t { background: linear-gradient(135deg, #fad0c4, #ffd1ff); } /* Pink/Peach gradient for T */
-.logo-b { background: linear-gradient(135deg, #d8bfd8, #e6e6fa); } /* Pink/Purple gradient for B */
-.logo-h { background: linear-gradient(135deg, #5dade2, #a9cce3); } /* Blue gradient for H/Housing */
-.logo-p { background: linear-gradient(135deg, #fad0c4, #f8bbd0); } /* Light pink/purple for P */
-.logo-d { background: linear-gradient(135deg, #a678de, #c39bd3); } /* Purple/Violet for D */
-.logo-l { background: linear-gradient(135deg, #a678de, #af7ac5); } /* Purple variant for L */
-.logo-a { background: linear-gradient(135deg, #4dd0e1, #80deea); } /* Cyan/Blue for A */
+.logo-charity { background: linear-gradient(135deg, #e74c3c, #e67e22); }
+.logo-n { background: linear-gradient(135deg, #f1c40f, #f39c12); }
+.logo-q { background: linear-gradient(135deg, #a678de, #8e44ad); }
+.logo-t { background: linear-gradient(135deg, #fad0c4, #ffd1ff); }
+.logo-b { background: linear-gradient(135deg, #d8bfd8, #e6e6fa); }
+.logo-h { background: linear-gradient(135deg, #5dade2, #a9cce3); }
+.logo-p { background: linear-gradient(135deg, #fad0c4, #f8bbd0); }
+.logo-d { background: linear-gradient(135deg, #a678de, #c39bd3); }
+.logo-l { background: linear-gradient(135deg, #a678de, #af7ac5); }
+.logo-a { background: linear-gradient(135deg, #4dd0e1, #80deea); }
 
 
 .product-info-stats {
@@ -691,30 +689,6 @@ img {
 .btn.full-width:hover {
      background-color: #495057;
      text-decoration: none;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .products-grid {
-        grid-template-columns: 1fr; /* Stack cards on smaller screens */
-    }
-    .product-logo {
-        width: 100px;
-        height: 100px;
-        font-size: 2rem;
-    }
-    .product-info-stats span {
-        font-size: 1.3rem;
-    }
-     .ai-header h1 {
-        font-size: 1rem;
-    }
-}
-
-.service-card.side-service .icon img {
-    width: 24px; /* Or your desired icon size */
-    height: 24px; /* Or your desired icon size */
-    vertical-align: middle; /* Helps align if needed */
 }
 
 /* --- General Page Styles --- */
