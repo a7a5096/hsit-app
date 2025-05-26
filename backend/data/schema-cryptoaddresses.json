@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "_id",
+    "address",
+    "currency",
+    "isAssigned",
+    "isActive"
+  ],
+  "properties": {
+    "_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObjectId"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "address": {
+      "type": "string"
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["BTC", "ETH", "USDT", "UBT"]
+    },
+    "isAssigned": {
+      "type": "boolean",
+      "default": false
+    },
+    "assignedTo": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObjectId"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "assignedAt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Date"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "importBatch": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "createdAt": {
+      "$ref": "#/$defs/Date"
+    },
+    "updatedAt": {
+      "$ref": "#/$defs/Date"
+    }
+  },
+  "$defs": {
+    "ObjectId": {
+      "type": "object",
+      "properties": {
+        "$oid": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        }
+      },
+      "required": [
+        "$oid"
+      ],
+      "additionalProperties": false
+    },
+    "Date": {
+      "type": "object",
+      "properties": {
+        "$date": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "$date"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

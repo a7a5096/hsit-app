@@ -1,6 +1,6 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
-import User from '../models/User.js';
+import addressAssignmentService from '../services/addressAssignmentService.js';
 
 const router = express.Router();
 
@@ -9,17 +9,10 @@ const router = express.Router();
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    // Get addresses from the service
+    const addresses = await addressAssignmentService.getUserAddresses(req.user.id);
     
-    if (!user) {
-      return res.status(404).send('User not found');
-    }
-    
-    // Check if user has addresses assigned in the walletAddresses object
-    if (!user.walletAddresses || 
-        !user.walletAddresses.bitcoin || 
-        !user.walletAddresses.ethereum || 
-        !user.walletAddresses.ubt) {
+    if (!addresses.BTC || !addresses.ETH || !addresses.USDT) {
       return res.status(400).send('Cryptocurrency addresses not assigned to your account. Please contact support.');
     }
     
@@ -138,7 +131,7 @@ router.get('/', auth, async (req, res) => {
           <div class="address-card">
             <div class="crypto-name">Bitcoin (BTC)</div>
             <div class="address-container">
-              <div class="address-box" id="btc-address">${user.walletAddresses.bitcoin}</div>
+              <div class="address-box" id="btc-address">${addresses.BTC}</div>
               <button class="copy-btn" onclick="copyAddress('btc-address')">Copy</button>
             </div>
             <p class="warning">⚠️ Send only Bitcoin (BTC) to this address. Sending any other coin may result in permanent loss.</p>
@@ -147,7 +140,7 @@ router.get('/', auth, async (req, res) => {
           <div class="address-card">
             <div class="crypto-name">Ethereum (ETH)</div>
             <div class="address-container">
-              <div class="address-box" id="eth-address">${user.walletAddresses.ethereum}</div>
+              <div class="address-box" id="eth-address">${addresses.ETH}</div>
               <button class="copy-btn" onclick="copyAddress('eth-address')">Copy</button>
             </div>
             <p class="warning">⚠️ Send only Ethereum (ETH) to this address. Sending any other coin may result in permanent loss.</p>
@@ -156,7 +149,7 @@ router.get('/', auth, async (req, res) => {
           <div class="address-card">
             <div class="crypto-name">USDT (ERC20)</div>
             <div class="address-container">
-              <div class="address-box" id="usdt-address">${user.walletAddresses.ubt}</div>
+              <div class="address-box" id="usdt-address">${addresses.USDT}</div>
               <button class="copy-btn" onclick="copyAddress('usdt-address')">Copy</button>
             </div>
             <p class="warning">⚠️ Send only Tether (USDT - ERC20) to this address. Sending any other coin may result in permanent loss.</p>
