@@ -160,24 +160,42 @@ img {
 
 .dashboard-main {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
 }
 
+/* MODIFIED: Reduced banner height by 50% and added frame */
 .banner {
-    margin-bottom: 30px;
+    margin-bottom: 15px; /* Reduced from 30px */
     border-radius: 8px;
     overflow: hidden;
+    max-height: 100px; /* Reduced height by 50% */
+    border: 3px solid #a678de; /* Added frame with purple accent color */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Added shadow for depth */
+    flex: 0 0 auto; /* Don't allow banner to grow */
+    max-width: 100%;
 }
+
 .banner img {
     display: block; /* Remove extra space below image */
     width: 100%;
+    height: 100%; /* Make image fill the container */
+    object-fit: cover; /* Maintain aspect ratio while filling */
 }
 
-
+/* MODIFIED: Adjusted dashboard section to take more space */
 .dashboard-section {
     margin-bottom: 30px;
     background-color: #1f1f30; /* Card background */
     padding: 20px;
     border-radius: 8px;
+    flex: 1 0 auto; /* Allow section to grow */
+}
+
+.dashboard-section.common-operations {
+    flex: 1 0 65%; /* Make operations section take at least 65% of available space */
+    display: flex;
+    flex-direction: column;
 }
 
 .dashboard-section h2 {
@@ -187,20 +205,27 @@ img {
     padding-bottom: 10px;
 }
 
-/* Operations Grid Styles */
+/* MODIFIED: Operations Grid Styles - increased size to take more screen space */
 .operations-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Responsive grid */
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); /* Increased minimum width */
     gap: 15px;
+    margin-top: 20px; /* Added more space at top */
+    flex: 1; /* Make grid take all available space */
 }
 
 .operation-card {
     background-color: #2c2c44;
-    padding: 15px;
+    padding: 20px; /* Increased padding */
     border-radius: 5px;
     text-align: center;
     color: #ccc;
     transition: transform 0.2s ease, background-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 110px; /* Ensure consistent height */
 }
 
 .operation-card:hover {
@@ -210,14 +235,21 @@ img {
 }
 
 .operation-card .icon {
-    font-size: 1.5rem; /* Placeholder */
-    margin-bottom: 8px;
+    font-size: 1.8rem; /* Increased icon size */
+    margin-bottom: 12px; /* Increased spacing */
     /* Use actual icons here (SVG, FontAwesome, etc.) */
     color: #a678de;
 }
 
+.operation-card .icon img {
+    width: 36px; /* Increased from 24px */
+    height: 36px; /* Increased from 24px */
+    vertical-align: middle;
+}
+
 .operation-card span {
-    font-size: 0.9rem;
+    font-size: 1.05rem; /* Increased font size */
+    font-weight: 500; /* Made text slightly bolder */
 }
 
 /* Service Section Styles */
@@ -245,6 +277,19 @@ img {
 @media (max-width: 768px) {
     .service-card.main-service {
         grid-column: span 1; /* Stack on smaller screens */
+    }
+    
+    /* Ensure buttons still take up enough space on mobile */
+    .operations-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+    }
+    
+    .operation-card {
+        min-height: 100px; /* Slightly smaller on mobile */
+    }
+    
+    .banner {
+        max-height: 80px; /* Even smaller banner on mobile */
     }
 }
 
@@ -666,7 +711,6 @@ img {
     }
 }
 
-.operation-card .icon img,
 .service-card.side-service .icon img {
     width: 24px; /* Or your desired icon size */
     height: 24px; /* Or your desired icon size */
@@ -735,8 +779,3 @@ img {
     padding-bottom: 10px;
     font-size: 1.3rem;
 }
-
-.info-text {
-    font-size: 0.9rem;
-    color: 
-(Content truncated due to size limit. Use line ranges to read in chunks)
