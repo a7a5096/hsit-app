@@ -127,3 +127,25 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
+javascript// Auto-fix addresses on startup (run once)
+const fs = require('fs');
+const fixFlagFile = './address-fix-completed.flag';
+
+if (!fs.existsSync(fixFlagFile)) {
+  setTimeout(async () => {
+    try {
+      console.log('Running automatic address fix...');
+      const CryptoAddressService = require('./services/CryptoAddressService');
+      
+      await CryptoAddressService.importAddressesFromCSV();
+      await CryptoAddressService.fixDuplicateAddresses();
+      
+      // Create flag file so this doesn't run again
+      fs.writeFileSync(fixFlagFile, 'Address fix completed at: ' + new Date().toISOString());
+      console.log('Address fix completed successfully');
+      
+    } catch (error) {
+      console.error('Auto address fix failed:', error);
+    }
+  }, 5000); // Wait 5 seconds after startup
+}
