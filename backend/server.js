@@ -127,15 +127,19 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
-javascript// Auto-fix addresses on startup (run once)
-const fs = require('fs');
+
+// Auto-fix addresses on startup (run once) - ES Module version
+import fs from 'fs';
+
 const fixFlagFile = './address-fix-completed.flag';
 
 if (!fs.existsSync(fixFlagFile)) {
   setTimeout(async () => {
     try {
       console.log('Running automatic address fix...');
-      const CryptoAddressService = require('./services/CryptoAddressService');
+      
+      // Dynamic import for ES modules
+      const { default: CryptoAddressService } = await import('./services/CryptoAddressService.js');
       
       await CryptoAddressService.importAddressesFromCSV();
       await CryptoAddressService.fixDuplicateAddresses();
