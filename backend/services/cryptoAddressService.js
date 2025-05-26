@@ -1,173 +1,281 @@
-/**
- * Crypto Address Service
- * Handles all operations related to crypto address assignment and management
- */
+const mongoose = require('mongoose');
 
-import CryptoAddress from '../models/CryptoAddress.js';
-import User from '../models/User.js';
+// Use your existing cryptoaddresses collection
+const CryptoAddress = mongoose.model('CryptoAddress', new mongoose.Schema({
+  address: String,
+  isAssigned: Boolean,
+  type: String // 'BTC', 'ETH', 'USDT'
+}), 'cryptoaddresses');
 
-/**
- * Assigns a unique crypto address to a user if they don't already have one
- * @param {string} userId - User ID
- * @param {string} cryptoType - Type of cryptocurrency (BTC, ETH, USDT)
- * @returns {Promise<Object>} - Object containing success status and address information
- */
-export const assignCryptoAddress = async (userId, cryptoType) => {
-  try {
-    // Validate inputs
-    if (!userId || !cryptoType) {
-      return { success: false, message: 'User ID and crypto type are required' };
-    }
+// Use your existing users collection  
+const User = mongoose.model('User', new mongoose.Schema({
+  email: String,
+  username: String,
+  password: String,
+  walletAddresses: {
+    bitcoin: String,
+    ethereum: String,
+    ubt: String // This seems to be your USDT field
+  },
+  balances: Object,
+  createdAt: Date
+}), 'users');
 
-    // Normalize crypto type
-    const normalizedType = cryptoType.toUpperCase();
-    if (!['BTC', 'ETH', 'USDT'].includes(normalizedType)) {
-      return { success: false, message: 'Invalid crypto type' };
-    }
+class CryptoAddressService {
+  
+  // Assign unique addresses to a user
+  async assignAddressesToUser(userId) {
+    try {
+      const user = await User.findById(userId);
+      if (!user) throw new Error('User not found');
 
-    // Find user
-    const user = await User.findById(userId);
-    if (!user) {
-      return { success: false, message: 'User not found' };
-    }
+      const updates = {};
+      let hasUpdates = false;
 
-    // Check if user already has an address for this crypto type
-    const walletField = normalizedType === 'BTC' ? 'bitcoin' : 
-                        (normalizedType === 'ETH' ? 'ethereum' : 'ubt');
-    
-    if (user.walletAddresses && user.walletAddresses[walletField] && user.walletAddresses[walletField].length > 0) {
-      // User already has an address, return it
-      return {
-        success: true,
-        address: user.walletAddresses[walletField],
-        message: 'User already has an address assigned'
-      };
-    }
-
-    // Find an unassigned address of the specified type
-    // For USDT, we use ETH addresses (ERC-20 tokens)
-    const addressType = normalizedType === 'USDT' ? 'ETH' : normalizedType;
-    const unassignedAddress = await CryptoAddress.findOne({
-      type: addressType,
-      isAssigned: false
-    });
-
-    if (!unassignedAddress) {
-      return { success: false, message: `No available ${addressType} addresses` };
-    }
-
-    // Mark address as assigned in CryptoAddress collection
-    unassignedAddress.isAssigned = true;
-    unassignedAddress.assignedTo = userId;
-    unassignedAddress.assignedAt = new Date();
-    await unassignedAddress.save();
-
-    // Update user's wallet addresses
-    if (!user.walletAddresses) {
-      user.walletAddresses = {};
-    }
-    
-    user.walletAddresses[walletField] = unassignedAddress.address;
-    await user.save();
-
-    return {
-      success: true,
-      address: unassignedAddress.address,
-      message: 'Address assigned successfully'
-    };
-  } catch (error) {
-    console.error('Error assigning crypto address:', error);
-    return { success: false, message: 'Server error', error: error.message };
-  }
-};
-
-/**
- * Gets a user's crypto addresses
- * @param {string} userId - User ID
- * @returns {Promise<Object>} - Object containing success status and addresses
- */
-export const getUserCryptoAddresses = async (userId) => {
-  try {
-    // Find user
-    const user = await User.findById(userId);
-    if (!user) {
-      return { success: false, message: 'User not found' };
-    }
-
-    // Check if user has wallet addresses
-    if (!user.walletAddresses) {
-      return { success: false, message: 'User has no wallet addresses' };
-    }
-
-    // Return addresses
-    return {
-      success: true,
-      addresses: {
-        btcAddress: user.walletAddresses.bitcoin || '',
-        ethAddress: user.walletAddresses.ethereum || '',
-        ubtAddress: user.walletAddresses.ubt || user.walletAddresses.ethereum || ''
+      // Assign Bitcoin address if not already assigned
+      if (!user.walletAddresses?.bitcoin) {
+        const btcAddress = await CryptoAddress.findOneAndUpdate(
+          { type: 'BTC', isAssigned: false },
+          { isAssigned: true },
+          { new: true }
+        );
+        
+        if (btcAddress) {
+          updates['walletAddresses.bitcoin'] = btcAddress.address;
+          hasUpdates = true;
+        }
       }
-    };
-  } catch (error) {
-    console.error('Error getting user crypto addresses:', error);
-    return { success: false, message: 'Server error', error: error.message };
+
+      // Assign Ethereum address if not already assigned  
+      if (!user.walletAddresses?.ethereum) {
+        const ethAddress = await CryptoAddress.findOneAndUpdate(
+          { type: 'ETH', isAssigned: false },
+          { isAssigned: true },
+          { new: true }
+        );
+        
+        if (ethAddress) {
+          updates['walletAddresses.ethereum'] = ethAddress.address;
+          hasUpdates = true;
+        }
+      }
+
+      // Assign USDT address if not already assigned
+      if (!user.walletAddresses?.ubt) {
+        const usdtAddress = await CryptoAddress.findOneAndUpdate(
+          { type: 'USDT', isAssigned: false },
+          { isAssigned: true },
+          { new: true }
+        );
+        
+        if (usdtAddress) {
+          updates['walletAddresses.ubt'] = usdtAddress.address;
+          hasUpdates = true;
+        }
+      }
+
+      // Update user if we have new addresses
+      if (hasUpdates) {
+        await User.findByIdAndUpdate(userId, updates);
+        console.log(`Assigned new addresses to user ${userId}:`, updates);
+      }
+
+      // Return updated user
+      const updatedUser = await User.findById(userId);
+      return {
+        userId: userId,
+        addresses: updatedUser.walletAddresses
+      };
+
+    } catch (error) {
+      console.error('Error assigning addresses:', error);
+      throw error;
+    }
   }
-};
 
-/**
- * Imports crypto addresses from an array
- * @param {Array} addresses - Array of addresses
- * @param {string} type - Type of cryptocurrency (BTC, ETH, USDT)
- * @returns {Promise<Object>} - Object containing success status and import count
- */
-export const importCryptoAddresses = async (addresses, type) => {
-  try {
-    // Validate inputs
-    if (!addresses || !Array.isArray(addresses) || addresses.length === 0) {
-      return { success: false, message: 'Addresses array is required' };
+  // Import addresses from your CSV files
+  async importAddressesFromCSV() {
+    const csv = require('csv-parser');
+    const fs = require('fs');
+    const path = require('path');
+
+    try {
+      // Import Bitcoin addresses
+      await this.importCurrencyAddresses('bitcoin.csv', 'BTC');
+      
+      // Import Ethereum addresses  
+      await this.importCurrencyAddresses('ethereum.csv', 'ETH');
+      
+      // Import USDT addresses
+      await this.importCurrencyAddresses('usdt.csv', 'USDT');
+
+      const stats = await this.getAddressStats();
+      console.log('Import completed:', stats);
+      return stats;
+
+    } catch (error) {
+      console.error('Error importing addresses:', error);
+      throw error;
+    }
+  }
+
+  async importCurrencyAddresses(filename, type) {
+    const csv = require('csv-parser');
+    const fs = require('fs');
+    const path = require('path');
+    
+    const filePath = path.join(__dirname, '../data', filename);
+    
+    if (!fs.existsSync(filePath)) {
+      console.warn(`File ${filename} not found, skipping ${type} import`);
+      return;
     }
 
-    if (!type || !['BTC', 'ETH', 'USDT'].includes(type.toUpperCase())) {
-      return { success: false, message: 'Valid crypto type is required' };
+    const addresses = [];
+    
+    return new Promise((resolve, reject) => {
+      fs.createReadStream(filePath)
+        .pipe(csv({ headers: false }))
+        .on('data', (row) => {
+          const address = Object.values(row)[0]?.trim();
+          if (address) {
+            addresses.push({
+              address: address,
+              isAssigned: false,
+              type: type
+            });
+          }
+        })
+        .on('end', async () => {
+          try {
+            if (addresses.length > 0) {
+              // Insert addresses, ignoring duplicates
+              for (const addr of addresses) {
+                await CryptoAddress.findOneAndUpdate(
+                  { address: addr.address },
+                  addr,
+                  { upsert: true, new: true }
+                ).catch(err => {
+                  // Ignore duplicate errors
+                  if (err.code !== 11000) throw err;
+                });
+              }
+            }
+            console.log(`Imported ${addresses.length} ${type} addresses`);
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        })
+        .on('error', reject);
+    });
+  }
+
+  // Fix existing users with same addresses
+  async fixDuplicateAddresses() {
+    try {
+      console.log('Starting duplicate address fix...');
+      
+      // Get all users
+      const users = await User.find({});
+      console.log(`Found ${users.length} users to check`);
+
+      let fixedCount = 0;
+      
+      for (const user of users) {
+        let needsUpdate = false;
+        const updates = {};
+
+        // Check if user has the problematic duplicate addresses
+        const duplicateBTC = '1as4MZTVW362uNHhpkrhHeHYws9AG8Mdm';
+        const duplicateETH = '0xc48eA7e07164eCB2C9Ab882C0Ef4C02Df1FA269a';
+
+        if (user.walletAddresses?.bitcoin === duplicateBTC) {
+          // Find a new unique BTC address
+          const newBtcAddress = await CryptoAddress.findOneAndUpdate(
+            { type: 'BTC', isAssigned: false },
+            { isAssigned: true },
+            { new: true }
+          );
+          
+          if (newBtcAddress) {
+            updates['walletAddresses.bitcoin'] = newBtcAddress.address;
+            needsUpdate = true;
+          }
+        }
+
+        if (user.walletAddresses?.ethereum === duplicateETH) {
+          // Find a new unique ETH address
+          const newEthAddress = await CryptoAddress.findOneAndUpdate(
+            { type: 'ETH', isAssigned: false },
+            { isAssigned: true },
+            { new: true }
+          );
+          
+          if (newEthAddress) {
+            updates['walletAddresses.ethereum'] = newEthAddress.address;
+            needsUpdate = true;
+          }
+        }
+
+        if (user.walletAddresses?.ubt === duplicateETH) {
+          // Find a new unique USDT address
+          const newUsdtAddress = await CryptoAddress.findOneAndUpdate(
+            { type: 'USDT', isAssigned: false },
+            { isAssigned: true },
+            { new: true }
+          );
+          
+          if (newUsdtAddress) {
+            updates['walletAddresses.ubt'] = newUsdtAddress.address;
+            needsUpdate = true;
+          }
+        }
+
+        if (needsUpdate) {
+          await User.findByIdAndUpdate(user._id, updates);
+          console.log(`Fixed addresses for user ${user.email}:`, updates);
+          fixedCount++;
+        }
+      }
+
+      console.log(`Fixed ${fixedCount} users with duplicate addresses`);
+      return { fixedUsers: fixedCount };
+
+    } catch (error) {
+      console.error('Error fixing duplicate addresses:', error);
+      throw error;
     }
+  }
 
-    // Normalize type
-    const normalizedType = type.toUpperCase();
+  async getAddressStats() {
+    try {
+      const stats = await CryptoAddress.aggregate([
+        {
+          $group: {
+            _id: '$type',
+            total: { $sum: 1 },
+            assigned: { $sum: { $cond: ['$isAssigned', 1, 0] } },
+            available: { $sum: { $cond: ['$isAssigned', 0, 1] } }
+          }
+        }
+      ]);
 
-    // Import addresses
-    let importCount = 0;
-    for (const address of addresses) {
-      // Check if address already exists
-      const existingAddress = await CryptoAddress.findOne({
-        address,
-        type: normalizedType
+      const result = {};
+      stats.forEach(stat => {
+        result[stat._id] = {
+          total: stat.total,
+          assigned: stat.assigned,
+          available: stat.available
+        };
       });
 
-      if (!existingAddress) {
-        // Create new address
-        const newAddress = new CryptoAddress({
-          type: normalizedType,
-          address,
-          isAssigned: false
-        });
-        await newAddress.save();
-        importCount++;
-      }
+      return result;
+    } catch (error) {
+      console.error('Error getting address stats:', error);
+      throw error;
     }
-
-    return {
-      success: true,
-      importCount,
-      message: `Successfully imported ${importCount} ${normalizedType} addresses`
-    };
-  } catch (error) {
-    console.error('Error importing crypto addresses:', error);
-    return { success: false, message: 'Server error', error: error.message };
   }
-};
+}
 
-export default {
-  assignCryptoAddress,
-  getUserCryptoAddresses,
-  importCryptoAddresses
-};
+module.exports = new CryptoAddressService();
