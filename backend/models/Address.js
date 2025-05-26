@@ -1,49 +1,14 @@
+// This file is deprecated and has been consolidated into CryptoAddress.js
+// Keeping this file as a reference for backward compatibility during migration
+// All new code should use the consolidated CryptoAddress model
+
 import mongoose from 'mongoose';
+import CryptoAddress from './CryptoAddress.js';
 
-const addressSchema = new mongoose.Schema({
-  address: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true
-  },
-  currency: {
-    type: String,
-    required: true,
-    enum: ['BTC', 'ETH', 'USDT'],
-    index: true
-  },
-  isAssigned: {
-    type: Boolean,
-    default: false,
-    index: true
-  },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    default: null,
-    index: true
-  },
-  assignedAt: {
-    type: Date,
-    default: null
-  },
-  isActive: {
-    type: Boolean,
-    default: true,
-    index: true
-  },
-  metadata: {
-    importBatch: String,
-    notes: String
-  }
-}, {
-  timestamps: true
-});
+// For backward compatibility, re-export the consolidated model
+const Address = CryptoAddress;
 
-// Compound indexes for efficient queries
-addressSchema.index({ currency: 1, isAssigned: 1, isActive: 1 });
-addressSchema.index({ assignedTo: 1, currency: 1 });
+// Warning message for developers
+console.warn('Address.js is deprecated. Please use CryptoAddress.js for all cryptocurrency address operations.');
 
-const Address = mongoose.model('Address', addressSchema);
 export default Address;
