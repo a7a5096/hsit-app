@@ -1,10 +1,17 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
+import csv from 'csv-parser';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Use your existing cryptoaddresses collection
 const CryptoAddress = mongoose.model('CryptoAddress', new mongoose.Schema({
   address: String,
   isAssigned: Boolean,
-  type: String // 'BTC', 'ETH', 'USDT'
+  type: String
 }), 'cryptoaddresses');
 
 // Use your existing users collection  
@@ -15,7 +22,7 @@ const User = mongoose.model('User', new mongoose.Schema({
   walletAddresses: {
     bitcoin: String,
     ethereum: String,
-    ubt: String // This seems to be your USDT field
+    ubt: String
   },
   balances: Object,
   createdAt: Date
@@ -23,7 +30,6 @@ const User = mongoose.model('User', new mongoose.Schema({
 
 class CryptoAddressService {
   
-  // Assign unique addresses to a user
   async assignAddressesToUser(userId) {
     try {
       const user = await User.findById(userId);
@@ -93,20 +99,10 @@ class CryptoAddressService {
     }
   }
 
-  // Import addresses from your CSV files
   async importAddressesFromCSV() {
-    const csv = require('csv-parser');
-    const fs = require('fs');
-    const path = require('path');
-
     try {
-      // Import Bitcoin addresses
       await this.importCurrencyAddresses('bitcoin.csv', 'BTC');
-      
-      // Import Ethereum addresses  
       await this.importCurrencyAddresses('ethereum.csv', 'ETH');
-      
-      // Import USDT addresses
       await this.importCurrencyAddresses('usdt.csv', 'USDT');
 
       const stats = await this.getAddressStats();
@@ -120,10 +116,6 @@ class CryptoAddressService {
   }
 
   async importCurrencyAddresses(filename, type) {
-    const csv = require('csv-parser');
-    const fs = require('fs');
-    const path = require('path');
-    
     const filePath = path.join(__dirname, '../data', filename);
     
     if (!fs.existsSync(filePath)) {
@@ -149,14 +141,12 @@ class CryptoAddressService {
         .on('end', async () => {
           try {
             if (addresses.length > 0) {
-              // Insert addresses, ignoring duplicates
               for (const addr of addresses) {
                 await CryptoAddress.findOneAndUpdate(
                   { address: addr.address },
                   addr,
                   { upsert: true, new: true }
                 ).catch(err => {
-                  // Ignore duplicate errors
                   if (err.code !== 11000) throw err;
                 });
               }
@@ -171,12 +161,10 @@ class CryptoAddressService {
     });
   }
 
-  // Fix existing users with same addresses
   async fixDuplicateAddresses() {
     try {
       console.log('Starting duplicate address fix...');
       
-      // Get all users
       const users = await User.find({});
       console.log(`Found ${users.length} users to check`);
 
@@ -186,12 +174,10 @@ class CryptoAddressService {
         let needsUpdate = false;
         const updates = {};
 
-        // Check if user has the problematic duplicate addresses
         const duplicateBTC = '1as4MZTVW362uNHhpkrhHeHYws9AG8Mdm';
         const duplicateETH = '0xc48eA7e07164eCB2C9Ab882C0Ef4C02Df1FA269a';
 
         if (user.walletAddresses?.bitcoin === duplicateBTC) {
-          // Find a new unique BTC address
           const newBtcAddress = await CryptoAddress.findOneAndUpdate(
             { type: 'BTC', isAssigned: false },
             { isAssigned: true },
@@ -205,7 +191,6 @@ class CryptoAddressService {
         }
 
         if (user.walletAddresses?.ethereum === duplicateETH) {
-          // Find a new unique ETH address
           const newEthAddress = await CryptoAddress.findOneAndUpdate(
             { type: 'ETH', isAssigned: false },
             { isAssigned: true },
@@ -219,7 +204,6 @@ class CryptoAddressService {
         }
 
         if (user.walletAddresses?.ubt === duplicateETH) {
-          // Find a new unique USDT address
           const newUsdtAddress = await CryptoAddress.findOneAndUpdate(
             { type: 'USDT', isAssigned: false },
             { isAssigned: true },
@@ -278,4 +262,4 @@ class CryptoAddressService {
   }
 }
 
-module.exports = new CryptoAddressService();
+export default new CryptoAddressService();
