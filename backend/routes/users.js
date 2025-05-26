@@ -11,7 +11,7 @@ import CryptoAddress from '../models/CryptoAddress.js';
 import auth from '../middleware/auth.js';
 
 // Import AddressService
-const AddressService = require('../services/AddressService');
+import AddressService from '../services/AddressService.js';
 
 const router = express.Router();
 

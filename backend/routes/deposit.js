@@ -2,12 +2,13 @@
  * Updated deposit route to use the correct wallet address fields
  * from the User model's walletAddresses object
  */
-const express = require('express');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import User from '../models/User.js';
+import Transaction from '../models/Transaction.js';
+import { processDeposit, getCurrentUBTRate } from '../utils/ubtExchange.js';
+
 const router = express.Router();
-const auth = require('../middleware/auth');
-const User = require('../models/User');
-const Transaction = require('../models/Transaction');
-const { processDeposit, getCurrentUBTRate } = require('../utils/ubtExchange');
 
 // @route   GET api/deposit/addresses
 // @desc    Get user's deposit addresses
@@ -115,4 +116,4 @@ router.post('/simulate', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import AddressService from '../services/AddressService.js';
+
 const router = express.Router();
-const AddressService = require('../services/AddressService');
-const auth = require('../middleware/auth'); // Adjust as needed
 
 // Import addresses from CSV files
 router.post('/import', auth, async (req, res) => {
@@ -141,4 +142,4 @@ router.post('/release', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

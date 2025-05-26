@@ -1,4 +1,4 @@
-const AddressService = require('../services/AddressService');
+import AddressService from '../services/AddressService.js';
 
 // Middleware to automatically assign addresses to new users
 const autoAssignAddresses = async (req, res, next) => {
@@ -23,4 +23,4 @@ const autoAssignAddresses = async (req, res, next) => {
   }
 };
 
-module.exports = autoAssignAddresses;
+export default autoAssignAddresses;

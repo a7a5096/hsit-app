@@ -1,8 +1,10 @@
-const Address = require('../models/Address');
-const UserAddress = require('../models/UserAddress');
-const csv = require('csv-parser');
-const fs = require('fs');
-const path = require('path');
+import Address from '../models/Address.js';
+import UserAddress from '../models/UserAddress.js';
+import csv from 'csv-parser';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import User from '../models/User.js';
 
 class AddressService {
   
@@ -33,6 +35,8 @@ class AddressService {
   }
 
   async importCurrencyAddresses(filename, currency, importBatch) {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
     const filePath = path.join(__dirname, '../data', filename);
     const addresses = [];
     
@@ -265,7 +269,6 @@ class AddressService {
   // Bulk assign addresses to existing users
   async bulkAssignToExistingUsers() {
     try {
-      const User = require('../models/User'); // Adjust path as needed
       const users = await User.find({}, '_id');
       
       const results = [];
@@ -286,4 +289,5 @@ class AddressService {
   }
 }
 
-module.exports = new AddressService();
+const addressService = new AddressService();
+export default addressService;

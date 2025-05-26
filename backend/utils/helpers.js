@@ -1,7 +1,8 @@
-const crypto = require('crypto');
-const qrcode = require('qrcode');
-const fs = require('fs');
-const path = require('path');
+import crypto from 'crypto';
+import qrcode from 'qrcode';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 /**
  * Generate a random verification code
@@ -54,6 +55,9 @@ const generateQRCode = async (address, outputPath) => {
  */
 const loadCryptoAddresses = () => {
   try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    
     const btcAddressesPath = path.join(__dirname, '../../bitcoin.csv');
     const ethAddressesPath = path.join(__dirname, '../../ethereum.csv');
     const usdtAddressesPath = path.join(__dirname, '../../USDT.csv');
@@ -98,7 +102,7 @@ const calculateUBTBuyRate = (currentExchangeRate, buyRateFactor = 0.98) => {
   return currentExchangeRate * buyRateFactor;
 };
 
-module.exports = {
+export {
   generateVerificationCode,
   generateInvitationCode,
   generateQRCode,

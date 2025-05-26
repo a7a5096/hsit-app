@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import User from '../models/User.js';
+import Invitation from '../models/Invitation.js';
+import { generateInvitationCode } from '../utils/helpers.js';
+
 const router = express.Router();
-const auth = require('../middleware/auth');
-const User = require('../models/User');
-const Invitation = require('../models/Invitation');
-const { generateInvitationCode } = require('../utils/helpers');
 
 // @route   GET api/invitations
 // @desc    Get user's invitation code
@@ -145,4 +146,4 @@ router.get('/validate/:code', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

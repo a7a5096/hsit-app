@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const userAddressSchema = new mongoose.Schema({
   userId: {
@@ -35,4 +35,5 @@ const userAddressSchema = new mongoose.Schema({
 // Ensure one document per user
 userAddressSchema.index({ userId: 1 }, { unique: true });
 
-module.exports = mongoose.model('UserAddress', userAddressSchema);
+const UserAddress = mongoose.model('UserAddress', userAddressSchema);
+export default UserAddress;
