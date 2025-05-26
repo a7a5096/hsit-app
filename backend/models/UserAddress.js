@@ -1,0 +1,38 @@
+const mongoose = require('mongoose');
+
+const userAddressSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  addresses: {
+    BTC: {
+      address: String,
+      assignedAt: Date,
+      isActive: { type: Boolean, default: true }
+    },
+    ETH: {
+      address: String,
+      assignedAt: Date,
+      isActive: { type: Boolean, default: true }
+    },
+    USDT: {
+      address: String,
+      assignedAt: Date,
+      isActive: { type: Boolean, default: true }
+    }
+  },
+  totalAssigned: {
+    type: Number,
+    default: 0
+  }
+}, {
+  timestamps: true
+});
+
+// Ensure one document per user
+userAddressSchema.index({ userId: 1 }, { unique: true });
+
+module.exports = mongoose.model('UserAddress', userAddressSchema);
