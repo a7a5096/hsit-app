@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import csv from 'csv-parser';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -123,42 +122,33 @@ class CryptoAddressService {
       return;
     }
 
-    const addresses = [];
-    
-    return new Promise((resolve, reject) => {
-      fs.createReadStream(filePath)
-        .pipe(csv({ headers: false }))
-        .on('data', (row) => {
-          const address = Object.values(row)[0]?.trim();
-          if (address) {
-            addresses.push({
-              address: address,
-              isAssigned: false,
-              type: type
-            });
-          }
-        })
-        .on('end', async () => {
-          try {
-            if (addresses.length > 0) {
-              for (const addr of addresses) {
-                await CryptoAddress.findOneAndUpdate(
-                  { address: addr.address },
-                  addr,
-                  { upsert: true, new: true }
-                ).catch(err => {
-                  if (err.code !== 11000) throw err;
-                });
-              }
-            }
-            console.log(`Imported ${addresses.length} ${type} addresses`);
-            resolve();
-          } catch (error) {
-            reject(error);
-          }
-        })
-        .on('error', reject);
-    });
+    try {
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      const lines = fileContent.split('\n').filter(line => line.trim());
+      
+      const addresses = lines.map(line => ({
+        address: line.trim(),
+        isAssigned: false,
+        type: type
+      })).filter(addr => addr.address);
+
+      if (addresses.length > 0) {
+        for (const addr of addresses) {
+          await CryptoAddress.findOneAndUpdate(
+            { address: addr.address },
+            addr,
+            { upsert: true, new: true }
+          ).catch(err => {
+            if (err.code !== 11000) throw err;
+          });
+        }
+      }
+      
+      console.log(`Imported ${addresses.length} ${type} addresses`);
+    } catch (error) {
+      console.error(`Error importing ${type} addresses:`, error);
+      throw error;
+    }
   }
 
   async fixDuplicateAddresses() {
