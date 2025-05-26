@@ -15,7 +15,6 @@ import usersRoutes from './routes/users.js';
 import teamRoutes from './routes/team.js';
 import depositPageRoutes from './routes/depositPage.js';
 import depositRoutes from './routes/deposit.js';
-import migrationRoutes from './routes/migration.js';
 // Import crypto service
 import CryptoAddressService from './services/CryptoAddressService.js';
 // Import address assignment service
@@ -64,41 +63,6 @@ app.use('/api/users', usersRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/deposit', depositPageRoutes);
 app.use('/api/deposit', depositRoutes);
-app.use('/api/migration', migrationRoutes);
-
-// Auto-trigger migration on startup (will only run once)
-setTimeout(async () => {
-  try {
-    console.log('Auto-triggering migration...');
-    // Get the migration token from the migration route
-    const migrationToken = migrationRoutes.MIGRATION_TOKEN;
-    
-    if (!migrationToken) {
-      console.log('Migration token not found, skipping auto-migration');
-      return;
-    }
-    
-    // Make an internal request to the migration endpoint
-    const response = await fetch('http://localhost:' + (process.env.PORT || 5000) + '/api/migration/run', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ token: migrationToken })
-    });
-    
-    const result = await response.json();
-    console.log('Auto-migration result:', result);
-    
-    if (result.success) {
-      console.log('Migration completed successfully!');
-    } else {
-      console.log('Migration failed:', result.message || 'Unknown error');
-    }
-  } catch (error) {
-    console.error('Error during auto-migration:', error);
-  }
-}, 10000); // Wait 10 seconds after startup to ensure database connection is established
 
 // CRYPTO ADDRESS MANAGEMENT ENDPOINTS
 app.post('/admin/fix-addresses', async (req, res) => {
@@ -252,6 +216,3 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
-
-// Export the migration token for auto-migration
-export const MIGRATION_TOKEN = migrationRoutes.MIGRATION_TOKEN;
