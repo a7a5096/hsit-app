@@ -4,26 +4,20 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 import csv from 'csv-parser';
-
 // Models
 import User from '../models/User.js';
 import Transaction from '../models/Transaction.js';
-
 const router = express.Router();
-
 // Environment variables
 const JWT_SECRET = process.env.JWT_SECRET || 'hsit_jwt_secret_key_2025';
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
 const UBT_INITIAL_EXCHANGE_RATE = process.env.UBT_INITIAL_EXCHANGE_RATE || 1;
-
 // Import models
 import VerificationCode from '../models/VerificationCode.js';
 import PendingRegistration from '../models/PendingRegistration.js';
-
 // Import migration utility and services
 import { migrateCryptoAddressesFromCsv } from '../utils/cryptoMigration.js';
 import AddressService from '../services/AddressService.js';
-
 // Helper functions
 const sendVerificationCode = async (phoneNumber) => {
   try {
@@ -59,323 +53,95 @@ const sendVerificationCode = async (phoneNumber) => {
     
     return true;
   } catch (error) {
-    console.error('SMS sending error:', error);
+    console.error('Send verification code error:', error);
     return false;
   }
 };
-
 const verifyCode = async (phoneNumber, code) => {
   try {
     // Find verification code in database
-    const verification = await VerificationCode.findOne({ phoneNumber });
+    const verificationCode = await VerificationCode.findOne({ phoneNumber });
     
-    // Check if we have a verification code for this phone number
-    if (!verification) {
-      return { valid: false, message: 'No verification code found' };
+    if (!verificationCode) {
+      return { valid: false, message: 'Verification code not found' };
     }
     
     // Check if code has expired
-    if (Date.now() > verification.expiresAt) {
+    if (Date.now() > verificationCode.expiresAt) {
       await VerificationCode.deleteOne({ phoneNumber });
-      return { valid: false, message: 'Verification code has expired' };
+      return { valid: false, message: 'Verification code expired' };
     }
     
     // Check if code matches
-    if (verification.code !== code) {
+    if (verificationCode.code !== code) {
       return { valid: false, message: 'Invalid verification code' };
     }
     
-    // Code is valid, clean up
+    // Delete verification code
     await VerificationCode.deleteOne({ phoneNumber });
     
     return { valid: true };
   } catch (error) {
-    console.error('Verification error:', error);
-    return { valid: false, message: 'Server error during verification' };
+    console.error('Verify code error:', error);
+    return { valid: false, message: 'Server error' };
   }
 };
-
-// Import crypto address model
-import CryptoAddress from '../models/CryptoAddress.js';
-
+// Get available crypto addresses
 const getAvailableCryptoAddresses = async () => {
-  const addresses = {
-    bitcoin: null,
-    ethereum: null,
-    ubt: null
-  };
-  
   try {
-    // Find available Bitcoin address
-    const bitcoinAddress = await CryptoAddress.findOne({ 
-      currency: 'bitcoin', 
-      used: false 
-    });
-    
-    if (bitcoinAddress) {
-      addresses.bitcoin = {
-        address: bitcoinAddress.address,
-        privateKey: bitcoinAddress.privateKey
-      };
-    }
-    
-    // Find available Ethereum address
-    const ethereumAddress = await CryptoAddress.findOne({ 
-      currency: 'ethereum', 
-      used: false 
-    });
-    
-    if (ethereumAddress) {
-      addresses.ethereum = {
-        address: ethereumAddress.address,
-        privateKey: ethereumAddress.privateKey
-      };
-      
-      // For UBT, we'll use the Ethereum address as well
-      addresses.ubt = {
-        address: ethereumAddress.address,
-        privateKey: ethereumAddress.privateKey
-      };
-    }
-    
-    // If we don't have addresses in the database yet, try to migrate from CSV files
-    if (!addresses.bitcoin || !addresses.ethereum) {
-      await migrateCryptoAddressesFromCsv();
-      
-      // Try again after migration
-      if (!addresses.bitcoin) {
-        const bitcoinAddress = await CryptoAddress.findOne({ 
-          currency: 'bitcoin', 
-          used: false 
-        });
-        
-        if (bitcoinAddress) {
-          addresses.bitcoin = {
-            address: bitcoinAddress.address,
-            privateKey: bitcoinAddress.privateKey
-          };
-        }
-      }
-      
-      if (!addresses.ethereum) {
-        const ethereumAddress = await CryptoAddress.findOne({ 
-          currency: 'ethereum', 
-          used: false 
-        });
-        
-        if (ethereumAddress) {
-          addresses.ethereum = {
-            address: ethereumAddress.address,
-            privateKey: ethereumAddress.privateKey
-          };
-          
-          // For UBT, we'll use the Ethereum address as well
-          addresses.ubt = {
-            address: ethereumAddress.address,
-            privateKey: ethereumAddress.privateKey
-          };
-        }
-      }
-    }
+    // Get available addresses from AddressService
+    return await AddressService.getAvailableAddresses();
   } catch (error) {
-    console.error('Error getting crypto addresses:', error);
+    console.error('Get available crypto addresses error:', error);
+    return {};
   }
-  
-  return addresses;
 };
-
+// Mark address as assigned
 const markAddressAsAssigned = async (currency, address) => {
   try {
-    // Find the address in the database
-    const cryptoAddress = await CryptoAddress.findOne({ address });
-    
-    if (!cryptoAddress) {
-      console.warn(`Crypto address ${address} not found in database`);
-      return false;
-    }
-    
-    // Mark as used and save
-    cryptoAddress.used = true;
-    cryptoAddress.assignedAt = new Date();
-    await cryptoAddress.save();
-    
-    console.log(`Marked ${currency} address ${address} as assigned in database`);
-    return true;
+    // Mark address as assigned in AddressService
+    await AddressService.markAddressAsAssigned(currency, address);
   } catch (error) {
-    console.error('Error marking address as assigned:', error);
-    return false;
+    console.error(`Mark ${currency} address as assigned error:`, error);
   }
 };
-
-// Routes
-
-// GET endpoint to retrieve authenticated user data
-router.get('/', async (req, res) => {
-  try {
-    // Get token from header
-    const token = req.header('x-auth-token');
-    
-    // Check if token exists
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'No authentication token, authorization denied' 
-      });
-    }
-    
-    // Verify token
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET);
-      
-      // Find user by id from decoded token
-      const user = await User.findById(decoded.id).select('-password');
-      
-      if (!user) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'User not found' 
-        });
-      }
-      
-      // Ensure user has balances object with all required fields
-      if (!user.balances) {
-        console.log(`Fixing missing balances for user: ${user.id}`);
-        user.balances = {
-          btc: 0,
-          eth: 0,
-          usdt: 0,
-          ubt: 100 // Default starting balance
-        };
-        await user.save();
-      } else {
-        // Ensure all balance fields exist
-        const requiredBalances = ['btc', 'eth', 'usdt', 'ubt'];
-        let balanceUpdated = false;
-        
-        for (const currency of requiredBalances) {
-          if (user.balances[currency] === undefined) {
-            console.log(`Adding missing ${currency} balance for user: ${user.id}`);
-            user.balances[currency] = currency === 'ubt' ? 100 : 0; // Default UBT to 100, others to 0
-            balanceUpdated = true;
-          }
-        }
-        
-        if (balanceUpdated) {
-          await user.save();
-        }
-      }
-      
-      // Get user's transactions
-      const transactions = await Transaction.find({ 
-        userId: user._id 
-      }).sort({ date: -1 }).limit(10);
-      
-      // Calculate balances
-      const balances = {
-        bitcoin: 0,
-        ethereum: 0,
-        ubt: 0
-      };
-      
-      // Process transactions to calculate balances
-      transactions.forEach(transaction => {
-        if (transaction.type === 'deposit') {
-          balances[transaction.currency] += transaction.amount;
-        } else if (transaction.type === 'withdrawal') {
-          balances[transaction.currency] -= transaction.amount;
-        }
-      });
-      
-      // Return user data with balances and recent transactions
-      res.json({
-        success: true,
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          walletAddresses: user.walletAddresses,
-          isVerified: user.isVerified,
-          lastLogin: user.lastLogin,
-          createdAt: user.createdAt,
-          balances: user.balances // Include the user's balances from the model
-        },
-        balances, // Include calculated balances from transactions
-        recentTransactions: transactions
-      });
-    } catch (err) {
-      console.error('Token verification error:', err);
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Token is not valid' 
-      });
-    }
-  } catch (error) {
-    console.error('GET /api/auth error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
-  }
-});
-
-// Add the root POST endpoint to match frontend login expectations
-router.post('/', async (req, res) => {
+// Login route - authenticate user
+router.post('/auth', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    console.log(`Login attempt for email: ${email}`);
-    
     // Validate inputs
     if (!email || !password) {
-      console.log('Login failed: Missing email or password');
-      return res.status(400).json({ success: false, message: 'Email and password are required' });
+      return res.status(400).json({ 
+        success: false, 
+        msg: 'Email and password are required' 
+      });
     }
     
     // Find user by email
     const user = await User.findOne({ email });
     
+    // Check if user exists
     if (!user) {
-      console.log(`Login failed: User with email ${email} not found`);
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+      return res.status(400).json({ 
+        success: false, 
+        msg: 'User with email ' + email + ' not found' 
+      });
     }
     
     // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.comparePassword(password);
     
     if (!isMatch) {
-      console.log(`Login failed: Invalid password for ${email}`);
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
-    }
-    
-    // Ensure user has balances object with all required fields
-    if (!user.balances) {
-      console.log(`Fixing missing balances for user: ${user.id}`);
-      user.balances = {
-        btc: 0,
-        eth: 0,
-        usdt: 0,
-        ubt: 100 // Default starting balance
-      };
-    } else {
-      // Ensure all balance fields exist
-      const requiredBalances = ['btc', 'eth', 'usdt', 'ubt'];
-      let balanceUpdated = false;
-      
-      for (const currency of requiredBalances) {
-        if (user.balances[currency] === undefined) {
-          console.log(`Adding missing ${currency} balance for user: ${user.id}`);
-          user.balances[currency] = currency === 'ubt' ? 100 : 0; // Default UBT to 100, others to 0
-          balanceUpdated = true;
-        }
-      }
+      return res.status(400).json({ 
+        success: false, 
+        msg: 'Invalid credentials' 
+      });
     }
     
     // Update last login
     user.lastLogin = Date.now();
     await user.save();
-    
-    console.log(`Login successful for user: ${user.id}`);
     
     // Generate JWT token
     const token = jwt.sign(
@@ -384,6 +150,7 @@ router.post('/', async (req, res) => {
       { expiresIn: JWT_EXPIRE }
     );
     
+    // Return token and user data
     res.json({
       success: true,
       token,
@@ -393,17 +160,19 @@ router.post('/', async (req, res) => {
         email: user.email,
         phoneNumber: user.phoneNumber,
         walletAddresses: user.walletAddresses,
-        cryptoBalance: user.cryptoBalance,
-        balances: user.balances // Include the user's balances
+        isVerified: user.isVerified,
+        balances: user.balances
       }
     });
   } catch (error) {
-    console.error('Login error details:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      success: false, 
+      msg: 'Server error' 
+    });
   }
 });
-
-// Initial registration - collect user info and send verification code
+// Initial registration - send verification code
 router.post('/register/initial', async (req, res) => {
   try {
     const { username, email, password, phoneNumber } = req.body;
@@ -414,10 +183,11 @@ router.post('/register/initial', async (req, res) => {
     }
     
     // Check if user already exists
-    const existingUser = await User.findOne({ 
+    const existingUser = await User.findOne({
       $or: [
         { email },
-        { username }
+        { username },
+        { phoneNumber }
       ]
     });
     
@@ -465,7 +235,6 @@ router.post('/register/initial', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-
 // Direct registration route with auto-address assignment
 router.post('/register', async (req, res) => {
   try {
@@ -481,13 +250,11 @@ router.post('/register', async (req, res) => {
       .catch(error => {
         console.error(`Failed to assign addresses to new user ${user._id}:`, error.message);
       });
-
     res.json({ success: true, user, message: 'User created successfully' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
 // Complete registration - verify code and create user
 router.post('/register/complete', async (req, res) => {
   try {
@@ -580,5 +347,4 @@ router.post('/register/complete', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-
 export default router;
