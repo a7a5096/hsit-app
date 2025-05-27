@@ -1,10 +1,9 @@
-// Script to import crypto addresses from CSV files to database
+// Script to import crypto addresses from database
 require('dotenv').config();
 const mongoose = require('mongoose');
-const fs = require('fs');
-const path = require('path');
 const config = require('../config/config');
 const CryptoAddress = require('../models/CryptoAddress');
+const ExchangeRate = require('../models/ExchangeRate');
 
 // Connect to MongoDB
 mongoose.connect(config.MONGODB_URI, {
@@ -14,62 +13,21 @@ mongoose.connect(config.MONGODB_URI, {
 .then(async () => {
   console.log('MongoDB connected');
   
-  // Read BTC addresses
-  const btcFilePath = path.join(__dirname, '../../bitcoin.csv');
-  const btcData = fs.readFileSync(btcFilePath, 'utf8');
-  const btcAddresses = btcData.split('\n').filter(line => line.trim() !== '');
-  console.log(`Found ${btcAddresses.length} BTC addresses`);
+  // Check if addresses already exist in the database
+  const btcCount = await CryptoAddress.countDocuments({ type: 'BTC' });
+  const ethCount = await CryptoAddress.countDocuments({ type: 'ETH' });
   
-  // Read ETH addresses
-  const ethFilePath = path.join(__dirname, '../../ethereum.csv');
-  const ethData = fs.readFileSync(ethFilePath, 'utf8');
-  const ethAddresses = ethData.split('\n').filter(line => line.trim() !== '');
-  console.log(`Found ${ethAddresses.length} ETH addresses`);
+  console.log(`Current address counts: BTC: ${btcCount}, ETH: ${ethCount}`);
   
-  // Import BTC addresses
-  let btcCount = 0;
-  for (const address of btcAddresses) {
-    try {
-      // Check if address already exists
-      const existingAddress = await CryptoAddress.findOne({ address, type: 'BTC' });
-      if (!existingAddress) {
-        const newAddress = new CryptoAddress({
-          type: 'BTC',
-          address,
-          isAssigned: false
-        });
-        await newAddress.save();
-        btcCount++;
-      }
-    } catch (error) {
-      console.error(`Error importing BTC address ${address}:`, error);
-    }
+  // Only proceed with import if no addresses exist
+  if (btcCount === 0 && ethCount === 0) {
+    console.log('No addresses found in database. Please use the admin interface to import addresses.');
+    console.log('Alternatively, you can use the API endpoint to import addresses programmatically.');
+  } else {
+    console.log('Addresses already exist in the database. No import needed.');
   }
   
-  // Import ETH addresses
-  let ethCount = 0;
-  for (const address of ethAddresses) {
-    try {
-      // Check if address already exists
-      const existingAddress = await CryptoAddress.findOne({ address, type: 'ETH' });
-      if (!existingAddress) {
-        const newAddress = new CryptoAddress({
-          type: 'ETH',
-          address,
-          isAssigned: false
-        });
-        await newAddress.save();
-        ethCount++;
-      }
-    } catch (error) {
-      console.error(`Error importing ETH address ${address}:`, error);
-    }
-  }
-  
-  console.log(`Successfully imported ${btcCount} BTC addresses and ${ethCount} ETH addresses`);
-  
-  // Initialize exchange rate
-  const ExchangeRate = require('../models/ExchangeRate');
+  // Initialize exchange rate if not exists
   const existingRate = await ExchangeRate.findOne({});
   if (!existingRate) {
     const newRate = new ExchangeRate({
@@ -81,7 +39,7 @@ mongoose.connect(config.MONGODB_URI, {
     console.log('Exchange rate initialized');
   }
   
-  console.log('Import completed');
+  console.log('Import check completed');
   process.exit(0);
 })
 .catch(err => {

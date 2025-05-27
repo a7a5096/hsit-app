@@ -4,10 +4,10 @@ import AddressService from '../services/AddressService.js';
 
 const router = express.Router();
 
-// Import addresses from CSV files
+// Import addresses from database
 router.post('/import', auth, async (req, res) => {
   try {
-    const results = await AddressService.importAddressesFromCSV();
+    const results = await AddressService.importAddresses();
     res.json({
       success: true,
       message: 'Addresses imported successfully',

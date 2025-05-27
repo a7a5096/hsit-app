@@ -10,11 +10,11 @@ async function setupAddresses() {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hsit-app');
     console.log('Connected to MongoDB');
 
-    // Import addresses from CSV files
-    console.log('Starting address import...');
-    const importResults = await AddressService.importAddressesFromCSV();
+    // Import addresses from database
+    console.log('Starting address setup...');
+    const importResults = await AddressService.importAddresses();
     
-    console.log('Import completed:', importResults);
+    console.log('Setup completed:', importResults);
 
     // Get statistics
     const stats = await AddressService.getAddressStats();

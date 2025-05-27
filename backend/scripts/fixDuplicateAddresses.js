@@ -9,11 +9,7 @@ async function fixDuplicates() {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected to MongoDB');
 
-    // First, import addresses if not already done
-    console.log('Importing addresses...');
-    await CryptoAddressService.importAddressesFromCSV();
-
-    // Then fix duplicate assignments
+    // Fix duplicate assignments directly from database
     console.log('Fixing duplicate addresses...');
     const result = await CryptoAddressService.fixDuplicateAddresses();
 

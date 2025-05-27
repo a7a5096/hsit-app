@@ -1,14 +1,11 @@
 /**
- * HSIT App - Simplified Crypto Deposit Address Assignment
- * This script handles assigning unique crypto wallet addresses to users
- * from bitcoin.csv, ethereum.csv, and USDT.csv files
+ * HSIT App - API-based Crypto Deposit Address Assignment
+ * This script handles fetching unique crypto wallet addresses for users
+ * from the backend API instead of CSV files
  */
 
 // Immediately invoked function to avoid global namespace pollution
 (function() {
-    // Store assigned addresses in localStorage
-    const STORAGE_KEY = 'hsit_assigned_addresses';
-    
     // Initialize when the DOM is fully loaded
     document.addEventListener('DOMContentLoaded', function() {
         // Find the Deposit button
@@ -40,124 +37,122 @@
     /**
      * Handle deposit button click
      */
-    function handleDepositClick() {
-        // Get or create user ID (using email from URL or localStorage)
-        const urlParams = new URLSearchParams(window.location.search);
-        let userId = urlParams.get('email');
-        
-        if (!userId) {
-            userId = localStorage.getItem('userEmail');
+    async function handleDepositClick() {
+        try {
+            // Check if user is authenticated
+            const token = localStorage.getItem('token');
             
-            if (!userId) {
-                // Prompt for email if not found
-                userId = prompt("Please enter your email to view deposit addresses:", "");
-                
-                if (userId) {
-                    localStorage.setItem('userEmail', userId);
-                } else {
-                    alert('Error: User identification required to view deposit addresses.');
-                    return;
-                }
+            if (!token) {
+                window.location.href = '/login.html?redirect=deposit';
+                return;
             }
-        }
-        
-        // Get assigned addresses for this user
-        const assignedAddresses = getAssignedAddresses(userId);
-        
-        if (assignedAddresses) {
-            // Show the addresses in a modal
-            showAddressesModal(assignedAddresses);
-        } else {
-            alert('Error: Could not assign crypto addresses. Please contact support.');
+            
+            // Show loading indicator
+            showLoadingIndicator();
+            
+            // Fetch addresses from API
+            const addresses = await fetchAddressesFromAPI(token);
+            
+            // Hide loading indicator
+            hideLoadingIndicator();
+            
+            if (!addresses) {
+                alert('Error: Could not retrieve crypto addresses. Please contact support.');
+                return;
+            }
+            
+            // Show addresses in modal
+            showAddressesModal(addresses);
+        } catch (error) {
+            console.error('Error handling deposit click:', error);
+            hideLoadingIndicator();
+            alert('An error occurred. Please try again later or contact support.');
         }
     }
     
     /**
-     * Get assigned addresses for a user, or assign new ones if none exist
+     * Fetch addresses from backend API
      */
-    function getAssignedAddresses(userId) {
-        // Check if user already has assigned addresses
-        const allAssignments = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-        
-        if (allAssignments[userId]) {
-            return allAssignments[userId];
-        }
-        
-        // If no addresses assigned yet, assign new ones
-        const bitcoinAddress = getNextAddress('bitcoin');
-        const ethereumAddress = getNextAddress('ethereum');
-        const usdtAddress = getNextAddress('usdt');
-        
-        if (!bitcoinAddress || !ethereumAddress || !usdtAddress) {
-            console.error('Failed to get addresses');
+    async function fetchAddressesFromAPI(token) {
+        try {
+            const response = await fetch('/api/deposit/addresses', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-auth-token': token
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to get addresses');
+            }
+            
+            return {
+                bitcoin: data.addresses.bitcoin,
+                ethereum: data.addresses.ethereum,
+                usdt: data.addresses.ubt
+            };
+        } catch (error) {
+            console.error('Error fetching addresses from API:', error);
             return null;
         }
-        
-        // Create new assignment
-        const newAssignment = {
-            userId: userId,
-            bitcoin: bitcoinAddress,
-            ethereum: ethereumAddress,
-            usdt: usdtAddress,
-            assignedAt: new Date().toISOString()
-        };
-        
-        // Save the assignment
-        allAssignments[userId] = newAssignment;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(allAssignments));
-        
-        console.log('Assigned addresses to user:', userId, newAssignment);
-        return newAssignment;
     }
     
     /**
-     * Get the next available address for a crypto type
+     * Show loading indicator
      */
-    function getNextAddress(cryptoType) {
-        // In a real implementation, these would be loaded from your CSV files
-        // For now, we're using hardcoded addresses for demonstration
-        const addresses = {
-            bitcoin: [
-                '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-                '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy',
-                'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
-                'bc1qc7slrfxkknqcq2jevvvkdgvrt8080852dfjewde450xdlk4ugp7szw5tk9',
-                '1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1'
-            ],
-            ethereum: [
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f44f',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f450',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f451',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f452'
-            ],
-            usdt: [
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f453',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f454',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f455',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f456',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f457'
-            ]
-        };
+    function showLoadingIndicator() {
+        // Create loading overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'loading-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        overlay.style.display = 'flex';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.zIndex = '9999';
         
-        // Get all assignments
-        const allAssignments = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        // Create spinner
+        const spinner = document.createElement('div');
+        spinner.style.border = '5px solid #f3f3f3';
+        spinner.style.borderTop = '5px solid #3498db';
+        spinner.style.borderRadius = '50%';
+        spinner.style.width = '50px';
+        spinner.style.height = '50px';
+        spinner.style.animation = 'spin 2s linear infinite';
         
-        // Get all assigned addresses of this type
-        const assignedAddresses = Object.values(allAssignments)
-            .map(assignment => assignment[cryptoType]);
+        // Add animation style
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
         
-        // Find an unassigned address
-        const availableAddresses = addresses[cryptoType].filter(
-            address => !assignedAddresses.includes(address)
-        );
-        
-        if (availableAddresses.length === 0) {
-            console.error(`No available ${cryptoType} addresses`);
-            return null;
+        overlay.appendChild(spinner);
+        document.body.appendChild(overlay);
+    }
+    
+    /**
+     * Hide loading indicator
+     */
+    function hideLoadingIndicator() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            document.body.removeChild(overlay);
         }
-        
-        return availableAddresses[0];
     }
     
     /**
