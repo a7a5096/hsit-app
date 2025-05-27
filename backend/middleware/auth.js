@@ -25,7 +25,14 @@ const authMiddleware = async (req, res, next) => {
   // Verify token using jose
   try {
     const { payload } = await jose.jwtVerify(token, JWT_SECRET);
-    req.user = payload.user; // Attach user information to request object
+    
+    // Fix: Set req.user directly from payload instead of expecting nested user object
+    // This matches the JWT structure created in auth.js: { id: user._id, username: user.username }
+    req.user = {
+      id: payload.id,
+      username: payload.username
+    };
+    
     next();
   } catch (err) {
     console.error("Auth Middleware - Token verification failed:", err.message); // Log the error

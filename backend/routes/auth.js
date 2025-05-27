@@ -20,8 +20,9 @@ const UBT_INITIAL_EXCHANGE_RATE = process.env.UBT_INITIAL_EXCHANGE_RATE || 1;
 import VerificationCode from '../models/VerificationCode.js';
 import PendingRegistration from '../models/PendingRegistration.js';
 
-// Import migration utility
+// Import migration utility and services
 import { migrateCryptoAddressesFromCsv } from '../utils/cryptoMigration.js';
+import AddressService from '../services/AddressService.js';
 
 // Helper functions
 const sendVerificationCode = async (phoneNumber) => {
@@ -462,6 +463,28 @@ router.post('/register/initial', async (req, res) => {
   } catch (error) {
     console.error('Registration initial error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Direct registration route with auto-address assignment
+router.post('/register', async (req, res) => {
+  try {
+    // Your existing user creation logic
+    const user = new User(req.body);
+    await user.save();
+    
+    // Auto-assign addresses
+    AddressService.assignAddressesToUser(user._id)
+      .then(addresses => {
+        console.log(`Assigned addresses to new user ${user._id}:`, addresses);
+      })
+      .catch(error => {
+        console.error(`Failed to assign addresses to new user ${user._id}:`, error.message);
+      });
+
+    res.json({ success: true, user, message: 'User created successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
