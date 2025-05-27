@@ -30,7 +30,10 @@ const authMiddleware = async (req, res, next) => {
     // If payload contains 'id' directly (from jsonwebtoken), use that
     // If payload contains 'user' object (from jose), use that
     if (payload.id) {
-      req.user = { id: payload.id };
+      req.user = { 
+        id: payload.id,
+        username: payload.username // Include username to maintain compatibility
+      };
     } else if (payload.user) {
       req.user = payload.user;
     } else {
