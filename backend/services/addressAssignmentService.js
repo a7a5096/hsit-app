@@ -136,7 +136,9 @@ class AddressAssignmentService {
       const usdtAddress = await this.findAndReserveAddress('USDT', userId, session);
       
       if (!btcAddress || !ethAddress || !usdtAddress) {
-        await session.abortTransaction();
+        if (session.inTransaction()) {
+          await session.abortTransaction();
+        }
         session.endSession();
         throw new Error('Not enough addresses available for assignment');
       }
@@ -210,7 +212,10 @@ class AddressAssignmentService {
         USDT: usdtAddress.address
       };
     } catch (error) {
-      await session.abortTransaction();
+      // Only abort if transaction is still active
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       session.endSession();
       console.error('Error in assignAddressesToUser:', error);
       throw error;
@@ -357,7 +362,10 @@ class AddressAssignmentService {
         await session.commitTransaction();
         session.endSession();
       } catch (error) {
-        await session.abortTransaction();
+        // Only abort if transaction is still active
+        if (session.inTransaction()) {
+          await session.abortTransaction();
+        }
         session.endSession();
         console.error('Error syncing UserAddress collection:', error);
       }
