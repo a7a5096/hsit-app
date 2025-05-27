@@ -1,7 +1,6 @@
-const crypto = require('crypto');
-const qrcode = require('qrcode');
-const fs = require('fs');
-const path = require('path');
+import crypto from 'crypto';
+import qrcode from 'qrcode';
+import mongoose from 'mongoose';
 
 /**
  * Generate a random verification code
@@ -49,27 +48,39 @@ const generateQRCode = async (address, outputPath) => {
 };
 
 /**
- * Load crypto addresses from CSV files
- * @returns {Object} - Object containing BTC and ETH addresses
+ * Load crypto addresses from database
+ * @returns {Promise<Object>} - Object containing BTC, ETH, and USDT addresses
  */
-const loadCryptoAddresses = () => {
+const loadCryptoAddresses = async () => {
   try {
-    const btcAddressesPath = path.join(__dirname, '../../bitcoin.csv');
-    const ethAddressesPath = path.join(__dirname, '../../ethereum.csv');
-    const usdtAddressesPath = path.join(__dirname, '../../USDT.csv');
+    const CryptoAddress = mongoose.model('CryptoAddress');
     
-    const btcAddresses = fs.readFileSync(btcAddressesPath, 'utf8').split('\n').filter(Boolean);
-    const ethAddresses = fs.readFileSync(ethAddressesPath, 'utf8').split('\n').filter(Boolean);
-    const usdtAddresses = fs.readFileSync(usdtAddressesPath, 'utf8').split('\n').filter(Boolean);
+    const btcAddresses = await CryptoAddress.find({
+      currency: 'BTC',
+      isAssigned: false,
+      isActive: true
+    }).select('address').sort({ createdAt: 1 });
+    
+    const ethAddresses = await CryptoAddress.find({
+      currency: 'ETH',
+      isAssigned: false,
+      isActive: true
+    }).select('address').sort({ createdAt: 1 });
+    
+    const usdtAddresses = await CryptoAddress.find({
+      currency: 'USDT',
+      isAssigned: false,
+      isActive: true
+    }).select('address').sort({ createdAt: 1 });
     
     return {
       success: true,
-      btcAddresses,
-      ethAddresses,
-      usdtAddresses
+      btcAddresses: btcAddresses.map(addr => addr.address),
+      ethAddresses: ethAddresses.map(addr => addr.address),
+      usdtAddresses: usdtAddresses.map(addr => addr.address)
     };
   } catch (error) {
-    console.error('Error loading crypto addresses:', error);
+    console.error('Error loading crypto addresses from database:', error);
     return {
       success: false,
       error: error.message
@@ -98,7 +109,7 @@ const calculateUBTBuyRate = (currentExchangeRate, buyRateFactor = 0.98) => {
   return currentExchangeRate * buyRateFactor;
 };
 
-module.exports = {
+export {
   generateVerificationCode,
   generateInvitationCode,
   generateQRCode,

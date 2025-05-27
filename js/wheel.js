@@ -1,95 +1,187 @@
+/**
+ * Updated spinning wheel game implementation
+ * Uses database-driven UBT balance management
+ */
 document.addEventListener('DOMContentLoaded', () => {
     const wheel = document.getElementById('luckyWheel');
     const spinButton = document.getElementById('spinButton');
     const wheelResult = document.getElementById('wheelResult');
+    const balanceDisplay = document.getElementById('ubtBalance');
+    const API_URL = 'https://hsit-backend.onrender.com';
 
     // Define the segments IN THE ORDER THEY APPEAR CLOCKWISE ON THE WHEEL
     const segments = [
-        { label: "1 UBT", value: 1 },    // Segment 1 (e.g., 0-40 degrees)
-        { label: "Sorry", value: 0 },    // Segment 2 (e.g., 40-80 degrees)
-        { label: "20 USDT", value: 20 }, // Segment 3
-        { label: "Sorry", value: 0 },    // Segment 4
-        { label: "10 UBT", value: 10 }, // Segment 5
-        { label: "Sorry", value: 0 },    // Segment 6
-        { label: "Sorry", value: 0 },    // Segment 7
-        { label: "Sorry", value: 0 },    // Segment 8
-        { label: "Sorry", value: 0 }     // Segment 9
+        { label: "1 UBT", value: 1, currency: "ubt" },
+        { label: "Sorry", value: 0, currency: "none" },
+        { label: "20 USDT", value: 20, currency: "usdt" },
+        { label: "Sorry", value: 0, currency: "none" },
+        { label: "10 UBT", value: 10, currency: "ubt" },
+        { label: "Sorry", value: 0, currency: "none" }
     ];
 
     const segmentCount = segments.length;
-    const segmentAngle = 360 / segmentCount; // Angle per segment (40 degrees)
+    const segmentAngle = 360 / segmentCount;
     let isSpinning = false;
     let currentRotation = 0; // Keep track of the wheel's rotation
 
-    spinButton.addEventListener('click', () => {
+    // Fetch UBT balance from the backend
+    async function fetchUBTBalance() {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            const response = await fetch(`${API_URL}/api/wheel/balance`, {
+                method: 'GET',
+                headers: {
+                    'x-auth-token': token
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch UBT balance');
+            }
+
+            const data = await response.json();
+            
+            if (balanceDisplay) {
+                balanceDisplay.textContent = data.balance.toFixed(2);
+            }
+            
+            return data.balance;
+        } catch (error) {
+            console.error('Error fetching UBT balance:', error);
+            showMessage('Error loading your UBT balance. Please try again later.', 'error');
+            return 0;
+        }
+    }
+
+    // Process wheel spin via backend
+    async function processWheelSpin() {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/index.html';
+                return null;
+            }
+
+            const response = await fetch(`${API_URL}/api/wheel/spin`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-auth-token': token
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to process wheel spin');
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error processing wheel spin:', error);
+            showMessage(error.message || 'Error processing your spin. Please try again later.', 'error');
+            return null;
+        }
+    }
+
+    // Initialize the wheel
+    async function initWheel() {
+        await fetchUBTBalance();
+        
+        // Optional: Position segments visually if not using a background image
+        const segmentElements = wheel.querySelectorAll('.segment');
+        segmentElements.forEach((seg, index) => {
+            const angle = segmentAngle * index + (segmentAngle / 2);
+            seg.style.transform = `rotate(${angle}deg) translate(0, -110px) rotate(-${angle}deg)`;
+        });
+    }
+
+    // Handle spin button click
+    spinButton.addEventListener('click', async () => {
         if (isSpinning) return; // Don't spin if already spinning
 
         isSpinning = true;
         spinButton.disabled = true;
         wheelResult.textContent = 'Spinning...';
 
-        // Calculate random stop angle
+        // Process the spin on the backend
+        const spinResult = await processWheelSpin();
+        
+        if (!spinResult) {
+            isSpinning = false;
+            spinButton.disabled = false;
+            wheelResult.textContent = 'Spin failed. Try again.';
+            return;
+        }
+
+        // Calculate rotation to show the winning segment
+        const winningSegmentIndex = spinResult.result.segmentIndex;
+        
         // Add multiple full rotations for visual effect (e.g., 3 to 7 rotations)
         const randomRotations = Math.floor(Math.random() * 5) + 3; // 3 to 7 full spins
-        const randomStopOffset = Math.random() * 360; // Random position within the last spin
-        const totalRotation = (randomRotations * 360) + randomStopOffset;
-
-        // Calculate the final rotation relative to the initial state
-        const finalRotation = (currentRotation + totalRotation) % 360;
+        
+        // Calculate the angle to the winning segment
+        // We need to rotate so that the winning segment lands at the top (pointer position)
+        // The winning segment's center should be at the top (0 degrees)
+        const winningSegmentAngle = segmentAngle * winningSegmentIndex;
+        
+        // Calculate total rotation: random full rotations + angle to winning segment
+        // We add 360 - winningSegmentAngle because we want the segment to stop at the top
+        const totalRotation = (randomRotations * 360) + (360 - winningSegmentAngle);
 
         // Apply the rotation using CSS transition
-        wheel.style.transition = 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)'; // Smooth spin animation
+        wheel.style.transition = 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)';
         wheel.style.transform = `rotate(${currentRotation + totalRotation}deg)`;
 
         // Update current rotation for the next spin
         currentRotation += totalRotation;
 
-        // Determine the winning segment after the animation ends
-        setTimeout(() => {
-            const actualStopAngle = finalRotation; // The angle where it actually stopped (0-359)
-
-            // --- Determine Winning Segment ---
-            // Adjust angle based on where the pointer is. Assuming pointer is at the top (0 degrees),
-            // the middle of the first segment is used as its reference point.
-            // We need to find which segment range the *opposite* angle (where the pointer points) falls into.
-            // Example: If wheel stops at 10deg, pointer points at 350deg relative to wheel start.
-
-            // Normalize the angle to determine the segment index based on the *pointer* position
-            // Pointer is static at the top (0 deg). We need to see which segment lands there.
-            // A segment's *center* angle determines its position.
-            // Segment 1 center: segmentAngle / 2
-            // Segment 2 center: segmentAngle * 1.5
-            // ...
-            // Segment N center: segmentAngle * (N - 0.5)
-
-            // Find the segment whose range contains the effective stop angle (relative to pointer)
-            // Effective angle calculation needs careful thought depending on setup.
-            // Let's simplify: find the segment index based on the final angle, assuming segment 1 starts at 0 deg.
-            // Adjust index based on pointer position (often pointer points slightly before 0 deg start of seg 1)
-            // Let's assume the pointer points directly at the top border between last and first segment.
-
-            const winningSegmentIndex = Math.floor( (360 - (actualStopAngle % 360)) / segmentAngle ) % segmentCount;
-
-
-            const winningSegment = segments[winningSegmentIndex];
-
-            wheelResult.textContent = `You won: ${winningSegment.label}!`;
+        // Update UI after the animation ends
+        setTimeout(async () => {
+            // Update the result text
+            wheelResult.textContent = `You won: ${spinResult.result.prize}!`;
+            
+            // Update the UBT balance display
+            if (balanceDisplay) {
+                balanceDisplay.textContent = spinResult.result.newBalance.toFixed(2);
+            }
+            
             isSpinning = false;
             spinButton.disabled = false;
-
-            // Optional: Reset transition if you want immediate rotation changes next time
-             // wheel.style.transition = 'none';
-
         }, 4000); // Match the timeout to the CSS transition duration
     });
 
-    // Optional: Position segments visually if not using a background image
-    const segmentElements = wheel.querySelectorAll('.segment');
-    segmentElements.forEach((seg, index) => {
-        const angle = segmentAngle * index + (segmentAngle / 2); // Position text in middle of segment
-        // Adjust positioning based on wheel size and desired text placement
-        seg.style.transform = `rotate(${angle}deg) translate(0, -110px) rotate(-${angle}deg)`; // Example positioning
-        // You might need more complex CSS or SVG/Canvas for perfect segment visuals
-    });
+    // Show message function
+    function showMessage(message, type = 'info') {
+        // Check if status message element exists
+        let statusElement = document.getElementById('statusMessage');
+        
+        // If not, create one
+        if (!statusElement) {
+            statusElement = document.createElement('div');
+            statusElement.id = 'statusMessage';
+            statusElement.className = 'status-message';
+            document.body.prepend(statusElement);
+        }
+        
+        // Set message and class
+        statusElement.textContent = message;
+        statusElement.className = `status-message ${type}`;
+        
+        // Show message
+        statusElement.style.display = 'block';
+        
+        // Hide after 5 seconds
+        setTimeout(() => {
+            statusElement.style.display = 'none';
+        }, 5000);
+    }
 
+    // Initialize the wheel
+    initWheel();
 });

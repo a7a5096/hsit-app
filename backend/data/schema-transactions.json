@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "_id",
+    "userId",
+    "txHash",
+    "toAddress",
+    "fromAddress",
+    "amount",
+    "currency",
+    "ubtAmount",
+    "exchangeRate",
+    "status",
+    "type"
+  ],
+  "properties": {
+    "_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObjectId"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "userId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObjectId"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "txHash": {
+      "type": "string"
+    },
+    "toAddress": {
+      "type": "string"
+    },
+    "fromAddress": {
+      "type": "string"
+    },
+    "amount": {
+      "$ref": "#/$defs/Decimal128"
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["BTC", "ETH", "USDT", "UBT"]
+    },
+    "ubtAmount": {
+      "$ref": "#/$defs/Decimal128"
+    },
+    "exchangeRate": {
+      "$ref": "#/$defs/Decimal128"
+    },
+    "relatedTransactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ObjectId"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "relationship": {
+            "type": "string",
+            "enum": ["parent", "child", "conversion", "fee", "refund"]
+          }
+        }
+      }
+    },
+    "batchId": {
+      "type": ["string", "null"],
+      "default": null
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "processing", "completed", "failed", "cancelled"],
+      "default": "pending"
+    },
+    "statusDetails": {
+      "type": "string",
+      "default": ""
+    },
+    "statusHistory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending", "processing", "completed", "failed", "cancelled"]
+          },
+          "timestamp": {
+            "$ref": "#/$defs/Date"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "type": {
+      "type": "string",
+      "enum": ["deposit", "withdrawal", "transfer", "conversion", "reward", "fee"]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "timestamps": {
+      "type": "object",
+      "properties": {
+        "created": {
+          "$ref": "#/$defs/Date"
+        },
+        "updated": {
+          "$ref": "#/$defs/Date"
+        },
+        "completed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ObjectId": {
+      "type": "object",
+      "properties": {
+        "$oid": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        }
+      },
+      "required": [
+        "$oid"
+      ],
+      "additionalProperties": false
+    },
+    "Date": {
+      "type": "object",
+      "properties": {
+        "$date": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "$date"
+      ],
+      "additionalProperties": false
+    },
+    "Decimal128": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "$numberDecimal": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "$numberDecimal"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

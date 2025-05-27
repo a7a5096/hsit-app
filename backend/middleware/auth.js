@@ -26,12 +26,17 @@ const authMiddleware = async (req, res, next) => {
   try {
     const { payload } = await jose.jwtVerify(token, JWT_SECRET);
     
-    // Fix: Set req.user directly from payload instead of expecting nested user object
-    // This matches the JWT structure created in auth.js: { id: user._id, username: user.username }
-    req.user = {
-      id: payload.id,
-      username: payload.username
-    };
+    // FIXED: Handle both token formats to ensure compatibility
+    // If payload contains 'id' directly (from jsonwebtoken), use that
+    // If payload contains 'user' object (from jose), use that
+    if (payload.id) {
+      req.user = { id: payload.id };
+    } else if (payload.user) {
+      req.user = payload.user;
+    } else {
+      // If neither format is found, token is invalid
+      return res.status(401).json({ msg: "Token payload is invalid" });
+    }
     
     next();
   } catch (err) {
@@ -47,4 +52,3 @@ const authMiddleware = async (req, res, next) => {
 };
 
 export default authMiddleware; // Changed to ES6 export to match routes/auth.js style
-

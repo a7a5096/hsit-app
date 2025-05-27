@@ -1,17 +1,20 @@
+// Refactored Asset Center page script
+// Uses centralized auth_utils.js for all user data and balance operations
+
+import { requireAuth, fetchUserData, updateGlobalBalanceDisplay, initGlobalBalanceDisplay, getAuthToken, getUserBalance } from './auth_utils.js';
+
 // API configuration directly integrated into this file
 const API_URL = 'https://hsit-backend.onrender.com';
 
 // Script to handle asset center functionality
-document.addEventListener('DOMContentLoaded', function() {
-  // Check if user is logged in
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/index.html';
-    return;
-  }
+document.addEventListener('DOMContentLoaded', async function() {
+  console.log("Asset Center page initializing...");
+  
+  // Check if user is logged in and redirect if not
+  if (!requireAuth()) return;
 
-  // Get user data
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+  // Initialize global balance display
+  await initGlobalBalanceDisplay();
   
   // Elements
   const totalValueElement = document.querySelector('.total-value');
@@ -35,32 +38,42 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Fetch user balances, transactions, and purchased bots
-  async function fetchUserData() {
+  async function fetchAssetData(forceRefresh = true) {
     try {
-      // Fetch user data
-      const userResponse = await fetch('${API_BASE_URL}/api/auth', {
-        headers: {
-          'x-auth-token': token
-        }
-      });
+      console.log("Fetching asset data from backend...");
       
-      if (!userResponse.ok) {
+      // Fetch user data from centralized utility with force refresh
+      const userData = await fetchUserData(forceRefresh);
+      if (!userData) {
         throw new Error('Failed to fetch user data');
       }
       
-      const userData = await userResponse.json();
+      // Log for debugging
+      console.log("User data received:", userData);
       
       // Fetch exchange rates
-      const ratesResponse = await fetch('${API_BASE_URL}/api/transactions/exchange-rates');
+      const ratesResponse = await fetch(`${API_URL}/api/transactions/exchange-rates`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+      });
+      
+      if (!ratesResponse.ok) {
+        throw new Error('Failed to fetch exchange rates');
+      }
+      
       const rates = await ratesResponse.json();
+      console.log("Exchange rates received:", rates);
       
       // Update UI with user balances
       updateBalances(userData.balances, rates);
       
       // Fetch purchased bots
-      const botsResponse = await fetch('${API_BASE_URL}/api/bots/purchased', {
+      const token = getAuthToken();
+      const botsResponse = await fetch(`${API_URL}/api/bots/purchased`, {
         headers: {
-          'x-auth-token': token
+          'x-auth-token': token,
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         }
       });
       
@@ -69,16 +82,14 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       const botsData = await botsResponse.json();
+      console.log("Bots data received:", botsData);
       
       // Update UI with purchased bots
       updatePurchasedBots(botsData.bots);
       
-      // Store updated user data
-      localStorage.setItem('userData', JSON.stringify(userData));
-      
       return userData;
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error fetching asset data:', error);
       showMessage('Error loading your account data. Please try again later.', 'error');
       
       // For demo purposes, create mock data if API fails
@@ -90,7 +101,12 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Update balances UI
   function updateBalances(balances, rates) {
-    if (!balances || !balancesList) return;
+    if (!balances || !balancesList) {
+      console.error("Missing balances or balancesList element");
+      return;
+    }
+    
+    console.log("Updating balances UI with:", balances);
     
     // Clear existing balances
     balancesList.innerHTML = '';
@@ -103,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
       btc: 70000, // Example price in USD
       eth: 3500,  // Example price in USD
       usdt: 1,    // USDT is pegged to USD
-      ubt: rates.sellRate // UBT price from exchange rate
+      ubt: rates.sellRate || 0.1 // UBT price from exchange rate
     };
     
     // Add each balance to the list
@@ -139,7 +155,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update total value
     if (totalValueElement) {
       totalValueElement.textContent = `$ ${totalValue.toFixed(2)} USD`;
+      console.log("Updated total value:", totalValue.toFixed(2));
     }
+    
+    // Also update global balance
+    updateGlobalBalanceDisplay(true);
   }
   
   // Update purchased bots UI
@@ -419,11 +439,10 @@ document.addEventListener('DOMContentLoaded', function() {
     modal.style.display = 'flex';
     
     // Handle currency change
-    currencySelect.addEventListener('change', () => {
-      const currency = currencySelect.value;
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const balances = userData.balances || {};
-      const balance = balances[currency.toLowerCase()] || 0;
+    currencySelect.addEventListener('change', async () => {
+      const currency = currencySelect.value.toLowerCase();
+      // Get fresh balance data from API
+      const balance = await getUserBalance(currency, true);
       
       amountInput.max = balance;
       amountInput.placeholder = `Max: ${balance}`;
@@ -449,7 +468,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       try {
-        const response = await fetch('${API_BASE_URL}/api/transactions/withdraw', {
+        const token = getAuthToken();
+        const response = await fetch(`${API_URL}/api/transactions/withdraw`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -472,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.remove();
         
         // Refresh user data
-        fetchUserData();
+        await fetchAssetData(true);
       } catch (error) {
         showMessage(error.message, 'error');
       }
@@ -482,34 +502,76 @@ document.addEventListener('DOMContentLoaded', function() {
     cancelBtn.addEventListener('click', () => {
       modal.remove();
     });
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+  }
+  
+  // Show message function
+  function showMessage(message, type = 'info') {
+    // Check if status message element exists
+    let statusElement = document.getElementById('statusMessage');
+    
+    // If not, create one
+    if (!statusElement) {
+      statusElement = document.createElement('div');
+      statusElement.id = 'statusMessage';
+      statusElement.className = 'status-message';
+      document.body.prepend(statusElement);
+    }
+    
+    // Set message and class
+    statusElement.textContent = message;
+    statusElement.className = `status-message ${type}`;
+    
+    // Show message
+    statusElement.style.display = 'block';
+    
+    // Hide after 5 seconds
+    setTimeout(() => {
+      statusElement.style.display = 'none';
+    }, 5000);
   }
   
   // Initialize
-  fetchUserData();
-});
-
-// Show message function
-function showMessage(message, type = 'info') {
-  // Check if status message element exists
-  let statusElement = document.getElementById('statusMessage');
+  console.log("Fetching initial asset data...");
+  await fetchAssetData(true);
   
-  // If not, create one
-  if (!statusElement) {
-    statusElement = document.createElement('div');
-    statusElement.id = 'statusMessage';
-    statusElement.className = 'status-message';
-    document.body.prepend(statusElement);
+  // Add console logging for debugging
+  console.log("Asset Center page loaded.");
+  
+  // Debug function to check balance
+  async function debugCheckBalance() {
+    const balance = await getUserBalance('ubt', true);
+    console.log("UBT Balance from API:", balance);
   }
   
-  // Set message and class
-  statusElement.textContent = message;
-  statusElement.className = `status-message ${type}`;
+  // Run debug check
+  await debugCheckBalance();
   
-  // Show message
-  statusElement.style.display = 'block';
+  // Add refresh button for testing
+  const refreshButton = document.createElement('button');
+  refreshButton.textContent = 'Refresh Data';
+  refreshButton.style.position = 'fixed';
+  refreshButton.style.bottom = '20px';
+  refreshButton.style.right = '20px';
+  refreshButton.style.zIndex = '1000';
+  refreshButton.style.padding = '10px 15px';
+  refreshButton.style.backgroundColor = '#4CAF50';
+  refreshButton.style.color = 'white';
+  refreshButton.style.border = 'none';
+  refreshButton.style.borderRadius = '5px';
+  refreshButton.style.cursor = 'pointer';
   
-  // Hide after 5 seconds
-  setTimeout(() => {
-    statusElement.style.display = 'none';
-  }, 5000);
-}
+  refreshButton.addEventListener('click', async () => {
+    console.log("Manual refresh triggered");
+    await fetchAssetData(true);
+    showMessage('Data refreshed from server', 'info');
+  });
+  
+  document.body.appendChild(refreshButton);
+});

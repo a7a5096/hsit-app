@@ -1,31 +1,18 @@
 /**
- * HSIT App - Crypto Deposit Address Assignment
- * This script handles assigning unique crypto wallet addresses to users
- * from bitcoin.csv, ethereum.csv, and USDT.csv files
+ * HSIT App - API-Based Crypto Deposit Address Manager
+ * This script handles fetching unique crypto wallet addresses from the backend API
  */
-
-// This would typically be integrated with your backend system
-// The following is a client-side implementation for demonstration
 
 class CryptoAddressManager {
     constructor() {
-        this.bitcoinAddresses = []; // Will be loaded from bitcoin.csv
-        this.ethereumAddresses = []; // Will be loaded from ethereum.csv
-        this.usdtAddresses = []; // Will be loaded from USDT.csv
-        this.assignedAddresses = {}; // Track which addresses are assigned to which users
+        this.apiUrl = window.location.origin;
     }
 
     /**
-     * Initialize by loading addresses from CSV files
-     * In a real implementation, this would be done server-side
+     * Initialize the manager
      */
     async initialize() {
         try {
-            // In a real implementation, these would be loaded from your server
-            // For demonstration, we're showing how it would work
-            await this.loadAddressesFromCSV('bitcoin');
-            await this.loadAddressesFromCSV('ethereum');
-            await this.loadAddressesFromCSV('usdt');
             console.log('Crypto address manager initialized successfully');
             return true;
         } catch (error) {
@@ -35,175 +22,64 @@ class CryptoAddressManager {
     }
 
     /**
-     * Load addresses from a CSV file
-     * In a real implementation, this would be done server-side
+     * Fetch addresses from the backend API
+     * @param {string} userId - Unique identifier for the user (not used in API call as token is used)
+     * @returns {Promise<Object>} - Object containing assigned addresses
      */
-    async loadAddressesFromCSV(cryptoType) {
-        // This is a mock implementation since we don't have direct access to the CSV files
-        // In a real implementation, you would fetch this data from your server
-        
-        // Simulating loading addresses from CSV files
-        console.log(`Loading ${cryptoType} addresses from CSV...`);
-        
-        // In a real implementation, you would use fetch or another method to get the data
-        /*
-        const response = await fetch(`/api/crypto-addresses/${cryptoType}`);
-        if (!response.ok) {
-            throw new Error(`Failed to load ${cryptoType} addresses`);
+    async fetchAddressesFromAPI() {
+        try {
+            // Get auth token from localStorage
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                console.error('No authentication token found');
+                throw new Error('Authentication required');
+            }
+            
+            // Make API request to get addresses
+            const response = await fetch(`${this.apiUrl}/api/crypto/addresses`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-auth-token': token
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to fetch addresses');
+            }
+            
+            return {
+                userId: 'current-user', // Not needed as we use token authentication
+                bitcoin: data.addresses.bitcoin,
+                ethereum: data.addresses.ethereum,
+                usdt: data.addresses.usdt,
+                assignedAt: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Error fetching addresses from API:', error);
+            throw error;
         }
-        const addresses = await response.json();
-        */
-        
-        // For demonstration, we're using placeholder addresses
-        const placeholderAddresses = this.getPlaceholderAddresses(cryptoType);
-        
-        // Store the addresses in the appropriate array
-        if (cryptoType === 'bitcoin') {
-            this.bitcoinAddresses = placeholderAddresses;
-        } else if (cryptoType === 'ethereum') {
-            this.ethereumAddresses = placeholderAddresses;
-        } else if (cryptoType === 'usdt') {
-            this.usdtAddresses = placeholderAddresses;
-        }
-        
-        console.log(`Loaded ${placeholderAddresses.length} ${cryptoType} addresses`);
-    }
-    
-    /**
-     * Get placeholder addresses for demonstration
-     * In a real implementation, these would come from your CSV files
-     */
-    getPlaceholderAddresses(cryptoType) {
-        // These are just examples and should be replaced with your actual addresses
-        if (cryptoType === 'bitcoin') {
-            return [
-                '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-                '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy',
-                'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
-                // Add more addresses as needed
-            ];
-        } else if (cryptoType === 'ethereum') {
-            return [
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f44f',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f450',
-                // Add more addresses as needed
-            ];
-        } else if (cryptoType === 'usdt') {
-            return [
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f451',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f452',
-                '0x742d35Cc6634C0532925a3b844Bc454e4438f453',
-                // Add more addresses as needed
-            ];
-        }
-        return [];
-    }
-
-    /**
-     * Assign crypto addresses to a user
-     * @param {string} userId - Unique identifier for the user
-     * @returns {Object} - Object containing assigned addresses
-     */
-    assignAddressesToUser(userId) {
-        // Check if user already has assigned addresses
-        if (this.assignedAddresses[userId]) {
-            return this.assignedAddresses[userId];
-        }
-        
-        // Find unassigned addresses
-        const bitcoinAddress = this.findUnassignedAddress('bitcoin');
-        const ethereumAddress = this.findUnassignedAddress('ethereum');
-        const usdtAddress = this.findUnassignedAddress('usdt');
-        
-        // Check if we have addresses available
-        if (!bitcoinAddress || !ethereumAddress || !usdtAddress) {
-            console.error('Not enough addresses available for assignment');
-            return null;
-        }
-        
-        // Create assignment
-        const assignment = {
-            userId,
-            bitcoin: bitcoinAddress,
-            ethereum: ethereumAddress,
-            usdt: usdtAddress,
-            assignedAt: new Date().toISOString()
-        };
-        
-        // Store assignment
-        this.assignedAddresses[userId] = assignment;
-        
-        // In a real implementation, you would save this to your database
-        this.saveAssignmentToDatabase(assignment);
-        
-        return assignment;
-    }
-    
-    /**
-     * Find an unassigned address for a specific crypto type
-     */
-    findUnassignedAddress(cryptoType) {
-        let addressPool = [];
-        
-        if (cryptoType === 'bitcoin') {
-            addressPool = this.bitcoinAddresses;
-        } else if (cryptoType === 'ethereum') {
-            addressPool = this.ethereumAddresses;
-        } else if (cryptoType === 'usdt') {
-            addressPool = this.usdtAddresses;
-        }
-        
-        // Get all assigned addresses of this type
-        const assignedAddresses = Object.values(this.assignedAddresses)
-            .map(assignment => assignment[cryptoType]);
-        
-        // Find an address that hasn't been assigned yet
-        const unassignedAddress = addressPool.find(address => 
-            !assignedAddresses.includes(address)
-        );
-        
-        return unassignedAddress;
-    }
-    
-    /**
-     * Save assignment to database (mock implementation)
-     * In a real implementation, this would make an API call to your backend
-     */
-    saveAssignmentToDatabase(assignment) {
-        console.log('Saving address assignment to database:', assignment);
-        
-        // In a real implementation, you would make an API call here
-        /*
-        fetch('/api/crypto-addresses/assign', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(assignment),
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Assignment saved successfully:', data);
-        })
-        .catch((error) => {
-            console.error('Error saving assignment:', error);
-        });
-        */
     }
     
     /**
      * Get assigned addresses for a user
+     * @param {string} userId - Unique identifier for the user (not used in API call as token is used)
+     * @returns {Promise<Object>} - Object containing assigned addresses
      */
-    getAssignedAddresses(userId) {
-        return this.assignedAddresses[userId] || null;
-    }
-    
-    /**
-     * Get all assigned addresses
-     */
-    getAllAssignedAddresses() {
-        return this.assignedAddresses;
+    async getAssignedAddresses(userId) {
+        try {
+            return await this.fetchAddressesFromAPI();
+        } catch (error) {
+            console.error('Error getting assigned addresses:', error);
+            return null;
+        }
     }
 }
 
@@ -232,27 +108,24 @@ function setupDepositButton() {
         depositButton.addEventListener('click', function(event) {
             event.preventDefault();
             
-            // Get user ID from URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const userEmail = urlParams.get('email');
-            
-            if (!userEmail) {
-                showNotification('Error: User not properly authenticated. Please log in again.', 'error');
-                return;
-            }
-            
-            // Use email as user ID for demonstration
-            const userId = userEmail;
-            
-            // Assign addresses to user
-            const assignment = cryptoAddressManager.assignAddressesToUser(userId);
-            
-            if (assignment) {
-                // Show deposit modal with addresses
-                showDepositModal(assignment);
-            } else {
-                showNotification('Error: Could not assign crypto addresses. Please contact support.', 'error');
-            }
+            // Fetch addresses from API
+            cryptoAddressManager.getAssignedAddresses()
+                .then(assignment => {
+                    if (assignment) {
+                        // Show deposit modal with addresses
+                        showDepositModal(assignment);
+                    } else {
+                        showNotification('Error: Could not fetch crypto addresses. Please try again or contact support.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching addresses:', error);
+                    if (error.message === 'Authentication required') {
+                        showNotification('Please log in to view your deposit addresses.', 'error');
+                    } else {
+                        showNotification('Error: Could not fetch crypto addresses. Please try again or contact support.', 'error');
+                    }
+                });
         });
     }
 }
@@ -291,24 +164,24 @@ function showDepositModal(assignment) {
             <div style="margin-bottom: 15px;">
                 <h3 style="margin-bottom: 5px; color: #f7931a;">Bitcoin</h3>
                 <div style="display: flex; align-items: center;">
-                    <input type="text" value="${assignment.bitcoin}" readonly style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                    <button onclick="copyToClipboard('${assignment.bitcoin}')" style="margin-left: 10px; padding: 8px 12px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
+                    <input type="text" value="${assignment.bitcoin || 'No address available'}" readonly style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <button onclick="copyToClipboard('${assignment.bitcoin}')" ${!assignment.bitcoin ? 'disabled style="background-color: #cccccc; cursor: not-allowed;"' : ''} style="margin-left: 10px; padding: 8px 12px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
                 </div>
             </div>
             
             <div style="margin-bottom: 15px;">
                 <h3 style="margin-bottom: 5px; color: #627eea;">Ethereum</h3>
                 <div style="display: flex; align-items: center;">
-                    <input type="text" value="${assignment.ethereum}" readonly style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                    <button onclick="copyToClipboard('${assignment.ethereum}')" style="margin-left: 10px; padding: 8px 12px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
+                    <input type="text" value="${assignment.ethereum || 'No address available'}" readonly style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <button onclick="copyToClipboard('${assignment.ethereum}')" ${!assignment.ethereum ? 'disabled style="background-color: #cccccc; cursor: not-allowed;"' : ''} style="margin-left: 10px; padding: 8px 12px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
                 </div>
             </div>
             
             <div style="margin-bottom: 20px;">
                 <h3 style="margin-bottom: 5px; color: #26a17b;">USDT</h3>
                 <div style="display: flex; align-items: center;">
-                    <input type="text" value="${assignment.usdt}" readonly style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                    <button onclick="copyToClipboard('${assignment.usdt}')" style="margin-left: 10px; padding: 8px 12px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
+                    <input type="text" value="${assignment.usdt || 'No address available'}" readonly style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <button onclick="copyToClipboard('${assignment.usdt}')" ${!assignment.usdt ? 'disabled style="background-color: #cccccc; cursor: not-allowed;"' : ''} style="margin-left: 10px; padding: 8px 12px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
                 </div>
             </div>
             
@@ -320,6 +193,8 @@ function showDepositModal(assignment) {
     
     // Add copy to clipboard function
     window.copyToClipboard = function(text) {
+        if (!text) return;
+        
         const textarea = document.createElement('textarea');
         textarea.value = text;
         document.body.appendChild(textarea);

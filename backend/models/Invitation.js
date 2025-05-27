@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
 const InvitationSchema = new Schema({
@@ -37,4 +37,5 @@ const InvitationSchema = new Schema({
   }
 });
 
-module.exports = mongoose.model('invitation', InvitationSchema);
+const Invitation = mongoose.model('invitation', InvitationSchema);
+export default Invitation;

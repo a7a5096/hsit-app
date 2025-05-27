@@ -1,197 +1,236 @@
-// API configuration directly integrated into this file
-const API_URL = 'https://hsit-backend.onrender.com';
+// Updated deposit.js for robust database-driven address assignment
+// This script handles the deposit page functionality and crypto address display
 
-// Script to handle deposit functionality
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+  console.log("Deposit page initializing...");
+  
   // Check if user is logged in
   const token = localStorage.getItem('token');
   if (!token) {
-    window.location.href = '/index.html';
+    window.location.href = 'index.html';
     return;
   }
-
-  // Get user data
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
   
   // Elements
-  const coinRadios = document.querySelectorAll('input[name="crypto"]');
-  const addressInput = document.getElementById('deposit-address');
-  const copyButton = document.getElementById('copy-button');
-  const selectedCoinName = document.getElementById('selected-coin-name');
-  const minDepositSpan = document.getElementById('min-deposit');
-  const qrCodeArea = document.getElementById('qr-code-area');
+  const cryptoSelector = document.querySelectorAll('input[name="crypto"]');
+  const depositAddressContainer = document.getElementById('depositAddress');
+  const depositAddressDisplay = document.getElementById('depositAddressDisplay');
+  const copyButton = document.getElementById('copyAddress');
+  const loadingIndicator = document.getElementById('loadingIndicator');
+  const warningMessage = document.getElementById('warningMessage');
+  const qrCodeContainer = document.getElementById('qrCode');
   
-  // Coin details
-  const coinDetailsBase = {
-    BTC: { name: 'Bitcoin (BTC)', min: '0.001 BTC'},
-    ETH: { name: 'Ethereum (ETH)', min: '0.01 ETH'},
-    USDT: { name: 'Tether (USDT - ERC20)', min: '10 USDT'}
-  };
+  // API URL
+  const API_URL = 'https://hsit-backend.onrender.com';
   
-  // Fetch user's crypto addresses
-  async function fetchUserAddresses() {
+  // Selected cryptocurrency
+  let selectedCrypto = 'bitcoin';
+  
+  // Initialize
+  initializePage();
+  
+  // Initialize the page
+  async function initializePage() {
+    // Set default selection
+    document.querySelector('input[value="bitcoin"]').checked = true;
+    
+    // Add event listeners to crypto selector
+    cryptoSelector.forEach(radio => {
+      radio.addEventListener('change', handleCryptoChange);
+    });
+    
+    // Add event listener to copy button
+    if (copyButton) {
+      copyButton.addEventListener('click', copyAddressToClipboard);
+    }
+    
+    // Load initial address
+    await loadDepositAddress('bitcoin');
+  }
+  
+  // Handle crypto selection change
+  async function handleCryptoChange(event) {
+    selectedCrypto = event.target.value;
+    console.log(`Selected crypto changed to: ${selectedCrypto}`);
+    
+    // Update warning message
+    updateWarningMessage(selectedCrypto);
+    
+    // Load deposit address for selected crypto
+    await loadDepositAddress(selectedCrypto);
+  }
+  
+  // Load deposit address from backend
+  async function loadDepositAddress(crypto) {
     try {
-      const response = await fetch('${API_BASE_URL}/api/crypto/addresses', {
+      // Show loading indicator
+      if (loadingIndicator) {
+        loadingIndicator.style.display = 'block';
+      }
+      if (depositAddressDisplay) {
+        depositAddressDisplay.textContent = 'Loading your address...';
+      }
+      if (qrCodeContainer) {
+        qrCodeContainer.innerHTML = '';
+      }
+      
+      console.log(`Fetching ${crypto} deposit address from backend...`);
+      
+      // Make API call to get address
+      const response = await fetch(`${API_URL}/api/crypto/address/${crypto}`, {
+        method: 'GET',
         headers: {
-          'x-auth-token': token
+          'x-auth-token': token,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         }
       });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch addresses');
+        throw new Error(`Failed to fetch address: ${response.status}`);
       }
       
       const data = await response.json();
-      return {
-        btc_address: data.btcAddress,
-        eth_address: data.ethAddress
-      };
+      console.log('Address data received:', data);
+      
+      if (!data.success || !data.address) {
+        throw new Error('No address returned from server');
+      }
+      
+      // Display the address
+      if (depositAddressDisplay) {
+        depositAddressDisplay.textContent = data.address;
+      }
+      
+      // Generate QR code
+      await generateQRCode(data.address, crypto);
+      
+      // Update warning message
+      updateWarningMessage(crypto);
+      
+      return data.address;
     } catch (error) {
-      console.error('Error fetching addresses:', error);
-      showMessage('Error loading your deposit addresses. Please try again later.', 'error');
+      console.error('Error loading deposit address:', error);
+      
+      if (depositAddressDisplay) {
+        depositAddressDisplay.textContent = 'Error loading address. Please try again.';
+      }
+      
       return null;
+    } finally {
+      // Hide loading indicator
+      if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+      }
     }
   }
   
-  // Generate QR code
-  async function fetchQRCode(currency) {
+  // Generate QR code for the address
+  async function generateQRCode(address, crypto) {
+    if (!qrCodeContainer) return;
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/api/crypto/qrcode/${currency}`, {
+      // Fetch QR code from backend
+      const response = await fetch(`${API_URL}/api/crypto/qrcode/${crypto}`, {
+        method: 'GET',
         headers: {
-          'x-auth-token': token
+          'x-auth-token': token,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         }
       });
       
       if (!response.ok) {
-        throw new Error('Failed to generate QR code');
+        // Fallback to client-side QR code generation
+        console.log('Using fallback QR code generation');
+        
+        // Clear container
+        qrCodeContainer.innerHTML = '';
+        
+        // Create QR code using qrcode.js library
+        if (typeof QRCode !== 'undefined') {
+          new QRCode(qrCodeContainer, {
+            text: address,
+            width: 128,
+            height: 128,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        } else {
+          // If QRCode library is not available, show text message
+          qrCodeContainer.innerHTML = '<p>QR Code not available</p>';
+        }
+        
+        return;
       }
       
       const data = await response.json();
-      return data;
+      console.log('QR code data received:', data);
+      
+      if (!data.success || !data.qrPath) {
+        throw new Error('No QR code returned from server');
+      }
+      
+      // Display the QR code
+      qrCodeContainer.innerHTML = `<img src="${API_URL}${data.qrPath}" alt="${crypto} deposit address QR code" width="128" height="128">`;
     } catch (error) {
       console.error('Error generating QR code:', error);
-      return null;
+      qrCodeContainer.innerHTML = '<p>QR Code not available</p>';
     }
   }
   
-  // Update deposit info based on selected currency
-  async function updateDepositInfo() {
-    const selectedValue = document.querySelector('input[name="crypto"]:checked').value;
-    const detailsBase = coinDetailsBase[selectedValue];
+  // Update warning message based on selected crypto
+  function updateWarningMessage(crypto) {
+    if (!warningMessage) return;
     
-    // Show loading state
-    addressInput.value = 'Loading your address...';
-    copyButton.disabled = true;
-    qrCodeArea.innerHTML = '<p>[Loading...]</p>';
-    
-    // Fetch addresses if not already loaded
-    if (!window.userAddresses) {
-      window.userAddresses = await fetchUserAddresses();
+    let cryptoName = 'cryptocurrency';
+    switch (crypto) {
+      case 'bitcoin':
+        cryptoName = 'Bitcoin (BTC)';
+        break;
+      case 'ethereum':
+        cryptoName = 'Ethereum (ETH)';
+        break;
+      case 'usdt':
+        cryptoName = 'Tether (USDT - ERC20)';
+        break;
+      default:
+        cryptoName = crypto.toUpperCase();
     }
     
-    if (!window.userAddresses) {
-      addressInput.value = 'Error loading addresses';
+    warningMessage.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Send only ${cryptoName} to this address. Sending any other coin may result in permanent loss.`;
+  }
+  
+  // Copy address to clipboard
+  function copyAddressToClipboard() {
+    if (!depositAddressDisplay) return;
+    
+    const address = depositAddressDisplay.textContent;
+    if (!address || address === 'Loading your address...' || address === 'Error loading address. Please try again.') {
       return;
     }
     
-    let currentAddress = null;
+    // Create temporary input element
+    const tempInput = document.createElement('input');
+    tempInput.value = address;
+    document.body.appendChild(tempInput);
     
-    if (selectedValue === 'BTC') {
-      currentAddress = window.userAddresses.btc_address;
-    } else if (selectedValue === 'ETH' || selectedValue === 'USDT') {
-      currentAddress = window.userAddresses.eth_address;
+    // Select and copy
+    tempInput.select();
+    document.execCommand('copy');
+    
+    // Remove temporary element
+    document.body.removeChild(tempInput);
+    
+    // Show copied message
+    if (copyButton) {
+      const originalText = copyButton.textContent;
+      copyButton.textContent = 'Copied!';
+      
+      setTimeout(() => {
+        copyButton.textContent = originalText;
+      }, 2000);
     }
-    
-    if (detailsBase && currentAddress) {
-      addressInput.value = currentAddress;
-      selectedCoinName.textContent = detailsBase.name;
-      minDepositSpan.textContent = detailsBase.min;
-      copyButton.disabled = false;
-      
-      // Update warning text
-      const warningElement = document.querySelector('.warning-text');
-      if (warningElement) {
-        warningElement.innerHTML = `⚠️ Send only <strong>${detailsBase.name}</strong> to this address. Sending any other coin may result in permanent loss.`;
-      }
-      
-      // Fetch QR code
-      const qrData = await fetchQRCode(selectedValue);
-      if (qrData && qrData.qrPath) {
-        qrCodeArea.innerHTML = `<img src="${qrData.qrPath}" alt="${selectedValue} QR Code" class="qr-code">`;
-      } else {
-        qrCodeArea.innerHTML = '<p>[QR Code unavailable]</p>';
-      }
-    } else {
-      addressInput.value = 'Address not available';
-      selectedCoinName.textContent = detailsBase ? detailsBase.name : 'Error';
-      minDepositSpan.textContent = detailsBase ? detailsBase.min : 'N/A';
-      copyButton.disabled = true;
-      qrCodeArea.innerHTML = '<p>[Address unavailable]</p>';
-    }
-  }
-  
-  // Add event listeners
-  if (coinRadios.length > 0) {
-    coinRadios.forEach(radio => {
-      radio.addEventListener('change', updateDepositInfo);
-    });
-    
-    // Initialize with first selection
-    updateDepositInfo();
-  }
-  
-  // Copy button functionality
-  if (copyButton) {
-    copyButton.addEventListener('click', () => {
-      if (copyButton.disabled || !addressInput.value || addressInput.value.includes('...')) return;
-      
-      addressInput.select();
-      addressInput.setSelectionRange(0, 99999); // For mobile devices
-      
-      try {
-        navigator.clipboard.writeText(addressInput.value).then(() => {
-          copyButton.textContent = 'Copied!';
-          setTimeout(() => { copyButton.textContent = 'Copy'; }, 2000);
-        }).catch(err => {
-          console.error('Clipboard API failed: ', err);
-          // Basic fallback
-          if (document.execCommand('copy')) {
-            copyButton.textContent = 'Copied!';
-            setTimeout(() => { copyButton.textContent = 'Copy'; }, 2000);
-          } else {
-            alert('Failed to copy automatically. Please copy manually.');
-          }
-        });
-      } catch (err) {
-        console.error('Failed to copy text: ', err);
-        alert('Failed to copy address. Please copy it manually.');
-      }
-    });
   }
 });
-
-// Show message function
-function showMessage(message, type = 'info') {
-  // Check if status message element exists
-  let statusElement = document.getElementById('statusMessage');
-  
-  // If not, create one
-  if (!statusElement) {
-    statusElement = document.createElement('div');
-    statusElement.id = 'statusMessage';
-    statusElement.className = 'status-message';
-    document.body.prepend(statusElement);
-  }
-  
-  // Set message and class
-  statusElement.textContent = message;
-  statusElement.className = `status-message ${type}`;
-  
-  // Show message
-  statusElement.style.display = 'block';
-  
-  // Hide after 5 seconds
-  setTimeout(() => {
-    statusElement.style.display = 'none';
-  }, 5000);
-}
