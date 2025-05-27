@@ -10,6 +10,9 @@
     
     // Initialize when the DOM is fully loaded
     document.addEventListener('DOMContentLoaded', function() {
+        // Clear any cached crypto addresses from localStorage
+        clearCachedAddresses();
+        
         // Find the Deposit button
         const buttons = document.querySelectorAll('a');
         let depositButton = null;
@@ -37,12 +40,29 @@
     });
     
     /**
+     * Clear any cached crypto addresses from localStorage
+     */
+    function clearCachedAddresses() {
+        // Remove any cached address data
+        if (localStorage.getItem('hsit_crypto_assign')) {
+            localStorage.removeItem('hsit_crypto_assign');
+            console.log('Cleared cached crypto addresses');
+        }
+    }
+    
+    /**
      * Handle deposit button click
      */
     function handleDepositClick() {
+        // Show loading indicator
+        const loadingModal = showLoadingModal();
+        
         // Fetch addresses from backend API
         fetchAddressesFromAPI()
             .then(addresses => {
+                // Remove loading indicator
+                document.body.removeChild(loadingModal);
+                
                 if (addresses) {
                     // Show the addresses in a modal
                     showAddressesModal(addresses);
@@ -51,9 +71,53 @@
                 }
             })
             .catch(error => {
+                // Remove loading indicator
+                if (document.body.contains(loadingModal)) {
+                    document.body.removeChild(loadingModal);
+                }
+                
                 console.error('Error fetching addresses:', error);
                 alert('Error: Could not fetch crypto addresses. Please try again or contact support.');
             });
+    }
+    
+    /**
+     * Show loading modal
+     */
+    function showLoadingModal() {
+        const modal = document.createElement('div');
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.7)';
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        modal.style.zIndex = '1001';
+        
+        const spinner = document.createElement('div');
+        spinner.style.border = '5px solid #f3f3f3';
+        spinner.style.borderTop = '5px solid #3498db';
+        spinner.style.borderRadius = '50%';
+        spinner.style.width = '50px';
+        spinner.style.height = '50px';
+        spinner.style.animation = 'spin 2s linear infinite';
+        
+        const keyframes = document.createElement('style');
+        keyframes.innerHTML = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        
+        document.head.appendChild(keyframes);
+        modal.appendChild(spinner);
+        document.body.appendChild(modal);
+        
+        return modal;
     }
     
     /**
@@ -70,12 +134,18 @@
                 return null;
             }
             
+            // Add cache-busting parameter to prevent caching
+            const cacheBuster = Date.now();
+            
             // Make API request to get addresses
-            const response = await fetch(`${API_URL}/api/crypto/addresses`, {
+            const response = await fetch(`${API_URL}/api/crypto/addresses?_=${cacheBuster}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-auth-token': token
+                    'x-auth-token': token,
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
                 }
             });
             
@@ -127,14 +197,14 @@
         
         // Add heading
         const heading = document.createElement('h2');
-        heading.textContent = 'Deposit Crypto';
+        heading.textContent = 'Your Crypto Deposit Addresses';
         heading.style.marginTop = '0';
         heading.style.color = '#333';
         content.appendChild(heading);
         
         // Add description
         const description = document.createElement('p');
-        description.textContent = 'Please send your crypto to the following addresses:';
+        description.textContent = 'These addresses are uniquely assigned to your account. Send your crypto to these addresses:';
         content.appendChild(description);
         
         // Add Bitcoin address

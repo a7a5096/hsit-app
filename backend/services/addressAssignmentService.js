@@ -17,20 +17,118 @@ class AddressAssignmentService {
     session.startTransaction();
     
     try {
-      // Check if user already has addresses assigned
+      // Check if user already has addresses assigned in UserAddress collection
       let userAddress = await UserAddress.findOne({ userId }).session(session);
       
-      // If user already has addresses, return them
-      if (userAddress) {
+      // If user already has addresses in UserAddress, return them
+      if (userAddress && 
+          userAddress.addresses.BTC?.address && 
+          userAddress.addresses.ETH?.address && 
+          userAddress.addresses.USDT?.address) {
+        
+        // Ensure addresses are also marked as assigned in CryptoAddress collection
+        await this.ensureAddressesAreMarkedAsAssigned(
+          userAddress.addresses.BTC.address,
+          userAddress.addresses.ETH.address,
+          userAddress.addresses.USDT.address,
+          userId,
+          session
+        );
+        
+        // Ensure User model has the same addresses
+        await this.syncUserModelAddresses(
+          userId,
+          userAddress.addresses.BTC.address,
+          userAddress.addresses.ETH.address,
+          userAddress.addresses.USDT.address,
+          session
+        );
+        
         await session.commitTransaction();
         session.endSession();
         
         return {
-          BTC: userAddress.addresses.BTC?.address,
-          ETH: userAddress.addresses.ETH?.address,
-          USDT: userAddress.addresses.USDT?.address
+          BTC: userAddress.addresses.BTC.address,
+          ETH: userAddress.addresses.ETH.address,
+          USDT: userAddress.addresses.USDT.address
         };
       }
+      
+      // Check if user has addresses in User model
+      const user = await User.findById(userId).session(session);
+      if (user && 
+          user.walletAddresses && 
+          user.walletAddresses.bitcoin && 
+          user.walletAddresses.ethereum && 
+          user.walletAddresses.ubt) {
+        
+        // Create or update UserAddress record
+        if (!userAddress) {
+          userAddress = new UserAddress({
+            userId,
+            addresses: {
+              BTC: {
+                address: user.walletAddresses.bitcoin,
+                assignedAt: new Date(),
+                isActive: true
+              },
+              ETH: {
+                address: user.walletAddresses.ethereum,
+                assignedAt: new Date(),
+                isActive: true
+              },
+              USDT: {
+                address: user.walletAddresses.ubt,
+                assignedAt: new Date(),
+                isActive: true
+              }
+            },
+            totalAssigned: 3
+          });
+          
+          await userAddress.save({ session });
+        } else {
+          // Update existing UserAddress record
+          userAddress.addresses.BTC = {
+            address: user.walletAddresses.bitcoin,
+            assignedAt: new Date(),
+            isActive: true
+          };
+          userAddress.addresses.ETH = {
+            address: user.walletAddresses.ethereum,
+            assignedAt: new Date(),
+            isActive: true
+          };
+          userAddress.addresses.USDT = {
+            address: user.walletAddresses.ubt,
+            assignedAt: new Date(),
+            isActive: true
+          };
+          userAddress.totalAssigned = 3;
+          
+          await userAddress.save({ session });
+        }
+        
+        // Ensure addresses are also marked as assigned in CryptoAddress collection
+        await this.ensureAddressesAreMarkedAsAssigned(
+          user.walletAddresses.bitcoin,
+          user.walletAddresses.ethereum,
+          user.walletAddresses.ubt,
+          userId,
+          session
+        );
+        
+        await session.commitTransaction();
+        session.endSession();
+        
+        return {
+          BTC: user.walletAddresses.bitcoin,
+          ETH: user.walletAddresses.ethereum,
+          USDT: user.walletAddresses.ubt
+        };
+      }
+      
+      // If no addresses found, assign new ones
       
       // Find available addresses for each currency
       const btcAddress = await this.findAndReserveAddress('BTC', userId, session);
@@ -43,30 +141,52 @@ class AddressAssignmentService {
         throw new Error('Not enough addresses available for assignment');
       }
       
-      // Create user address record
-      userAddress = new UserAddress({
-        userId,
-        addresses: {
-          BTC: {
-            address: btcAddress.address,
-            assignedAt: new Date(),
-            isActive: true
+      // Create or update user address record
+      if (!userAddress) {
+        userAddress = new UserAddress({
+          userId,
+          addresses: {
+            BTC: {
+              address: btcAddress.address,
+              assignedAt: new Date(),
+              isActive: true
+            },
+            ETH: {
+              address: ethAddress.address,
+              assignedAt: new Date(),
+              isActive: true
+            },
+            USDT: {
+              address: usdtAddress.address,
+              assignedAt: new Date(),
+              isActive: true
+            }
           },
-          ETH: {
-            address: ethAddress.address,
-            assignedAt: new Date(),
-            isActive: true
-          },
-          USDT: {
-            address: usdtAddress.address,
-            assignedAt: new Date(),
-            isActive: true
-          }
-        },
-        totalAssigned: 3
-      });
-      
-      await userAddress.save({ session });
+          totalAssigned: 3
+        });
+        
+        await userAddress.save({ session });
+      } else {
+        // Update existing UserAddress record
+        userAddress.addresses.BTC = {
+          address: btcAddress.address,
+          assignedAt: new Date(),
+          isActive: true
+        };
+        userAddress.addresses.ETH = {
+          address: ethAddress.address,
+          assignedAt: new Date(),
+          isActive: true
+        };
+        userAddress.addresses.USDT = {
+          address: usdtAddress.address,
+          assignedAt: new Date(),
+          isActive: true
+        };
+        userAddress.totalAssigned = 3;
+        
+        await userAddress.save({ session });
+      }
       
       // Update user model with wallet addresses
       await User.findByIdAndUpdate(
@@ -92,8 +212,74 @@ class AddressAssignmentService {
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
+      console.error('Error in assignAddressesToUser:', error);
       throw error;
     }
+  }
+  
+  /**
+   * Ensure addresses are marked as assigned in CryptoAddress collection
+   * @param {string} btcAddress - Bitcoin address
+   * @param {string} ethAddress - Ethereum address
+   * @param {string} usdtAddress - USDT address
+   * @param {string} userId - User ID
+   * @param {mongoose.ClientSession} session - Mongoose session
+   */
+  async ensureAddressesAreMarkedAsAssigned(btcAddress, ethAddress, usdtAddress, userId, session) {
+    // Update BTC address
+    await CryptoAddress.findOneAndUpdate(
+      { address: btcAddress },
+      {
+        isAssigned: true,
+        assignedTo: userId,
+        assignedAt: new Date()
+      },
+      { upsert: true, session }
+    );
+    
+    // Update ETH address
+    await CryptoAddress.findOneAndUpdate(
+      { address: ethAddress },
+      {
+        isAssigned: true,
+        assignedTo: userId,
+        assignedAt: new Date()
+      },
+      { upsert: true, session }
+    );
+    
+    // Update USDT address
+    await CryptoAddress.findOneAndUpdate(
+      { address: usdtAddress },
+      {
+        isAssigned: true,
+        assignedTo: userId,
+        assignedAt: new Date()
+      },
+      { upsert: true, session }
+    );
+  }
+  
+  /**
+   * Sync User model addresses with UserAddress collection
+   * @param {string} userId - User ID
+   * @param {string} btcAddress - Bitcoin address
+   * @param {string} ethAddress - Ethereum address
+   * @param {string} usdtAddress - USDT address
+   * @param {mongoose.ClientSession} session - Mongoose session
+   */
+  async syncUserModelAddresses(userId, btcAddress, ethAddress, usdtAddress, session) {
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        walletAddresses: {
+          bitcoin: btcAddress,
+          ethereum: ethAddress,
+          ubt: usdtAddress
+        }
+      },
+      { session }
+    );
   }
   
   /**
@@ -135,18 +321,47 @@ class AddressAssignmentService {
     // First check UserAddress collection
     const userAddress = await UserAddress.findOne({ userId });
     
-    if (userAddress) {
+    if (userAddress && 
+        userAddress.addresses.BTC?.address && 
+        userAddress.addresses.ETH?.address && 
+        userAddress.addresses.USDT?.address) {
       return {
-        BTC: userAddress.addresses.BTC?.address,
-        ETH: userAddress.addresses.ETH?.address,
-        USDT: userAddress.addresses.USDT?.address
+        BTC: userAddress.addresses.BTC.address,
+        ETH: userAddress.addresses.ETH.address,
+        USDT: userAddress.addresses.USDT.address
       };
     }
     
-    // If not found, check User model
+    // If not found or incomplete, check User model
     const user = await User.findById(userId);
     
-    if (user && user.walletAddresses) {
+    if (user && 
+        user.walletAddresses && 
+        user.walletAddresses.bitcoin && 
+        user.walletAddresses.ethereum && 
+        user.walletAddresses.ubt) {
+      
+      // Sync with UserAddress collection for future consistency
+      const session = await mongoose.startSession();
+      session.startTransaction();
+      
+      try {
+        await this.syncUserAddressCollection(
+          userId, 
+          user.walletAddresses.bitcoin,
+          user.walletAddresses.ethereum,
+          user.walletAddresses.ubt,
+          session
+        );
+        
+        await session.commitTransaction();
+        session.endSession();
+      } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        console.error('Error syncing UserAddress collection:', error);
+      }
+      
       return {
         BTC: user.walletAddresses.bitcoin,
         ETH: user.walletAddresses.ethereum,
@@ -154,8 +369,53 @@ class AddressAssignmentService {
       };
     }
     
-    // If still not found, assign new addresses
+    // If still not found or incomplete, assign new addresses
     return this.assignAddressesToUser(userId);
+  }
+  
+  /**
+   * Sync UserAddress collection with User model
+   * @param {string} userId - User ID
+   * @param {string} btcAddress - Bitcoin address
+   * @param {string} ethAddress - Ethereum address
+   * @param {string} usdtAddress - USDT address
+   * @param {mongoose.ClientSession} session - Mongoose session
+   */
+  async syncUserAddressCollection(userId, btcAddress, ethAddress, usdtAddress, session) {
+    await UserAddress.findOneAndUpdate(
+      { userId },
+      {
+        userId,
+        addresses: {
+          BTC: {
+            address: btcAddress,
+            assignedAt: new Date(),
+            isActive: true
+          },
+          ETH: {
+            address: ethAddress,
+            assignedAt: new Date(),
+            isActive: true
+          },
+          USDT: {
+            address: usdtAddress,
+            assignedAt: new Date(),
+            isActive: true
+          }
+        },
+        totalAssigned: 3
+      },
+      { upsert: true, session }
+    );
+    
+    // Also ensure addresses are marked as assigned in CryptoAddress collection
+    await this.ensureAddressesAreMarkedAsAssigned(
+      btcAddress,
+      ethAddress,
+      usdtAddress,
+      userId,
+      session
+    );
   }
   
   /**
