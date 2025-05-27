@@ -106,7 +106,8 @@ const markAddressAsAssigned = async (currency, address) => {
   }
 };
 // Login route - authenticate user
-router.post('/auth', async (req, res) => {
+// Changed from '/auth' to '/' to match the expected endpoint
+router.post('/', async (req, res) => {
   try {
     const { email, password } = req.body;
     
