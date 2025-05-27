@@ -3,9 +3,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import twilio from 'twilio';
 import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import CryptoAddress from '../models/CryptoAddress.js';
 import auth from '../middleware/auth.js';
@@ -24,66 +21,6 @@ const twilioClient = new twilio(
 // Helper function to generate verification code
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
-// Helper function to assign crypto addresses to user
-const assignCryptoAddresses = async (userId) => {
-  try {
-    // Get current file path for ES modules
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    
-    // Read CSV files for addresses
-    const btcAddressesPath = path.join(process.cwd(), '../frontend/public/csv/bitcoin.csv');
-    const ethAddressesPath = path.join(process.cwd(), '../frontend/public/csv/ethereum.csv');
-    const usdtAddressesPath = path.join(process.cwd(), '../frontend/public/csv/USDT.csv');
-    const usedAddressesPath = path.join(process.cwd(), '../frontend/public/csv/used.csv');
-    
-    // Read addresses from files
-    const btcAddresses = fs.readFileSync(btcAddressesPath, 'utf8').split('\n').filter(addr => addr.trim());
-    const ethAddresses = fs.readFileSync(ethAddressesPath, 'utf8').split('\n').filter(addr => addr.trim());
-    const usdtAddresses = fs.readFileSync(usdtAddressesPath, 'utf8').split('\n').filter(addr => addr.trim());
-    
-    // Read used addresses
-    let usedAddresses = [];
-    try {
-      usedAddresses = fs.readFileSync(usedAddressesPath, 'utf8').split('\n').filter(addr => addr.trim());
-    } catch (err) {
-      // If file doesn't exist, create it
-      fs.writeFileSync(usedAddressesPath, '', 'utf8');
-    }
-    
-    // Find unused addresses
-    const unusedBtcAddresses = btcAddresses.filter(addr => !usedAddresses.includes(addr));
-    const unusedEthAddresses = ethAddresses.filter(addr => !usedAddresses.includes(addr));
-    const unusedUsdtAddresses = usdtAddresses.filter(addr => !usedAddresses.includes(addr));
-    
-    if (unusedBtcAddresses.length === 0 || unusedEthAddresses.length === 0 || unusedUsdtAddresses.length === 0) {
-      throw new Error('Not enough unused addresses available');
-    }
-    
-    // Select one address of each type
-    const btcAddress = unusedBtcAddresses[0];
-    const ethAddress = unusedEthAddresses[0];
-    const usdtAddress = unusedUsdtAddresses[0];
-    
-    // Update user with addresses
-    const user = await User.findById(userId);
-    user.btcAddress = btcAddress;
-    user.ethAddress = ethAddress;
-    user.usdtAddress = usdtAddress;
-    await user.save();
-    
-    // Mark addresses as used
-    fs.appendFileSync(usedAddressesPath, btcAddress + '\n', 'utf8');
-    fs.appendFileSync(usedAddressesPath, ethAddress + '\n', 'utf8');
-    fs.appendFileSync(usedAddressesPath, usdtAddress + '\n', 'utf8');
-    
-    return { btcAddress, ethAddress, usdtAddress };
-  } catch (err) {
-    console.error('Error assigning crypto addresses:', err);
-    throw err;
-  }
 };
 
 // @route   POST api/users/register
@@ -209,9 +146,12 @@ router.post('/verify-phone', async (req, res) => {
     user.phoneVerificationCode = null;
     user.phoneVerificationExpires = null;
 
-    // Assign crypto addresses to user
+    // Assign crypto addresses to user using the database service
     try {
-      await assignCryptoAddresses(userId);
+      const addresses = await AddressService.assignAddressesToUser(userId);
+      if (!addresses) {
+        console.error(`Failed to assign addresses to user ${userId}`);
+      }
     } catch (addressErr) {
       console.error('Error assigning addresses:', addressErr);
       // Continue with verification even if address assignment fails

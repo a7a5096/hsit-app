@@ -8,10 +8,10 @@
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import CryptoAddress from '../models/CryptoAddress.js';
-import { config } from '../config/config.js';
+import config from '../config/config.js';
 
 // Connect to MongoDB
-mongoose.connect(config.mongoURI, {
+mongoose.connect(config.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => {
@@ -33,7 +33,7 @@ async function verifyAddressAssignments() {
     const duplicateAssignments = [];
     
     // Get all used addresses
-    const usedAddresses = await CryptoAddress.find({ used: true });
+    const usedAddresses = await CryptoAddress.find({ isAssigned: true });
     console.log(`Found ${usedAddresses.length} used addresses`);
     
     // Check each address in user records
@@ -68,15 +68,15 @@ async function verifyAddressAssignments() {
       
       // Check if user has multiple Bitcoin addresses
       const bitcoinAddresses = await CryptoAddress.find({
-        currency: 'bitcoin',
-        used: true,
+        currency: 'BTC',
+        isAssigned: true,
         assignedTo: user._id
       });
       
       if (bitcoinAddresses.length > 1) {
         usersWithMultipleAddresses.push({
           userId: user._id,
-          currency: 'bitcoin',
+          currency: 'BTC',
           addressCount: bitcoinAddresses.length,
           addresses: bitcoinAddresses.map(a => a.address)
         });
@@ -84,15 +84,15 @@ async function verifyAddressAssignments() {
       
       // Check if user has multiple Ethereum addresses
       const ethereumAddresses = await CryptoAddress.find({
-        currency: 'ethereum',
-        used: true,
+        currency: 'ETH',
+        isAssigned: true,
         assignedTo: user._id
       });
       
       if (ethereumAddresses.length > 1) {
         usersWithMultipleAddresses.push({
           userId: user._id,
-          currency: 'ethereum',
+          currency: 'ETH',
           addressCount: ethereumAddresses.length,
           addresses: ethereumAddresses.map(a => a.address)
         });
@@ -100,15 +100,15 @@ async function verifyAddressAssignments() {
       
       // Check if user has multiple USDT addresses
       const usdtAddresses = await CryptoAddress.find({
-        currency: 'usdt',
-        used: true,
+        currency: 'USDT',
+        isAssigned: true,
         assignedTo: user._id
       });
       
       if (usdtAddresses.length > 1) {
         usersWithMultipleAddresses.push({
           userId: user._id,
-          currency: 'usdt',
+          currency: 'USDT',
           addressCount: usdtAddresses.length,
           addresses: usdtAddresses.map(a => a.address)
         });
@@ -126,27 +126,27 @@ async function verifyAddressAssignments() {
       if (user.walletAddresses.bitcoin) {
         const bitcoinAddress = await CryptoAddress.findOne({
           address: user.walletAddresses.bitcoin,
-          currency: 'bitcoin'
+          currency: 'BTC'
         });
         
         if (!bitcoinAddress) {
           inconsistencies.push({
             userId: user._id,
-            currency: 'bitcoin',
+            currency: 'BTC',
             address: user.walletAddresses.bitcoin,
             issue: 'Address not found in CryptoAddress collection'
           });
-        } else if (!bitcoinAddress.used) {
+        } else if (!bitcoinAddress.isAssigned) {
           inconsistencies.push({
             userId: user._id,
-            currency: 'bitcoin',
+            currency: 'BTC',
             address: user.walletAddresses.bitcoin,
             issue: 'Address not marked as used in CryptoAddress collection'
           });
         } else if (!bitcoinAddress.assignedTo || !bitcoinAddress.assignedTo.equals(user._id)) {
           inconsistencies.push({
             userId: user._id,
-            currency: 'bitcoin',
+            currency: 'BTC',
             address: user.walletAddresses.bitcoin,
             issue: 'Address assigned to different user in CryptoAddress collection',
             assignedTo: bitcoinAddress.assignedTo
@@ -158,27 +158,27 @@ async function verifyAddressAssignments() {
       if (user.walletAddresses.ethereum) {
         const ethereumAddress = await CryptoAddress.findOne({
           address: user.walletAddresses.ethereum,
-          currency: 'ethereum'
+          currency: 'ETH'
         });
         
         if (!ethereumAddress) {
           inconsistencies.push({
             userId: user._id,
-            currency: 'ethereum',
+            currency: 'ETH',
             address: user.walletAddresses.ethereum,
             issue: 'Address not found in CryptoAddress collection'
           });
-        } else if (!ethereumAddress.used) {
+        } else if (!ethereumAddress.isAssigned) {
           inconsistencies.push({
             userId: user._id,
-            currency: 'ethereum',
+            currency: 'ETH',
             address: user.walletAddresses.ethereum,
             issue: 'Address not marked as used in CryptoAddress collection'
           });
         } else if (!ethereumAddress.assignedTo || !ethereumAddress.assignedTo.equals(user._id)) {
           inconsistencies.push({
             userId: user._id,
-            currency: 'ethereum',
+            currency: 'ETH',
             address: user.walletAddresses.ethereum,
             issue: 'Address assigned to different user in CryptoAddress collection',
             assignedTo: ethereumAddress.assignedTo
@@ -190,27 +190,27 @@ async function verifyAddressAssignments() {
       if (user.walletAddresses.usdt && user.walletAddresses.usdt !== user.walletAddresses.ethereum) {
         const usdtAddress = await CryptoAddress.findOne({
           address: user.walletAddresses.usdt,
-          currency: 'usdt'
+          currency: 'USDT'
         });
         
         if (!usdtAddress) {
           inconsistencies.push({
             userId: user._id,
-            currency: 'usdt',
+            currency: 'USDT',
             address: user.walletAddresses.usdt,
             issue: 'Address not found in CryptoAddress collection'
           });
-        } else if (!usdtAddress.used) {
+        } else if (!usdtAddress.isAssigned) {
           inconsistencies.push({
             userId: user._id,
-            currency: 'usdt',
+            currency: 'USDT',
             address: user.walletAddresses.usdt,
             issue: 'Address not marked as used in CryptoAddress collection'
           });
         } else if (!usdtAddress.assignedTo || !usdtAddress.assignedTo.equals(user._id)) {
           inconsistencies.push({
             userId: user._id,
-            currency: 'usdt',
+            currency: 'USDT',
             address: user.walletAddresses.usdt,
             issue: 'Address assigned to different user in CryptoAddress collection',
             assignedTo: usdtAddress.assignedTo
