@@ -53,22 +53,23 @@
      */
     async function handleDepositClick() {
         try {
-            // Check if user is authenticated
+            // Get user token from localStorage
             const token = localStorage.getItem('token');
             
             if (!token) {
-                window.location.href = '/login.html?redirect=deposit';
+                alert('Please log in to view your deposit addresses.');
+                window.location.href = '/login.html';
                 return;
             }
             
             // Show loading indicator
-            showLoadingModal();
+            const loadingModal = showLoadingModal();
             
             // Fetch addresses from API
-            const addresses = await fetchAddressesFromAPI(token);
+            const addresses = await fetchUserAddresses(token);
             
-            // Hide loading indicator
-            hideLoadingModal();
+            // Remove loading indicator
+            document.body.removeChild(loadingModal);
             
             if (!addresses) {
                 alert('Error: Could not retrieve crypto addresses. Please contact support.');
@@ -79,15 +80,14 @@
             showAddressesModal(addresses);
         } catch (error) {
             console.error('Error handling deposit click:', error);
-            hideLoadingModal();
             alert('An error occurred. Please try again later or contact support.');
         }
     }
     
     /**
-     * Fetch addresses from backend API
+     * Fetch user's crypto addresses from the API
      */
-    async function fetchAddressesFromAPI(token) {
+    async function fetchUserAddresses(token) {
         try {
             const response = await fetch(CONFIG.apiEndpoints.getAddresses, {
                 method: 'GET',
@@ -104,16 +104,16 @@
             const data = await response.json();
             
             if (!data.success) {
-                throw new Error(data.message || 'Failed to get addresses');
+                throw new Error(data.message || 'Failed to retrieve addresses');
             }
             
             return {
                 bitcoin: data.addresses.bitcoin,
                 ethereum: data.addresses.ethereum,
-                usdt: data.addresses.ubt
+                usdt: data.addresses.usdt
             };
         } catch (error) {
-            console.error('Error fetching addresses from API:', error);
+            console.error('Error fetching user addresses:', error);
             return null;
         }
     }
@@ -122,21 +122,18 @@
      * Show loading modal
      */
     function showLoadingModal() {
-        // Create modal container
         const modal = document.createElement('div');
-        modal.id = 'loading-modal';
         modal.style.position = 'fixed';
         modal.style.top = '0';
         modal.style.left = '0';
         modal.style.width = '100%';
         modal.style.height = '100%';
-        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.7)';
         modal.style.display = 'flex';
         modal.style.justifyContent = 'center';
         modal.style.alignItems = 'center';
         modal.style.zIndex = '1001';
         
-        // Create loading spinner
         const spinner = document.createElement('div');
         spinner.style.border = '5px solid #f3f3f3';
         spinner.style.borderTop = '5px solid #3498db';
@@ -145,28 +142,19 @@
         spinner.style.height = '50px';
         spinner.style.animation = 'spin 2s linear infinite';
         
-        // Add keyframes for spinner animation
-        const style = document.createElement('style');
-        style.textContent = `
+        const keyframes = document.createElement('style');
+        keyframes.innerHTML = `
             @keyframes spin {
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
             }
         `;
-        document.head.appendChild(style);
         
+        document.head.appendChild(keyframes);
         modal.appendChild(spinner);
         document.body.appendChild(modal);
-    }
-    
-    /**
-     * Hide loading modal
-     */
-    function hideLoadingModal() {
-        const modal = document.getElementById('loading-modal');
-        if (modal) {
-            document.body.removeChild(modal);
-        }
+        
+        return modal;
     }
     
     /**
@@ -288,8 +276,8 @@
             document.execCommand('copy');
             alert('Address copied to clipboard!');
         };
-        addressContainer.appendChild(copyButton);
         
+        addressContainer.appendChild(copyButton);
         section.appendChild(addressContainer);
         container.appendChild(section);
     }

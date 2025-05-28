@@ -2,60 +2,19 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 import authMiddleware from '../middleware/auth.js';
 import User from '../models/User.js';
 import CryptoAddress from '../models/CryptoAddress.js';
 import * as qrcode from 'qrcode';
+import CryptoAddressService from '../services/CryptoAddressService.js';
+import addressAssignmentService from '../services/addressAssignmentService.js';
 
 const router = express.Router();
 
 // Define __dirname in ES module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-/**
- * Load crypto addresses from CSV files
- * @returns {Object} - Object containing addresses by currency type
- */
-const loadCryptoAddressesFromCSV = () => {
-  try {
-    // Use relative paths for development, can be updated for production
-    const csvDir = path.join(__dirname, '../../csv');
-    
-    const bitcoinPath = path.join(csvDir, 'bitcoin.csv');
-    const ethereumPath = path.join(csvDir, 'ethereum.csv');
-    const usdtPath = path.join(csvDir, 'usdt.csv');
-    
-    // Read and parse CSV files
-    const bitcoinAddresses = fs.readFileSync(bitcoinPath, 'utf8')
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-      
-    const ethereumAddresses = fs.readFileSync(ethereumPath, 'utf8')
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-      
-    const usdtAddresses = fs.readFileSync(usdtPath, 'utf8')
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-    
-    return {
-      success: true,
-      bitcoin: bitcoinAddresses,
-      ethereum: ethereumAddresses,
-      usdt: usdtAddresses
-    };
-  } catch (error) {
-    console.error('Error loading crypto addresses from CSV:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-};
 
 /**
  * Generate QR code for a crypto address
@@ -85,8 +44,8 @@ const generateQRCode = async (address, outputPath) => {
 };
 
 /**
- * Import crypto addresses from CSV files to database
- * This should be run once to initialize the database with addresses
+ * Import crypto addresses from database to database
+ * This endpoint should be used with admin privileges
  */
 router.post('/import-addresses', authMiddleware, async (req, res) => {
   try {
@@ -96,86 +55,63 @@ router.post('/import-addresses', authMiddleware, async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    // Load addresses from CSV files
-    const addresses = loadCryptoAddressesFromCSV();
-    if (!addresses.success) {
-      return res.status(500).json({ 
+    // Get addresses from request body
+    const { bitcoin, ethereum, usdt } = req.body;
+    
+    if (!bitcoin || !ethereum || !usdt) {
+      return res.status(400).json({ 
         success: false, 
-        message: 'Failed to load addresses from CSV files',
-        error: addresses.error
+        message: 'Missing address data. Please provide bitcoin, ethereum, and usdt arrays.'
       });
     }
     
     // Import Bitcoin addresses
-    let bitcoinCount = 0;
-    for (const address of addresses.bitcoin) {
-      // Check if address already exists
-      const existingAddress = await CryptoAddress.findOne({ 
-        address: address,
-        currency: 'bitcoin'
-      });
-      
-      if (!existingAddress) {
-        const newAddress = new CryptoAddress({
-          address: address,
-          currency: 'bitcoin',
-          privateKey: 'PLACEHOLDER', // In production, this should be securely managed
-          used: false
-        });
-        await newAddress.save();
-        bitcoinCount++;
-      }
-    }
+    const bitcoinResults = await CryptoAddressService.importAddresses(
+      bitcoin.map(address => ({
+        address,
+        currency: 'BTC',
+        isAssigned: false,
+        isActive: true
+      }))
+    );
     
     // Import Ethereum addresses
-    let ethereumCount = 0;
-    for (const address of addresses.ethereum) {
-      // Check if address already exists
-      const existingAddress = await CryptoAddress.findOne({ 
-        address: address,
-        currency: 'ethereum'
-      });
-      
-      if (!existingAddress) {
-        const newAddress = new CryptoAddress({
-          address: address,
-          currency: 'ethereum',
-          privateKey: 'PLACEHOLDER', // In production, this should be securely managed
-          used: false
-        });
-        await newAddress.save();
-        ethereumCount++;
-      }
-    }
+    const ethereumResults = await CryptoAddressService.importAddresses(
+      ethereum.map(address => ({
+        address,
+        currency: 'ETH',
+        isAssigned: false,
+        isActive: true
+      }))
+    );
     
-    // Import USDT addresses (typically same as Ethereum for ERC-20 tokens)
-    let usdtCount = 0;
-    for (const address of addresses.usdt) {
-      // Check if address already exists
-      const existingAddress = await CryptoAddress.findOne({ 
-        address: address,
-        currency: 'usdt'
-      });
-      
-      if (!existingAddress) {
-        const newAddress = new CryptoAddress({
-          address: address,
-          currency: 'usdt',
-          privateKey: 'PLACEHOLDER', // In production, this should be securely managed
-          used: false
-        });
-        await newAddress.save();
-        usdtCount++;
-      }
-    }
+    // Import USDT addresses
+    const usdtResults = await CryptoAddressService.importAddresses(
+      usdt.map(address => ({
+        address,
+        currency: 'USDT',
+        isAssigned: false,
+        isActive: true
+      }))
+    );
     
     res.json({
       success: true,
       message: 'Addresses imported successfully',
       imported: {
-        bitcoin: bitcoinCount,
-        ethereum: ethereumCount,
-        usdt: usdtCount
+        bitcoin: bitcoinResults.imported,
+        ethereum: ethereumResults.imported,
+        usdt: usdtResults.imported
+      },
+      duplicates: {
+        bitcoin: bitcoinResults.duplicates,
+        ethereum: ethereumResults.duplicates,
+        usdt: usdtResults.duplicates
+      },
+      errors: {
+        bitcoin: bitcoinResults.errors,
+        ethereum: ethereumResults.errors,
+        usdt: usdtResults.errors
       }
     });
   } catch (error) {
@@ -196,107 +132,31 @@ router.post('/import-addresses', authMiddleware, async (req, res) => {
  */
 router.post('/assign-addresses', authMiddleware, async (req, res) => {
   try {
-    // Use findOneAndUpdate to atomically check and update the user
-    // This prevents race conditions when multiple requests come in for the same user
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
+    // Use the addressAssignmentService to assign addresses
+    const userId = req.user.id;
     
-    // Check if user already has addresses assigned
-    if (user.walletAddresses && user.walletAddresses.bitcoin && user.walletAddresses.ethereum) {
-      return res.json({
+    try {
+      const addresses = await addressAssignmentService.assignAddressesToUser(userId);
+      
+      res.json({
         success: true,
-        message: 'User already has addresses assigned',
+        message: 'Addresses assigned successfully',
         addresses: {
-          bitcoin: user.walletAddresses.bitcoin,
-          ethereum: user.walletAddresses.ethereum,
-          usdt: user.walletAddresses.usdt || user.walletAddresses.ethereum // USDT uses Ethereum address (ERC-20)
+          bitcoin: addresses.BTC,
+          ethereum: addresses.ETH,
+          usdt: addresses.USDT
         }
       });
-    }
-    
-    // Find and assign Bitcoin address with findOneAndUpdate to atomically mark as used
-    const bitcoinAddress = await CryptoAddress.findOneAndUpdate(
-      { currency: 'bitcoin', used: false, assignedTo: { $exists: false } },
-      { 
-        used: true, 
-        assignedTo: user._id, 
-        assignedAt: new Date() 
-      },
-      { new: true }
-    );
-    
-    if (!bitcoinAddress) {
-      return res.status(500).json({ 
+    } catch (error) {
+      console.error('Error assigning addresses:', error);
+      res.status(500).json({ 
         success: false, 
-        message: 'No available Bitcoin addresses'
+        message: 'Server error during address assignment',
+        error: error.message
       });
     }
-    
-    // Find and assign Ethereum address with findOneAndUpdate to atomically mark as used
-    const ethereumAddress = await CryptoAddress.findOneAndUpdate(
-      { currency: 'ethereum', used: false, assignedTo: { $exists: false } },
-      { 
-        used: true, 
-        assignedTo: user._id, 
-        assignedAt: new Date() 
-      },
-      { new: true }
-    );
-    
-    if (!ethereumAddress) {
-      // Revert Bitcoin address assignment if Ethereum address assignment fails
-      await CryptoAddress.findByIdAndUpdate(
-        bitcoinAddress._id,
-        { used: false, $unset: { assignedTo: "", assignedAt: "" } }
-      );
-      
-      return res.status(500).json({ 
-        success: false, 
-        message: 'No available Ethereum addresses'
-      });
-    }
-    
-    // Find and assign USDT address with findOneAndUpdate to atomically mark as used
-    const usdtAddress = await CryptoAddress.findOneAndUpdate(
-      { currency: 'usdt', used: false, assignedTo: { $exists: false } },
-      { 
-        used: true, 
-        assignedTo: user._id, 
-        assignedAt: new Date() 
-      },
-      { new: true }
-    );
-    
-    if (!usdtAddress) {
-      // Use Ethereum address for USDT if no dedicated USDT address is available
-      console.log('No dedicated USDT address available, using Ethereum address');
-    }
-    
-    // Initialize walletAddresses object if it doesn't exist
-    if (!user.walletAddresses) {
-      user.walletAddresses = {};
-    }
-    
-    // Update user with assigned addresses
-    user.walletAddresses.bitcoin = bitcoinAddress.address;
-    user.walletAddresses.ethereum = ethereumAddress.address;
-    user.walletAddresses.usdt = usdtAddress ? usdtAddress.address : ethereumAddress.address;
-    
-    await user.save();
-    
-    res.json({
-      success: true,
-      message: 'Addresses assigned successfully',
-      addresses: {
-        bitcoin: bitcoinAddress.address,
-        ethereum: ethereumAddress.address,
-        usdt: usdtAddress ? usdtAddress.address : ethereumAddress.address
-      }
-    });
   } catch (error) {
-    console.error('Error assigning addresses:', error);
+    console.error('Error in assign-addresses route:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Server error during address assignment',
@@ -313,100 +173,30 @@ router.post('/assign-addresses', authMiddleware, async (req, res) => {
  */
 router.get('/addresses', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
+    const userId = req.user.id;
     
-    // Initialize walletAddresses object if it doesn't exist
-    if (!user.walletAddresses) {
-      user.walletAddresses = {};
-      await user.save();
-    }
-    
-    // Check if user has addresses assigned
-    const needsAddresses = !user.walletAddresses.bitcoin || 
-                          !user.walletAddresses.ethereum || 
-                          !user.walletAddresses.usdt;
-    
-    if (needsAddresses) {
-      // Assign addresses if not already assigned
-      // Find and assign Bitcoin address with findOneAndUpdate to atomically mark as used
-      if (!user.walletAddresses.bitcoin) {
-        const bitcoinAddress = await CryptoAddress.findOneAndUpdate(
-          { currency: 'bitcoin', used: false, assignedTo: { $exists: false } },
-          { 
-            used: true, 
-            assignedTo: user._id, 
-            assignedAt: new Date() 
-          },
-          { new: true }
-        );
-        
-        if (bitcoinAddress) {
-          user.walletAddresses.bitcoin = bitcoinAddress.address;
-        } else {
-          console.error('No available Bitcoin addresses');
-        }
-      }
+    // Use the addressAssignmentService to get or assign addresses
+    try {
+      const addresses = await addressAssignmentService.getUserAddresses(userId);
       
-      // Find and assign Ethereum address with findOneAndUpdate to atomically mark as used
-      if (!user.walletAddresses.ethereum) {
-        const ethereumAddress = await CryptoAddress.findOneAndUpdate(
-          { currency: 'ethereum', used: false, assignedTo: { $exists: false } },
-          { 
-            used: true, 
-            assignedTo: user._id, 
-            assignedAt: new Date() 
-          },
-          { new: true }
-        );
-        
-        if (ethereumAddress) {
-          user.walletAddresses.ethereum = ethereumAddress.address;
-        } else {
-          console.error('No available Ethereum addresses');
+      res.json({
+        success: true,
+        addresses: {
+          bitcoin: addresses.BTC,
+          ethereum: addresses.ETH,
+          usdt: addresses.USDT
         }
-      }
-      
-      // Find and assign USDT address with findOneAndUpdate to atomically mark as used
-      if (!user.walletAddresses.usdt) {
-        const usdtAddress = await CryptoAddress.findOneAndUpdate(
-          { currency: 'usdt', used: false, assignedTo: { $exists: false } },
-          { 
-            used: true, 
-            assignedTo: user._id, 
-            assignedAt: new Date() 
-          },
-          { new: true }
-        );
-        
-        if (usdtAddress) {
-          user.walletAddresses.usdt = usdtAddress.address;
-        } else if (user.walletAddresses.ethereum) {
-          // Use Ethereum address for USDT if no dedicated USDT address is available
-          user.walletAddresses.usdt = user.walletAddresses.ethereum;
-          console.log('No dedicated USDT address available, using Ethereum address');
-        } else {
-          console.error('No available USDT or Ethereum addresses');
-        }
-      }
-      
-      // Save the updated user
-      await user.save();
+      });
+    } catch (error) {
+      console.error('Error getting addresses:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Server error while retrieving addresses',
+        error: error.message
+      });
     }
-    
-    // Return addresses
-    res.json({
-      success: true,
-      addresses: {
-        bitcoin: user.walletAddresses.bitcoin || null,
-        ethereum: user.walletAddresses.ethereum || null,
-        usdt: user.walletAddresses.usdt || user.walletAddresses.ethereum || null
-      }
-    });
   } catch (error) {
-    console.error('Error getting addresses:', error);
+    console.error('Error in addresses route:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Server error while retrieving addresses',
@@ -423,31 +213,18 @@ router.get('/addresses', authMiddleware, async (req, res) => {
  */
 router.get('/address/:currency', authMiddleware, async (req, res) => {
   const { currency } = req.params;
+  const userId = req.user.id;
   
   try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    // Initialize walletAddresses object if it doesn't exist
-    if (!user.walletAddresses) {
-      user.walletAddresses = {};
-      await user.save();
-    }
-    
-    let currencyKey;
-    let address;
+    // Map currency parameter to database currency code
+    let dbCurrency;
     
     if (currency.toLowerCase() === 'bitcoin' || currency.toLowerCase() === 'btc') {
-      currencyKey = 'bitcoin';
-      address = user.walletAddresses.bitcoin;
+      dbCurrency = 'BTC';
     } else if (currency.toLowerCase() === 'ethereum' || currency.toLowerCase() === 'eth') {
-      currencyKey = 'ethereum';
-      address = user.walletAddresses.ethereum;
+      dbCurrency = 'ETH';
     } else if (currency.toLowerCase() === 'usdt') {
-      currencyKey = 'usdt';
-      address = user.walletAddresses.usdt || user.walletAddresses.ethereum; // Fallback to ETH
+      dbCurrency = 'USDT';
     } else {
       return res.status(400).json({ 
         success: false, 
@@ -455,33 +232,13 @@ router.get('/address/:currency', authMiddleware, async (req, res) => {
       });
     }
     
-    // If address is not assigned, assign one now
-    if (!address) {
-      const cryptoAddress = await CryptoAddress.findOneAndUpdate(
-        { currency: currencyKey, used: false, assignedTo: { $exists: false } },
-        { 
-          used: true, 
-          assignedTo: user._id, 
-          assignedAt: new Date() 
-        },
-        { new: true }
-      );
-      
-      if (cryptoAddress) {
-        address = cryptoAddress.address;
-        user.walletAddresses[currencyKey] = address;
-        await user.save();
-      } else {
-        return res.status(404).json({ 
-          success: false, 
-          message: `No available ${currencyKey} addresses`
-        });
-      }
-    }
+    // Get addresses for the user
+    const addresses = await addressAssignmentService.getUserAddresses(userId);
     
+    // Return the specific address
     res.json({
       success: true,
-      address: address
+      address: addresses[dbCurrency]
     });
   } catch (error) {
     console.error('Error getting address:', error);
@@ -501,31 +258,22 @@ router.get('/address/:currency', authMiddleware, async (req, res) => {
  */
 router.get('/qrcode/:currency', authMiddleware, async (req, res) => {
   const { currency } = req.params;
+  const userId = req.user.id;
   
   try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    // Initialize walletAddresses object if it doesn't exist
-    if (!user.walletAddresses) {
-      user.walletAddresses = {};
-      await user.save();
-    }
-    
+    // Map currency parameter to database currency code
+    let dbCurrency;
     let currencyKey;
-    let address;
     
     if (currency.toLowerCase() === 'bitcoin' || currency.toLowerCase() === 'btc') {
+      dbCurrency = 'BTC';
       currencyKey = 'bitcoin';
-      address = user.walletAddresses.bitcoin;
     } else if (currency.toLowerCase() === 'ethereum' || currency.toLowerCase() === 'eth') {
+      dbCurrency = 'ETH';
       currencyKey = 'ethereum';
-      address = user.walletAddresses.ethereum;
     } else if (currency.toLowerCase() === 'usdt') {
+      dbCurrency = 'USDT';
       currencyKey = 'usdt';
-      address = user.walletAddresses.usdt || user.walletAddresses.ethereum; // Fallback to ETH
     } else {
       return res.status(400).json({ 
         success: false, 
@@ -533,90 +281,52 @@ router.get('/qrcode/:currency', authMiddleware, async (req, res) => {
       });
     }
     
-    // If address is not assigned, assign one now
+    // Get addresses for the user
+    const addresses = await addressAssignmentService.getUserAddresses(userId);
+    
+    const address = addresses[dbCurrency];
+    
     if (!address) {
-      const cryptoAddress = await CryptoAddress.findOneAndUpdate(
-        { currency: currencyKey, used: false, assignedTo: { $exists: false } },
-        { 
-          used: true, 
-          assignedTo: user._id, 
-          assignedAt: new Date() 
-        },
-        { new: true }
-      );
-      
-      if (cryptoAddress) {
-        address = cryptoAddress.address;
-        user.walletAddresses[currencyKey] = address;
-        await user.save();
-      } else {
-        return res.status(404).json({ 
-          success: false, 
-          message: `No available ${currencyKey} addresses`
-        });
-      }
+      return res.status(404).json({ 
+        success: false, 
+        message: `No ${currencyKey} address assigned to user`
+      });
     }
     
-    // Create directory for QR codes if it doesn't exist
+    // Generate QR code
     const qrDir = path.join(__dirname, '../../public/qrcodes');
+    
+    // Ensure directory exists
     if (!fs.existsSync(qrDir)) {
       fs.mkdirSync(qrDir, { recursive: true });
     }
     
-    // Generate a safe filename for the QR code
-    const safeUserId = String(user._id).replace(/[^a-zA-Z0-9]/g, '');
-    const safeCurrency = currency.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
-    const fileName = `${safeUserId}_${safeCurrency}.png`;
-    const qrPath = path.join(qrDir, fileName);
+    const qrFilename = `${userId}_${currencyKey}_${Date.now()}.png`;
+    const qrPath = path.join(qrDir, qrFilename);
     
-    const result = await generateQRCode(address, qrPath);
+    const qrResult = await generateQRCode(address, qrPath);
     
-    if (!result.success) {
+    if (!qrResult.success) {
       return res.status(500).json({ 
         success: false, 
-        message: 'Failed to generate QR code'
+        message: 'Failed to generate QR code',
+        error: qrResult.error
       });
     }
     
-    // Return QR code URL path
+    // Return QR code URL
+    const qrUrl = `/qrcodes/${qrFilename}`;
+    
     res.json({
       success: true,
-      qrPath: `/qrcodes/${fileName}`,
-      address: address
+      address: address,
+      qrcode: qrUrl
     });
   } catch (error) {
     console.error('Error generating QR code:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Server error while generating QR code',
-      error: error.message
-    });
-  }
-});
-
-/**
- * Get user's UBT balance
- * @route   GET /api/crypto/balance/ubt
- * @desc    Get user's UBT balance from database
- * @access  Private
- */
-router.get('/balance/ubt', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    // Return UBT balance from database
-    res.json({
-      success: true,
-      balance: user.balances.ubt || 0
-    });
-  } catch (error) {
-    console.error('Error getting UBT balance:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error while retrieving UBT balance',
       error: error.message
     });
   }

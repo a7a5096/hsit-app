@@ -8,17 +8,11 @@ import corsMiddleware from './middleware/cors.js';
 // Import routes
 import authRoutes from './routes/auth.js';
 import directSmsVerification from './routes/direct-sms-verification.js';
-import dailySignInRoutes from './routes/dailySignInRoutes.js';
-import transactionsRoutes from './routes/transactions.js';
-import botsRoutes from './routes/bots.js';
-import usersRoutes from './routes/users.js';
-import teamRoutes from './routes/team.js';
-import depositPageRoutes from './routes/depositPage.js';
-import depositRoutes from './routes/deposit.js';
-// Import crypto service
-import CryptoAddressService from './services/CryptoAddressService.js';
-// Import address assignment service
-import addressAssignmentService from './services/addressAssignmentService.js';
+import dailySignInRoutes from './routes/dailySignInRoutes.js'; // Fixed path to match original import
+import transactionsRoutes from './routes/transactions.js'; // Import transactions routes
+import botsRoutes from './routes/bots.js'; // Import bots routes
+import usersRoutes from './routes/users.js'; // Import users routes with SMS verification
+import ubtRoutes from './routes/ubt.js'; // Import UBT routes for balance and spin
 
 // Load environment variables
 dotenv.config();
@@ -56,96 +50,11 @@ app.use((err, req, res, next) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/verify', directSmsVerification);
-app.use('/api/daily-signin', dailySignInRoutes);
-app.use('/api/transactions', transactionsRoutes);
-app.use('/api/bots', botsRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/team', teamRoutes);
-app.use('/deposit', depositPageRoutes);
-app.use('/api/deposit', depositRoutes);
-
-// CRYPTO ADDRESS MANAGEMENT ENDPOINTS
-app.post('/admin/fix-addresses', async (req, res) => {
-  try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== 'hsit-fix-2025') {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    console.log('Starting address fix...');
-    
-    const importResult = await CryptoAddressService.importAddresses();
-    console.log('Import result:', importResult);
-    
-    const fixResult = await CryptoAddressService.fixDuplicateAddresses();
-    console.log('Fix result:', fixResult);
-    
-    const stats = await CryptoAddressService.getStats();
-    
-    res.json({
-      success: true,
-      message: 'Address fix completed',
-      importResult,
-      fixResult,
-      stats
-    });
-    
-  } catch (error) {
-    console.error('Fix failed:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      stack: error.stack
-    });
-  }
-});
-
-// Get address statistics (admin)
-app.get('/admin/address-stats', async (req, res) => {
-  try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== 'hsit-fix-2025') {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const stats = await CryptoAddressService.getStats();
-    res.json({
-      success: true,
-      data: stats
-    });
-    
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Assign addresses to specific user (admin)
-app.post('/admin/assign-addresses/:userId', async (req, res) => {
-  try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== 'hsit-fix-2025') {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const { userId } = req.params;
-    const result = await addressAssignmentService.assignAddressesToUser(userId);
-    
-    res.json({
-      success: true,
-      message: 'Addresses assigned successfully',
-      data: result
-    });
-    
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
+app.use('/api/daily-signin', dailySignInRoutes); // Use daily sign-in routes
+app.use('/api/transactions', transactionsRoutes); // Use transactions routes
+app.use('/api/bots', botsRoutes); // Use bots routes
+app.use('/api/users', usersRoutes); // Use users routes with SMS verification
+app.use('/api/ubt', ubtRoutes); // Use UBT routes for balance and spin
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -193,12 +102,9 @@ app.use((req, res) => {
 
 // Connect to MongoDB
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb+srv://a7a5096:MM00nngg2@cluster0hsit.xelat83.mongodb.net/hsit_app?retryWrites=true&w=majority&appName=Cluster0HSIT';
-// Ensure database name is explicitly set to hsit_app
-const dbURI = MONGO_URI.includes('/hsit_app?') ? MONGO_URI : MONGO_URI.replace('/?', '/hsit_app?');
 const PORT = process.env.PORT || 5000;
 
-console.log('Connecting to MongoDB with URI:', dbURI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')); // Log sanitized URI
-mongoose.connect(dbURI)
+mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('MongoDB Connected Successfully');
     app.listen(PORT, '0.0.0.0', () => {

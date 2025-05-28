@@ -10,9 +10,6 @@ import User from '../models/User.js';
 import CryptoAddress from '../models/CryptoAddress.js';
 import auth from '../middleware/auth.js';
 
-// Import AddressService
-import AddressService from '../services/AddressService.js';
-
 const router = express.Router();
 
 // Initialize Twilio client
@@ -90,10 +87,9 @@ const assignCryptoAddresses = async (userId) => {
 // @desc    Register a user
 // @access  Public
 router.post('/register', async (req, res) => {
-  try {
-    // Your existing user creation logic
-    const { username, email, phone, password, invitationCode, requirePhoneVerification } = req.body;
+  const { username, email, phone, password, invitationCode, requirePhoneVerification } = req.body;
 
+  try {
     // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
@@ -156,15 +152,6 @@ router.post('/register', async (req, res) => {
 
     // Save user
     await user.save();
-    
-    // Auto-assign addresses
-    AddressService.assignAddressesToUser(user._id)
-      .then(addresses => {
-        console.log(`Assigned addresses to new user ${user._id}:`, addresses);
-      })
-      .catch(error => {
-        console.error(`Failed to assign addresses to new user ${user._id}:`, error.message);
-      });
 
     // Return success with userId for verification redirect
     return res.status(201).json({

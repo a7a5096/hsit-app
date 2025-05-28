@@ -1,13 +1,43 @@
-// This file is deprecated and has been consolidated into CryptoAddressService.js
-// Keeping this file as a reference for backward compatibility during migration
-// All new code should use the consolidated CryptoAddressService
+import AddressService from '../services/AddressService.js';
 
-import CryptoAddressService from './CryptoAddressService.js';
+// AddressService implementation
+const assignAddressesToUser = async (userId) => {
+  try {
+    // Get available crypto addresses
+    const addresses = await getAvailableCryptoAddresses();
+    
+    // Find the user
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    // Assign addresses to user
+    if (addresses.bitcoin) {
+      user.walletAddresses.bitcoin = addresses.bitcoin.address;
+      await markAddressAsAssigned('bitcoin', addresses.bitcoin.address);
+    }
+    
+    if (addresses.ethereum) {
+      user.walletAddresses.ethereum = addresses.ethereum.address;
+      await markAddressAsAssigned('ethereum', addresses.ethereum.address);
+    }
+    
+    if (addresses.ubt) {
+      user.walletAddresses.ubt = addresses.ubt.address;
+    }
+    
+    // Save the updated user
+    await user.save();
+    
+    return user.walletAddresses;
+  } catch (error) {
+    console.error('Error assigning addresses to user:', error);
+    throw error;
+  }
+};
 
-// For backward compatibility, re-export the consolidated service
-const AddressService = CryptoAddressService;
-
-// Warning message for developers
-console.warn('AddressService.js is deprecated. Please use CryptoAddressService.js for all cryptocurrency address operations.');
-
-export default AddressService;
+export default {
+  assignAddressesToUser
+};

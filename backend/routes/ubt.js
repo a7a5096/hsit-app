@@ -1,114 +1,185 @@
 import express from 'express';
-import authMiddleware from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
 import User from '../models/User.js';
-import mongoose from 'mongoose';
+import Transaction from '../models/Transaction.js';
 
 const router = express.Router();
 
 /**
  * @route   GET /api/ubt/balance
- * @desc    Get user's UBT balance from database
+ * @desc    Get user's UBT balance
  * @access  Private
  */
-router.get('/balance', authMiddleware, async (req, res) => {
+router.get('/balance', auth, async (req, res) => {
   try {
+    // Get user from database
     const user = await User.findById(req.user.id);
+    
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
     }
     
-    // Initialize balances if it doesn't exist
-    if (!user.balances) {
-      user.balances = { ubt: 0 };
-      await user.save();
-    }
+    // Get user's transactions to calculate balance
+    const transactions = await Transaction.find({ 
+      userId: user._id,
+      currency: 'ubt'
+    });
     
-    // Return UBT balance from database
+    // Calculate UBT balance from transactions
+    let balance = 0;
+    transactions.forEach(transaction => {
+      if (transaction.type === 'deposit' || transaction.type === 'reward') {
+        balance += transaction.amount;
+      } else if (transaction.type === 'withdrawal' || transaction.type === 'wager') {
+        balance -= transaction.amount;
+      }
+    });
+    
+    // Return balance
     res.json({
       success: true,
-      balance: user.balances.ubt || 0
+      balance: balance
     });
+    
   } catch (error) {
-    console.error('Error getting UBT balance:', error);
+    console.error('Error fetching UBT balance:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Server error while retrieving UBT balance',
-      error: error.message
+      message: 'Server error' 
     });
   }
 });
 
 /**
  * @route   POST /api/ubt/spin
- * @desc    Process a wheel spin and update UBT balance
+ * @desc    Process a spin wager and determine outcome
  * @access  Private
  */
-router.post('/spin', authMiddleware, async (req, res) => {
-  // Start a MongoDB session for transaction
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  
+router.post('/spin', auth, async (req, res) => {
   try {
-    // Find user with session to lock the document
-    const user = await User.findById(req.user.id).session(session);
+    const { wager } = req.body;
+    
+    // Validate wager amount
+    if (!wager || isNaN(wager) || wager < 1 || wager > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid wager amount. Must be between 1-100 UBT.'
+      });
+    }
+    
+    // Get user from database
+    const user = await User.findById(req.user.id);
+    
     if (!user) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
     }
     
-    // Initialize balances if it doesn't exist
-    if (!user.balances) {
-      user.balances = { ubt: 0 };
+    // Calculate current balance
+    const transactions = await Transaction.find({ 
+      userId: user._id,
+      currency: 'ubt'
+    });
+    
+    let currentBalance = 0;
+    transactions.forEach(transaction => {
+      if (transaction.type === 'deposit' || transaction.type === 'reward') {
+        currentBalance += transaction.amount;
+      } else if (transaction.type === 'withdrawal' || transaction.type === 'wager') {
+        currentBalance -= transaction.amount;
+      }
+    });
+    
+    // Check if user has enough balance
+    if (currentBalance < wager) {
+      return res.status(400).json({
+        success: false,
+        message: 'Insufficient UBT balance for this wager.'
+      });
     }
     
-    // Define the segments
-    const segments = [
-      { label: "1 UBT", value: 1, currency: "ubt" },
-      { label: "Sorry", value: 0, currency: "none" },
-      { label: "20 USDT", value: 20, currency: "usdt" },
-      { label: "Sorry", value: 0, currency: "none" },
-      { label: "10 UBT", value: 10, currency: "ubt" },
-      { label: "Sorry", value: 0, currency: "none" }
+    // Create wager transaction
+    const wagerTransaction = new Transaction({
+      userId: user._id,
+      type: 'wager',
+      amount: wager,
+      currency: 'ubt',
+      description: 'Spinning wheel wager',
+      status: 'completed',
+      date: Date.now()
+    });
+    
+    await wagerTransaction.save();
+    
+    // Calculate balance after wager
+    const balanceAfterWager = currentBalance - wager;
+    
+    // Determine spin outcome
+    // Define prize segments (matching frontend)
+    const prizes = [
+      { text: "10 UBT", color: "#FFC300", value: 10 },
+      { text: "Try Again", color: "#C70039", value: 0 },
+      { text: "5 UBT", color: "#900C3F", value: 5 },
+      { text: "20 UBT", color: "#581845", value: 20 },
+      { text: "Bonus Spin", color: "#FF5733", value: "bonus" },
+      { text: "2 UBT", color: "#DAF7A6", value: 2 },
+      { text: "50 UBT", color: "#3498DB", value: 50 },
+      { text: "Jackpot!", color: "#2ECC71", value: 100 }
     ];
     
-    // Determine the winning segment (random)
-    const winningSegmentIndex = Math.floor(Math.random() * segments.length);
-    const winningSegment = segments[winningSegmentIndex];
+    // Randomly select a segment (weighted if needed)
+    const winningSegmentIndex = Math.floor(Math.random() * prizes.length);
+    const winningPrize = prizes[winningSegmentIndex];
     
-    // Update user's balance based on the winning segment
-    if (winningSegment.currency === 'ubt') {
-      user.balances.ubt = (user.balances.ubt || 0) + winningSegment.value;
-    } else if (winningSegment.currency === 'usdt') {
-      user.balances.usdt = (user.balances.usdt || 0) + winningSegment.value;
+    let prizeAmount = 0;
+    
+    // Process the prize
+    if (winningPrize.value === "bonus") {
+      // For bonus spin, we'll give a fixed amount for now
+      prizeAmount = 5; // 5 UBT for bonus spin
+    } else if (typeof winningPrize.value === 'number') {
+      prizeAmount = winningPrize.value;
     }
     
-    // Save user with updated balance
-    await user.save({ session });
+    // If there's a prize to award
+    if (prizeAmount > 0) {
+      // Create prize transaction
+      const prizeTransaction = new Transaction({
+        userId: user._id,
+        type: 'reward',
+        amount: prizeAmount,
+        currency: 'ubt',
+        description: `Spinning wheel prize: ${winningPrize.text}`,
+        status: 'completed',
+        date: Date.now()
+      });
+      
+      await prizeTransaction.save();
+    }
     
-    // Commit the transaction
-    await session.commitTransaction();
-    session.endSession();
+    // Calculate final balance
+    const finalBalance = balanceAfterWager + prizeAmount;
     
     // Return the result
     res.json({
       success: true,
-      result: {
-        segmentIndex: winningSegmentIndex,
-        prize: winningSegment.value > 0 ? `${winningSegment.value} ${winningSegment.currency.toUpperCase()}` : 'Nothing',
-        newBalance: user.balances.ubt || 0
-      }
+      winningSegmentIndex,
+      prizeText: winningPrize.text,
+      prizeValue: winningPrize.value,
+      balanceAfterWager,
+      finalBalance
     });
-  } catch (error) {
-    // Abort transaction on error
-    await session.abortTransaction();
-    session.endSession();
     
-    console.error('Error processing wheel spin:', error);
+  } catch (error) {
+    console.error('Error processing spin:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Server error while processing wheel spin',
-      error: error.message
+      message: 'Server error' 
     });
   }
 });

@@ -6,9 +6,12 @@ import twilio from 'twilio';
 // Models
 import User from '../models/User.js';
 import Transaction from '../models/Transaction.js';
+import VerificationCode from '../models/VerificationCode.js';
+import PendingRegistration from '../models/PendingRegistration.js';
 
 // Services
 import addressAssignmentService from '../services/addressAssignmentService.js';
+import AddressService from '../services/AddressService.js';
 
 const router = express.Router();
 
@@ -25,22 +28,23 @@ const sendVerificationCode = async (phoneNumber) => {
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
     
-    // Use ES module import for twilio
-    const client = twilio(accountSid, authToken);
+    const client = require('twilio')(accountSid, authToken);
     
     // Generate a random 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Store the code in memory (in production, use Redis or similar)
-    // This is a simplified version for demonstration
-    if (!global.verificationCodes) {
-      global.verificationCodes = {};
-    }
+    // Store the code in database
+    // First, delete any existing codes for this phone number
+    await VerificationCode.deleteMany({ phoneNumber });
     
-    global.verificationCodes[phoneNumber] = {
+    // Create new verification code document
+    const verificationCode = new VerificationCode({
+      phoneNumber,
       code,
-      expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
-    };
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+    });
+    
+    await verificationCode.save();
     
     // Send SMS
     await client.messages.create({
@@ -51,37 +55,40 @@ const sendVerificationCode = async (phoneNumber) => {
     
     return true;
   } catch (error) {
-    console.error('SMS sending error:', error);
+    console.error('Send verification code error:', error);
     return false;
   }
 };
 
-const verifyCode = (phoneNumber, code) => {
-  // Check if we have a verification code for this phone number
-  if (!global.verificationCodes || !global.verificationCodes[phoneNumber]) {
-    return { valid: false, message: 'No verification code found' };
+const verifyCode = async (phoneNumber, code) => {
+  try {
+    // Find verification code in database
+    const verificationCode = await VerificationCode.findOne({ phoneNumber });
+    
+    if (!verificationCode) {
+      return { valid: false, message: 'Verification code not found' };
+    }
+    
+    // Check if code has expired
+    if (Date.now() > verificationCode.expiresAt) {
+      await VerificationCode.deleteOne({ phoneNumber });
+      return { valid: false, message: 'Verification code expired' };
+    }
+    
+    // Check if code matches
+    if (verificationCode.code !== code) {
+      return { valid: false, message: 'Invalid verification code' };
+    }
+    
+    // Delete verification code
+    await VerificationCode.deleteOne({ phoneNumber });
+    
+    return { valid: true };
+  } catch (error) {
+    console.error('Verify code error:', error);
+    return { valid: false, message: 'Server error' };
   }
-  
-  const verification = global.verificationCodes[phoneNumber];
-  
-  // Check if code has expired
-  if (Date.now() > verification.expiresAt) {
-    delete global.verificationCodes[phoneNumber];
-    return { valid: false, message: 'Verification code has expired' };
-  }
-  
-  // Check if code matches
-  if (verification.code !== code) {
-    return { valid: false, message: 'Invalid verification code' };
-  }
-  
-  // Code is valid, clean up
-  delete global.verificationCodes[phoneNumber];
-  
-  return { valid: true };
 };
-
-// Routes
 
 // GET endpoint to retrieve authenticated user data
 router.get('/', async (req, res) => {
@@ -164,28 +171,38 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Add the root POST endpoint to match frontend login expectations
+// Login route - authenticate user
 router.post('/', async (req, res) => {
   try {
     const { email, password } = req.body;
     
     // Validate inputs
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password are required' });
+      return res.status(400).json({ 
+        success: false, 
+        msg: 'Email and password are required' 
+      });
     }
     
     // Find user by email
     const user = await User.findOne({ email });
     
+    // Check if user exists
     if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+      return res.status(400).json({ 
+        success: false, 
+        msg: 'User with email ' + email + ' not found' 
+      });
     }
     
     // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.comparePassword(password);
     
     if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+      return res.status(400).json({ 
+        success: false, 
+        msg: 'Invalid credentials' 
+      });
     }
     
     // Update last login
@@ -199,6 +216,7 @@ router.post('/', async (req, res) => {
       { expiresIn: JWT_EXPIRE }
     );
     
+    // Return token and user data
     res.json({
       success: true,
       token,
@@ -208,16 +226,41 @@ router.post('/', async (req, res) => {
         email: user.email,
         phoneNumber: user.phoneNumber,
         walletAddresses: user.walletAddresses,
-        cryptoBalance: user.cryptoBalance
+        isVerified: user.isVerified,
+        balances: user.balances
       }
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    res.status(500).json({ 
+      success: false, 
+      msg: 'Server error' 
+    });
   }
 });
 
-// Initial registration - collect user info and send verification code
+// Direct registration route with auto-address assignment
+router.post('/register', async (req, res) => {
+  try {
+    // Your existing user creation logic
+    const user = new User(req.body);
+    await user.save();
+    
+    // Auto-assign addresses using addressAssignmentService
+    addressAssignmentService.assignAddressesToUser(user._id)
+      .then(addresses => {
+        console.log(`Assigned addresses to new user ${user._id}:`, addresses);
+      })
+      .catch(error => {
+        console.error(`Failed to assign addresses to new user ${user._id}:`, error.message);
+      });
+    res.json({ success: true, user, message: 'User created successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Initial registration - send verification code
 router.post('/register/initial', async (req, res) => {
   try {
     const { username, email, password, phoneNumber } = req.body;
@@ -228,51 +271,55 @@ router.post('/register/initial', async (req, res) => {
     }
     
     // Check if user already exists
-    const existingUser = await User.findOne({ 
+    const existingUser = await User.findOne({
       $or: [
-        { username },
         { email },
+        { username },
         { phoneNumber }
       ]
     });
     
     if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Username, email, or phone number already in use' });
+      if (existingUser.email === email) {
+        return res.status(400).json({ success: false, message: 'Email already in use' });
+      } else {
+        return res.status(400).json({ success: false, message: 'Username already taken' });
+      }
+    }
+    
+    // Send verification code
+    const smsSent = await sendVerificationCode(phoneNumber);
+    
+    if (!smsSent) {
+      return res.status(500).json({ success: false, message: 'Failed to send verification code' });
     }
     
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     
-    // Create user document but don't save yet (wait for verification)
-    const tempUser = {
+    // Store user data in database
+    // First, delete any existing pending registrations for this phone number
+    await PendingRegistration.deleteMany({ phoneNumber });
+    
+    // Create new pending registration
+    const pendingRegistration = new PendingRegistration({
       username,
       email,
       password: hashedPassword,
+      phoneNumber,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+    });
+    
+    await pendingRegistration.save();
+    
+    res.json({
+      success: true,
+      message: 'Verification code sent',
       phoneNumber
-    };
-    
-    // Store temp user in session or use a temporary storage solution
-    if (!req.session) {
-      // If session is not available, use global object (not ideal for production)
-      if (!global.tempUsers) {
-        global.tempUsers = {};
-      }
-      global.tempUsers[phoneNumber] = tempUser;
-    } else {
-      req.session.tempUser = tempUser;
-    }
-    
-    // Send verification code via SMS (now optional)
-    try {
-      await sendVerificationCode(phoneNumber);
-      res.json({ success: true, message: 'Verification code sent. You can also proceed without verification.' });
-    } catch (error) {
-      console.error('SMS sending error:', error);
-      res.json({ success: true, message: 'Could not send verification code. You can proceed without verification.' });
-    }
+    });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Registration initial error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -280,38 +327,49 @@ router.post('/register/initial', async (req, res) => {
 // Complete registration - verify code and create user
 router.post('/register/complete', async (req, res) => {
   try {
-    const { phoneNumber, verificationCode, skipVerification } = req.body;
+    const { phoneNumber, code } = req.body;
     
-    // Get temp user data
-    let tempUser;
-    if (!req.session) {
-      tempUser = global.tempUsers?.[phoneNumber];
-    } else {
-      tempUser = req.session.tempUser;
+    // Validate inputs
+    if (!phoneNumber || !code) {
+      return res.status(400).json({ success: false, message: 'Phone number and verification code are required' });
     }
     
-    if (!tempUser) {
-      return res.status(400).json({ success: false, message: 'Registration session expired or invalid' });
+    // Verify the code
+    const verification = await verifyCode(phoneNumber, code);
+    
+    if (!verification.valid) {
+      return res.status(400).json({ success: false, message: verification.message });
     }
     
-    // Verify code if not skipping verification
-    if (!skipVerification && verificationCode) {
-      const verification = verifyCode(phoneNumber, verificationCode);
-      if (!verification.valid) {
-        return res.status(400).json({ success: false, message: verification.message });
-      }
+    // Get pending registration data from database
+    const pendingRegistration = await PendingRegistration.findOne({ phoneNumber });
+    
+    if (!pendingRegistration) {
+      return res.status(400).json({ success: false, message: 'Registration session expired or not found' });
+    }
+    
+    // Check if registration session has expired
+    if (Date.now() > pendingRegistration.expiresAt) {
+      await PendingRegistration.deleteOne({ phoneNumber });
+      return res.status(400).json({ success: false, message: 'Registration session expired' });
     }
     
     // Create new user
     const newUser = new User({
-      username: tempUser.username,
-      email: tempUser.email,
-      password: tempUser.password,
-      phoneNumber: tempUser.phoneNumber,
-      isVerified: !skipVerification
+      username: pendingRegistration.username,
+      email: pendingRegistration.email,
+      password: pendingRegistration.password,
+      phoneNumber: pendingRegistration.phoneNumber,
+      isVerified: true,
+      balances: {
+        btc: 0,
+        eth: 0,
+        usdt: 0,
+        ubt: 100 // Default starting balance
+      },
+      lastLogin: Date.now()
     });
     
-    // Save user to database
     await newUser.save();
     
     // Assign crypto addresses to user using addressAssignmentService
@@ -319,24 +377,22 @@ router.post('/register/complete', async (req, res) => {
       const addresses = await addressAssignmentService.assignAddressesToUser(newUser._id);
       
       // Update user with wallet addresses
-      newUser.walletAddresses = {
-        bitcoin: addresses.BTC,
-        ethereum: addresses.ETH,
-        ubt: addresses.USDT
-      };
-      
-      await newUser.save();
+      if (addresses) {
+        newUser.walletAddresses = {
+          bitcoin: addresses.BTC,
+          ethereum: addresses.ETH,
+          ubt: addresses.USDT
+        };
+        
+        await newUser.save();
+      }
     } catch (error) {
       console.error('Error assigning addresses:', error);
       // Continue registration even if address assignment fails
     }
     
-    // Clean up temp user data
-    if (!req.session) {
-      delete global.tempUsers[phoneNumber];
-    } else {
-      delete req.session.tempUser;
-    }
+    // Delete pending registration
+    await PendingRegistration.deleteOne({ phoneNumber });
     
     // Generate JWT token
     const token = jwt.sign(
@@ -366,7 +422,7 @@ router.post('/register/complete', async (req, res) => {
 // Verify phone number for existing user
 router.post('/verify-phone', async (req, res) => {
   try {
-    const { userId, verificationCode } = req.body;
+    const { userId, code } = req.body;
     
     // Find user
     const user = await User.findById(userId);
@@ -376,7 +432,7 @@ router.post('/verify-phone', async (req, res) => {
     }
     
     // Verify code
-    const verification = verifyCode(user.phoneNumber, verificationCode);
+    const verification = await verifyCode(user.phoneNumber, code);
     if (!verification.valid) {
       return res.status(400).json({ success: false, message: verification.message });
     }
