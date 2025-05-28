@@ -4,8 +4,8 @@ const userAddressSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
+    required: true
+    // Removed redundant index: true to fix duplicate index warning
   },
   addresses: {
     BTC: {
