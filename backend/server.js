@@ -69,16 +69,17 @@ app.get('/api/test', (req, res) => {
 const projectRoot = path.join(__dirname, '../');
 app.use(express.static(projectRoot));
 
+// API 404 handler for unhandled API routes - only for GET requests
+// This ensures POST and other methods are not affected
+app.get('/api/*', (req, res) => {
+  res.status(404).json({ success: false, message: 'API endpoint not found.' });
+});
+
 // Fallback to serving index.html from the project root for any unhandled GET requests
 // This helps if you have client-side routing for some parts or just want a default page.
 // Ensure index.html exists in your project root if you use this.
 app.get('*', (req, res) => {
-  // Check if the request is for an API route, if so, don't send index.html
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ success: false, message: 'API endpoint not found.' });
-  }
-  
-  // Otherwise, send index.html for client-side routing
+  // Send index.html for client-side routing
   res.sendFile(path.resolve(projectRoot, 'index.html'));
 });
 
