@@ -180,7 +180,7 @@ router.post('/', async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ 
         success: false, 
-        msg: 'Email and password are required' 
+        message: 'Email and password are required' 
       });
     }
     
@@ -191,7 +191,7 @@ router.post('/', async (req, res) => {
     if (!user) {
       return res.status(400).json({ 
         success: false, 
-        msg: 'User with email ' + email + ' not found' 
+        message: 'User with email ' + email + ' not found' 
       });
     }
     
@@ -201,7 +201,7 @@ router.post('/', async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ 
         success: false, 
-        msg: 'Invalid credentials' 
+        message: 'Invalid credentials' 
       });
     }
     
@@ -234,7 +234,7 @@ router.post('/', async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({ 
       success: false, 
-      msg: 'Server error' 
+      message: 'Server error' 
     });
   }
 });
@@ -256,7 +256,7 @@ router.post('/register', async (req, res) => {
       });
     res.json({ success: true, user, message: 'User created successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
