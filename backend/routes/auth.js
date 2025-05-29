@@ -184,14 +184,19 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Find user by email
-    const user = await User.findOne({ email });
+    // Normalize email to lowercase for case-insensitive lookup
+    const normalizedEmail = email.toLowerCase();
+    
+    // Find user by normalized email (case-insensitive)
+    const user = await User.findOne({ 
+      email: { $regex: new RegExp('^' + normalizedEmail + '$', 'i') } 
+    });
     
     // Check if user exists
     if (!user) {
       return res.status(400).json({ 
         success: false, 
-        message: 'User with email ' + email + ' not found' 
+        message: 'Invalid email or password' 
       });
     }
     
@@ -201,7 +206,7 @@ router.post('/', async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Invalid credentials' 
+        message: 'Invalid email or password' 
       });
     }
     
