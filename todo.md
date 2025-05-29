@@ -1,20 +1,11 @@
-# HSIT App Signup Fix Todo
+# HSIT App Index Page Update
 
-## Analysis
-- [x] Clone the repository
-- [x] Analyze the signup 404 error in the screenshots
-- [x] Examine frontend code for API endpoint usage
-- [x] Examine backend code for available API endpoints
-- [x] Identify the mismatch between frontend and backend endpoints
-
-## Implementation
-- [x] Create a database-driven fix for the signup endpoint issue
-- [x] Ensure all user verification and state is stored in MongoDB (no local storage)
-- [x] Implement proper error handling for production environment
-- [x] Test the fix locally
-- [x] Commit the changes
-- [x] Push to main branch
-
-## Validation
-- [x] Verify the fix resolves the 404 error
-- [x] Notify user of the completed fix
+- [x] Review dashboard.html layout to understand the structure
+- [x] Review index.html layout to identify needed changes
+- [x] Update index.html to include banner/animated GIF at the top
+- [x] Ensure sign-in fields appear below the banner
+- [x] Maintain consistent styling between pages
+- [x] Test the updated layout locally
+- [ ] Commit changes to the main branch
+- [ ] Verify changes in production
+- [ ] Report completion to user
