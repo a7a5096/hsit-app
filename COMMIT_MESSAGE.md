@@ -1,24 +1,16 @@
-# Fix Duplicate Index in UserAddress Model
+# UBT Logo and Dashboard Button Update
 
-This commit fixes the login failure issue (Status 400) by resolving duplicate MongoDB schema index warnings.
+This commit adds the following features:
 
-## Problem
-- The UserAddress model had duplicate index definitions on the userId field:
-  1. `index: true` property in the field definition
-  2. Explicit `userAddressSchema.index({ userId: 1 }, { unique: true })` call
-- This redundancy created conflicts at the database level, causing Mongoose warnings
-- The index conflicts were causing authentication failures, resulting in 400/401 errors
+1. Replaces the logo on the index page with the first frame of the provided GIF
+2. Adds a white letterbox with black text showing the UBT/USDT exchange rate at the bottom of the logo
+3. Adds a dedicated button on the dashboard with the same icon, linking to the UBT exchange page
+4. Implements a backend API to fetch and store the live UBT/USDT exchange rate
+5. Ensures the exchange rate updates dynamically through frontend integration
 
-## Solution
-- Removed the redundant `index: true` property from the userId field definition
-- Created a database script to clean up duplicate indexes in production
-- Validated the fix by running the script and confirming index removal
+## Technical Details
 
-## Files Changed
-- backend/models/UserAddress.js - Removed redundant index
-- backend/scripts/fix_duplicate_index.js - Added script to clean database indexes
-
-## Testing
-- Executed the fix script in production environment
-- Confirmed duplicate indexes were successfully removed
-- Verified that the MongoDB schema warnings no longer appear
+- Created a new ExchangeRate model for database persistence
+- Added new API endpoints for fetching and updating exchange rates
+- Implemented frontend JavaScript to dynamically update the logo overlay
+- Ensured all changes are production-ready and database-driven

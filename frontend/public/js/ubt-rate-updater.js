@@ -35,7 +35,7 @@ async function fetchExchangeRate() {
   }
 }
 
-// Function to update the logo with the current rate
+// Function to update the dashboard button icon with the current rate
 async function updateLogoWithRate() {
   try {
     // Fetch the current rate
@@ -45,18 +45,18 @@ async function updateLogoWithRate() {
     const formattedRate = rate.toFixed(4);
     
     // Create a new image with the rate overlay
-    await createLogoWithRateOverlay(formattedRate);
+    await createButtonIconWithRateOverlay(formattedRate);
     
-    console.log(`Logo updated with rate: ${formattedRate}`);
+    console.log(`Dashboard button icon updated with rate: ${formattedRate}`);
   } catch (error) {
-    console.error('Error updating logo:', error);
+    console.error('Error updating dashboard button icon:', error);
   }
 }
 
-// Function to create the logo with rate overlay
-async function createLogoWithRateOverlay(rate) {
-  // This function uses the Canvas API to create a new logo with the rate overlay
-  // and replaces the current logo with it
+// Function to create the dashboard button icon with rate overlay
+async function createButtonIconWithRateOverlay(rate) {
+  // This function uses the Canvas API to create a new icon with the rate overlay
+  // and updates only the dashboard button icon
   
   return new Promise((resolve, reject) => {
     try {
@@ -64,17 +64,17 @@ async function createLogoWithRateOverlay(rate) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
-      // Create a new image element for the logo
-      const logoImg = new Image();
+      // Create a new image element for the icon
+      const iconImg = new Image();
       
       // Set up the onload handler
-      logoImg.onload = function() {
-        // Set canvas dimensions to match the logo
-        canvas.width = logoImg.width;
-        canvas.height = logoImg.height;
+      iconImg.onload = function() {
+        // Set canvas dimensions to match the icon
+        canvas.width = iconImg.width;
+        canvas.height = iconImg.height;
         
-        // Draw the logo on the canvas
-        ctx.drawImage(logoImg, 0, 0);
+        // Draw the icon on the canvas
+        ctx.drawImage(iconImg, 0, 0);
         
         // Create white letterbox at the bottom
         const letterboxHeight = 20;
@@ -98,13 +98,7 @@ async function createLogoWithRateOverlay(rate) {
         // Get the data URL of the canvas
         const dataUrl = canvas.toDataURL('image/png');
         
-        // Update all logo images on the page
-        const logoImages = document.querySelectorAll('img.logo');
-        logoImages.forEach(img => {
-          img.src = dataUrl;
-        });
-        
-        // Also update the dashboard button icon if it exists
+        // Update only the dashboard button icon
         const buttonIcon = document.querySelector('a[href="ubt_exchange.html"] img');
         if (buttonIcon) {
           buttonIcon.src = dataUrl;
@@ -114,13 +108,13 @@ async function createLogoWithRateOverlay(rate) {
       };
       
       // Set up error handler
-      logoImg.onerror = function() {
-        reject(new Error('Failed to load logo image'));
+      iconImg.onerror = function() {
+        reject(new Error('Failed to load icon image'));
       };
       
-      // Set the source of the image to the original logo
+      // Set the source of the image to the original icon
       // Use a cache-busting query parameter to ensure we get the latest version
-      logoImg.src = `/images/ubt_logo_frame.png?t=${Date.now()}`;
+      iconImg.src = `/images/ubt_logo_frame.png?t=${Date.now()}`;
       
     } catch (error) {
       reject(error);
