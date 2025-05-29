@@ -1,16 +1,15 @@
-# UBT Logo and Dashboard Button Update
+# UBT Logo and Dashboard Button Update - Revision
 
-This commit adds the following features:
+This commit updates the previous implementation based on user feedback:
 
-1. Replaces the logo on the index page with the first frame of the provided GIF
-2. Adds a white letterbox with black text showing the UBT/USDT exchange rate at the bottom of the logo
-3. Adds a dedicated button on the dashboard with the same icon, linking to the UBT exchange page
-4. Implements a backend API to fetch and store the live UBT/USDT exchange rate
-5. Ensures the exchange rate updates dynamically through frontend integration
+1. Changed the index page to use the full animated GIF instead of a static frame
+2. Restricted the UBT/USDT exchange rate overlay to only appear on the dashboard button
+3. Maintained the backend API for fetching live exchange rates
+4. Updated the frontend JavaScript to only modify the dashboard button icon
 
 ## Technical Details
 
-- Created a new ExchangeRate model for database persistence
-- Added new API endpoints for fetching and updating exchange rates
-- Implemented frontend JavaScript to dynamically update the logo overlay
-- Ensured all changes are production-ready and database-driven
+- Index page now uses logo.gif for the animated logo
+- Dashboard button still uses the static frame with exchange rate overlay
+- Exchange rate updates are now only applied to the dashboard button
+- All changes remain production-ready and database-driven
