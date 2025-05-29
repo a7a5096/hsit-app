@@ -1,15 +1,11 @@
-# HSIT App Mobile Layout Fix
+# Revert Index Page and CSS Files
 
-- [x] Review dashboard.html layout to understand the structure
-- [x] Review index.html layout to identify needed changes
-- [x] Update index.html to include banner/animated GIF at the top
-- [x] Ensure sign-in fields appear below the banner
-- [x] Maintain consistent styling between pages
-- [x] Test the updated layout locally
-- [x] Commit changes to the main branch
-- [x] Verify changes in production
-- [x] Report completion to user
-- [x] Fix mobile layout to place banner on top
-- [ ] Commit mobile layout fixes to main branch
-- [ ] Verify mobile layout in production
-- [ ] Report mobile layout fix completion to user
+- [x] Clarify revert requirements with user
+- [x] Pull latest repository from GitHub
+- [x] Identify earliest versions of index.html and CSS files before 3 PM Edmonton time
+- [ ] Restore index.html to the version before the cutoff time
+- [ ] Restore logo-banner.css to the version before the cutoff time
+- [ ] Restore style.css to the version before the cutoff time
+- [ ] Restore auth.css to the version before the cutoff time
+- [ ] Commit and push changes to main branch
+- [ ] Notify user of completion
