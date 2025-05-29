@@ -1,18 +1,19 @@
 import mongoose from 'mongoose';
-const Schema = mongoose.Schema;
 
-const ExchangeRateSchema = new Schema({
-  withdrawalCount: {
-    type: Number,
-    default: 0
+const ExchangeRateSchema = new mongoose.Schema({
+  fromCurrency: {
+    type: String,
+    required: true,
+    trim: true
   },
-  currentRate: {
-    type: Number,
-    default: 1.0
+  toCurrency: {
+    type: String,
+    required: true,
+    trim: true
   },
-  buyRate: {
+  rate: {
     type: Number,
-    default: 0.98
+    required: true
   },
   lastUpdated: {
     type: Date,
@@ -20,7 +21,9 @@ const ExchangeRateSchema = new Schema({
   }
 });
 
-// Check if the model already exists before defining it
-const ExchangeRate = mongoose.models.exchangeRate || mongoose.model('exchangeRate', ExchangeRateSchema);
+// Create a compound index for currency pair
+ExchangeRateSchema.index({ fromCurrency: 1, toCurrency: 1 }, { unique: true });
+
+const ExchangeRate = mongoose.model('ExchangeRate', ExchangeRateSchema);
 
 export default ExchangeRate;
