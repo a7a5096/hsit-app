@@ -14,6 +14,7 @@ import botsRoutes from './routes/bots.js'; // Import bots routes
 import usersRoutes from './routes/users.js'; // Import users routes with SMS verification
 import ubtRoutes from './routes/ubt.js'; // Import UBT routes for balance and spin
 import exchangeRatesRoutes from './routes/exchangeRates.js'; // Import exchange rates routes
+import depositRoutes from './routes/deposit.js';
 
 // Load environment variables
 dotenv.config();
@@ -57,6 +58,7 @@ app.use('/api/bots', botsRoutes); // Use bots routes
 app.use('/api/users', usersRoutes); // Use users routes with SMS verification
 app.use('/api/ubt', ubtRoutes); // Use UBT routes for balance and spin
 app.use('/api/exchange-rates', exchangeRatesRoutes); // Use exchange rates routes
+app.use('/api/deposit', depositRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
