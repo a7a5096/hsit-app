@@ -8,12 +8,13 @@ import corsMiddleware from './middleware/cors.js';
 // Import routes
 import authRoutes from './routes/auth.js';
 import directSmsVerification from './routes/direct-sms-verification.js';
-import dailySignInRoutes from './routes/dailySignInRoutes.js'; // Fixed path to match original import
-import transactionsRoutes from './routes/transactions.js'; // Import transactions routes
-import botsRoutes from './routes/bots.js'; // Import bots routes
-import usersRoutes from './routes/users.js'; // Import users routes with SMS verification
-import ubtRoutes from './routes/ubt.js'; // Import UBT routes for balance and spin
-import exchangeRatesRoutes from './routes/exchangeRates.js'; // Import exchange rates routes
+import dailySignInRoutes from './routes/dailySignInRoutes.js';
+import transactionsRoutes from './routes/transactions.js';
+import botsRoutes from './routes/bots.js';
+import usersRoutes from './routes/users.js';
+import ubtRoutes from './routes/ubt.js';
+import exchangeRatesRoutes from './routes/exchangeRates.js';
+import depositRoutes from './routes/deposit.js'; // <-- THIS LINE IS NOW CORRECT
 
 // Load environment variables
 dotenv.config();
@@ -21,7 +22,7 @@ dotenv.config();
 // ES Module equivalent for __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const depositRoutes = require('./routes/deposit.js');
+
 const app = express();
 
 // Apply enhanced CORS middleware
@@ -51,12 +52,12 @@ app.use((err, req, res, next) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/verify', directSmsVerification);
-app.use('/api/daily-signin', dailySignInRoutes); // Use daily sign-in routes
-app.use('/api/transactions', transactionsRoutes); // Use transactions routes
-app.use('/api/bots', botsRoutes); // Use bots routes
-app.use('/api/users', usersRoutes); // Use users routes with SMS verification
-app.use('/api/ubt', ubtRoutes); // Use UBT routes for balance and spin
-app.use('/api/exchange-rates', exchangeRatesRoutes); // Use exchange rates routes
+app.use('/api/daily-signin', dailySignInRoutes);
+app.use('/api/transactions', transactionsRoutes);
+app.use('/api/bots', botsRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/ubt', ubtRoutes);
+app.use('/api/exchange-rates', exchangeRatesRoutes);
 app.use('/api/deposit', depositRoutes);
 
 // Health check endpoint
@@ -73,20 +74,16 @@ const projectRoot = path.join(__dirname, '../');
 app.use(express.static(projectRoot));
 
 // API 404 handler for unhandled API routes - only for GET requests
-// This ensures POST and other methods are not affected
 app.get('/api/*', (req, res) => {
   res.status(404).json({ success: false, message: 'API endpoint not found.' });
 });
 
-// Fallback to serving index.html from the project root for any unhandled GET requests
-// This helps if you have client-side routing for some parts or just want a default page.
-// Ensure index.html exists in your project root if you use this.
+// Fallback to serving index.html from the project root
 app.get('*', (req, res) => {
-  // Send index.html for client-side routing
   res.sendFile(path.resolve(projectRoot, 'index.html'));
 });
 
-// Error handling middleware - must be after all routes
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Server error:', err.stack);
   res.status(500).json({ 
@@ -96,7 +93,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler - must be after all routes
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
