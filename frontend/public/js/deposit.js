@@ -10,7 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Get auth token from localStorage
   const token = localStorage.getItem('token');
 
-  // Define API base URL
+  // ---> THIS IS THE KEY PART <---
+  // For production (like on hsitapp.link), API_BASE_URL will be an empty string.
+  // The fetch URL will correctly become: '/api/deposit/addresses'
   const API_BASE_URL = window.location.hostname.includes('localhost') ? 'http://localhost:5000' : '';
 
   // Coin details
@@ -23,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch user's crypto addresses
   async function fetchUserAddresses() {
     try {
+      // ---> THIS LINE BUILDS THE CORRECT URL <---
       const response = await fetch(`${API_BASE_URL}/api/deposit/addresses`, {
         headers: {
           'x-auth-token': token
@@ -30,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (!response.ok) {
+        // This will be triggered by the 400 error if addresses aren't assigned
         throw new Error('Failed to fetch addresses');
       }
 
@@ -45,6 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return null;
     }
   }
+
+  // --- The rest of your deposit.js file ---
+  // (The following functions are the same as before and are correct)
 
   // Generate QR code
   async function fetchQRCode(currency) {
@@ -69,38 +76,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Update deposit info based on selected currency
   async function updateDepositInfo() {
-    // FIX: First, check that all required HTML elements exist before proceeding.
     if (!addressInput || !copyButton || !qrCodeArea || !selectedCoinName || !minDepositSpan) {
-      console.error('Deposit Script Error: One or more required HTML elements (like #cryptoAddress) are missing. Please check your HTML file.');
-      return; // Stop the function to prevent errors
+      console.error('Deposit Script Error: One or more required HTML elements are missing.');
+      return;
     }
-
     const selectedRadio = document.querySelector('input[name="crypto"]:checked');
     if (!selectedRadio) {
-      // This can happen on initial load if no radio is checked by default.
       console.log('No crypto option selected yet.');
       return;
     }
     const selectedValue = selectedRadio.value;
     const detailsBase = coinDetailsBase[selectedValue];
-
-    // Show loading state
     addressInput.value = 'Loading your address...';
     copyButton.disabled = true;
     qrCodeArea.innerHTML = '<p>[Loading...]</p>';
-
-    // Fetch addresses if not already loaded
     if (!window.userAddresses) {
       window.userAddresses = await fetchUserAddresses();
     }
-
     if (!window.userAddresses) {
       addressInput.value = 'Error loading addresses';
       return;
     }
-
     let currentAddress = null;
-
     if (selectedValue === 'BTC') {
       currentAddress = window.userAddresses.btc_address;
     } else if (selectedValue === 'ETH') {
@@ -108,20 +105,15 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (selectedValue === 'USDT') {
       currentAddress = window.userAddresses.usdt_address;
     }
-
     if (detailsBase && currentAddress) {
       addressInput.value = currentAddress;
       selectedCoinName.textContent = detailsBase.name;
       minDepositSpan.textContent = detailsBase.min;
       copyButton.disabled = false;
-
-      // Update warning text
       const warningElement = document.querySelector('.warning-text');
       if (warningElement) {
         warningElement.innerHTML = `⚠️ Send only <strong>${detailsBase.name}</strong> to this address. Sending any other coin may result in permanent loss.`;
       }
-
-      // Fetch QR code
       const qrData = await fetchQRCode(selectedValue);
       if (qrData && qrData.qrPath) {
         qrCodeArea.innerHTML = `<img src="${qrData.qrPath}" alt="${selectedValue} QR Code" class="qr-code">`;
@@ -137,33 +129,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Add event listeners
   if (coinRadios.length > 0) {
     coinRadios.forEach(radio => {
       radio.addEventListener('change', updateDepositInfo);
     });
-
-    // FIX: Initialize only if a radio button is already checked on load.
     if (document.querySelector('input[name="crypto"]:checked')) {
       updateDepositInfo();
     }
   }
 
-  // Copy button functionality
   if (copyButton) {
     copyButton.addEventListener('click', () => {
       if (copyButton.disabled || !addressInput.value || addressInput.value.includes('...')) return;
-
       addressInput.select();
-      addressInput.setSelectionRange(0, 99999); // For mobile devices
-
+      addressInput.setSelectionRange(0, 99999);
       try {
         navigator.clipboard.writeText(addressInput.value).then(() => {
           copyButton.textContent = 'Copied!';
           setTimeout(() => { copyButton.textContent = 'Copy'; }, 2000);
         }).catch(err => {
-          console.error('Clipboard API failed: ', err);
-          // Basic fallback
           if (document.execCommand('copy')) {
             copyButton.textContent = 'Copied!';
             setTimeout(() => { copyButton.textContent = 'Copy'; }, 2000);
@@ -172,34 +156,23 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
       } catch (err) {
-        console.error('Failed to copy text: ', err);
         alert('Failed to copy address. Please copy it manually.');
       }
     });
   }
 });
 
-// Show message function
 function showMessage(message, type = 'info') {
-  // Check if status message element exists
   let statusElement = document.getElementById('statusMessage');
-
-  // If not, create one
   if (!statusElement) {
     statusElement = document.createElement('div');
     statusElement.id = 'statusMessage';
     statusElement.className = 'status-message';
     document.body.prepend(statusElement);
   }
-
-  // Set message and class
   statusElement.textContent = message;
   statusElement.className = `status-message ${type}`;
-
-  // Show message
   statusElement.style.display = 'block';
-
-  // Hide after 5 seconds
   setTimeout(() => {
     statusElement.style.display = 'none';
   }, 5000);
