@@ -1,6 +1,6 @@
 /**
  * Deposit handling logic
- * 
+ *
  * This file handles the deposit process, including crypto address assignment
  * and automatic conversion to UBT.
  */
@@ -15,29 +15,34 @@ const { processDeposit, getCurrentUBTRate } = require('../utils/ubtExchange');
 // @route   GET api/deposit/addresses
 // @desc    Get user's deposit addresses
 // @access  Private
+//
+// ======== THIS IS THE CORRECTED SECTION ========
 router.get('/addresses', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    // Fetch user and specifically select the walletAddresses
+    const user = await User.findById(req.user.id).select('walletAddresses');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if user has addresses assigned
-    if (!user.btcAddress || !user.ethAddress || !user.usdtAddress) {
-      return res.status(400).json({ message: 'Crypto addresses not assigned to user' });
+    // Check if user has the walletAddresses object and the addresses are assigned
+    if (!user.walletAddresses || !user.walletAddresses.bitcoin || !user.walletAddresses.ethereum) {
+      return res.status(400).json({ message: 'Crypto addresses not yet assigned to this user.' });
     }
 
-    // Return addresses
+    // Return addresses from the correct location in the User model
     return res.json({
-      btcAddress: user.btcAddress,
-      ethAddress: user.ethAddress,
-      usdtAddress: user.usdtAddress
+      btcAddress: user.walletAddresses.bitcoin,
+      ethAddress: user.walletAddresses.ethereum,
+      usdtAddress: user.walletAddresses.ethereum // USDT is an ERC20 token, using the ETH address
     });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
+// ======== END OF CORRECTED SECTION ========
+
 
 // @route   GET api/deposit/balance
 // @desc    Get user's UBT balance
