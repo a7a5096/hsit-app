@@ -14,7 +14,6 @@ import botsRoutes from './routes/bots.js'; // Import bots routes
 import usersRoutes from './routes/users.js'; // Import users routes with SMS verification
 import ubtRoutes from './routes/ubt.js'; // Import UBT routes for balance and spin
 import exchangeRatesRoutes from './routes/exchangeRates.js'; // Import exchange rates routes
-import depositRoutes from './routes/deposit.js';
 
 // Load environment variables
 dotenv.config();
@@ -22,7 +21,7 @@ dotenv.config();
 // ES Module equivalent for __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
+const depositRoutes = require('./routes/deposit.js');
 const app = express();
 
 // Apply enhanced CORS middleware
