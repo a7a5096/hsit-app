@@ -10,8 +10,7 @@
     <header class="page-header">
         <a href="dashboard.html" class="back-button">&larr; Back</a>
         <h1>Deposit Funds</h1>
-        <span>&nbsp;</span> <!-- Placeholder for alignment -->
-    </header>
+        <span>&nbsp;</span> </header>
 
     <main class="page-main">
         <section class="content-card">
@@ -24,7 +23,6 @@
                     <input type="radio" name="crypto" value="ETH"> Ethereum (ETH)
                 </label>
                 <label>
-                    <!-- USDT uses the same address infrastructure as ETH (ERC-20) -->
                     <input type="radio" name="crypto" value="USDT"> Tether (USDT - ERC20)
                 </label>
             </div>
@@ -34,32 +32,22 @@
             <h2>Your Deposit Address</h2>
             <div class="deposit-info">
                 <p class="warning-text">
-                    ⚠️ Send only <strong id="selected-coin-name">Bitcoin (BTC)</strong> to this address.
+                    ⚠️ Send only <strong id="selectedCoinName">Bitcoin (BTC)</strong> to this address.
                     Sending any other coin may result in permanent loss.
                 </p>
                 <div class="address-box">
-                    <input type="text" id="deposit-address" value="Loading your address..." readonly>
-                    <button id="copy-button" class="btn btn-copy" disabled>Copy</button>
+                    <input type="text" id="cryptoAddress" value="Loading your address..." readonly>
+                    <button id="copyAddressBtn" class="btn btn-copy" disabled>Copy</button>
                 </div>
-                <div class="qr-code-placeholder" id="qr-code-area">
+                <div class="qr-code-placeholder" id="qrCodeArea">
                     <p>[QR Code will appear here]</p>
-                    <!-- QR code library (like qrcode.js) would target this -->
                 </div>
-                 <p class="note">Minimum deposit: <span id="min-deposit">...</span></p>
+                 <p class="note">Minimum deposit: <span id="minDeposit">...</span></p>
                  <p class="note">Deposits require network confirmations and may take time to reflect.</p>
-                 <!--
-                    WARNING FOR DEVELOPER:
-                    The addresses displayed here MUST be fetched from a secure backend
-                    that has uniquely assigned an address pair (BTC, ETH) from your CSVs
-                    to this specific logged-in user during their signup.
-                    The backend manages the list of available/assigned addresses.
-                 -->
-            </div>
+                 </div>
         </section>
     </main>
 
-    <!-- Include a QR Code generation library -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="js/deposit.js"></script>
 
 </body>
