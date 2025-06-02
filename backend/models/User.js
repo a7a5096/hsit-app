@@ -21,53 +21,43 @@ const UserSchema = new mongoose.Schema({
   },
   phoneNumber: {
     type: String,
-    required: true,
-    unique: true,
+    required: false, // Changed from true to false, as per previous discussions
     trim: true
   },
-  phoneVerified: {
+  isPhoneVerified: {
     type: Boolean,
     default: false
   },
-  walletAddresses: {
-    bitcoin: {
-      type: String,
-      default: ''
-    },
-    ethereum: {
-      type: String,
-      default: ''
-    },
-    ubt: {
-      type: String,
-      default: ''
-    }
+  invitedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
   },
-  balances: {
-    btc: {
-      type: Number,
-      default: 0
-    },
-    eth: {
-      type: Number,
-      default: 0
-    },
-    usdt: {
-      type: Number,
-      default: 0
-    },
-    ubt: {
-      type: Number,
-      default: 100
-    }
+  referralCode: { // Username can serve as a referral code
+    type: String,
+    unique: true,
+    sparse: true // Allows null values not to conflict with unique index if not set
   },
-  cryptoBalance: {
+  directInvitesCount: {
     type: Number,
     default: 0
   },
-  isVerified: {
-    type: Boolean,
-    default: false
+  secondLevelInvitesCount: {
+    type: Number,
+    default: 0
+  },
+  ubtBonusEarned: {
+    type: Number,
+    default: 0
+  },
+  botsPurchased: { // To track if an invite is "qualified"
+    type: Number,
+    default: 0
+  },
+  walletAddresses: {
+    bitcoin: { type: String, default: '' },
+    ethereum: { type: String, default: '' },
+    ubt: { type: String, default: '' } // Assuming UBT address or could be USDT
   },
   createdAt: {
     type: Date,
@@ -76,34 +66,48 @@ const UserSchema = new mongoose.Schema({
   lastLogin: {
     type: Date
   },
-  lastSignIn: {
-    type: Date
+  // --- New fields for Password Reset ---
+  passwordResetToken: {
+    type: String,
+    default: undefined
   },
-  consecutiveDays: {
-    type: Number,
-    default: 0
+  passwordResetExpires: {
+    type: Date,
+    default: undefined
   }
+  // --- End new fields ---
+}, {
+  timestamps: true // Adds createdAt and updatedAt automatically
 });
 
-// Password hash middleware
+// Pre-save hook to hash password
 UserSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     return next();
   }
-  
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 });
 
-// Method to compare passwords
+// Method to compare password
 UserSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+  return bcrypt.compare(candidatePassword, this.password);
 };
+
+// Pre-save hook to set referralCode to username if empty
+UserSchema.pre('save', function(next) {
+  if (this.isNew || this.isModified('username')) {
+    if (this.username && (!this.referralCode || this.referralCode !== this.username)) {
+      this.referralCode = this.username;
+    }
+  }
+  next();
+});
 
 const User = mongoose.model('User', UserSchema);
 
