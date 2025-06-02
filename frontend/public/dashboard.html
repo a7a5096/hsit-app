@@ -15,77 +15,67 @@
     </header>
 
     <main class="dashboard-main">
-        <!-- Area for Status Messages -->
         <div id="statusMessage" class="status-message"></div>
 
         <section class="banner">
-            <img src="banner.png" alt="AI Trading Banner">
+            <video autoplay loop muted class="banner-background-video">
+                <source src="images/IMG_6204.gif" type="video/mp4">
+            </video>
+            <div class="banner-content">
+                 <img src="banner.png" alt="AI Trading Banner">
+            </div>
         </section>
 
         <section class="dashboard-section common-operations">
             <h2><i class="fas fa-cogs"></i> Common Operations</h2>
           
-  <div class="operations-grid">
-                <!-- AI Button -->
+            <div class="operations-grid">
                 <a href="ai_products.html" class="operation-card">
                     <div class="icon">
                         <img src="icon_ai.svg" alt="AI Icon">
                     </div>
                     <span>AI</span>
                 </a>
-                <!-- UBT Exchange Button -->
                 <a href="ubt_exchange.html" class="operation-card">
                     <div class="icon">
                         <img src="images/ubt_button_icon.png" alt="UBT Exchange Icon">
                     </div>
                     <span>UBT Exchange</span>
                 </a>
-                <!-- Option Button -->
-                <a href="#" class="operation-card"> <!-- Placeholder link -->
-                    <div class="icon">
+                <a href="#" class="operation-card"> <div class="icon">
                         <img src="icon_option.svg" alt="Option Icon">
                     </div>
                     <span>Option (Coming soon)</span>
                 </a>
-                <!-- Deposit Button -->
                 <a href="deposit.html" class="operation-card">
                     <div class="icon">
                         <img src="icon_deposit.svg" alt="Deposit Icon">
                     </div>
                     <span>Deposit</span>
                 </a>
-                 <!-- Sign in Button -->
                  <button type="button" id="dailySignInButton" class="operation-card">
                      <div class="icon">
                          <img src="icon_signin.svg" alt="Daily Signin Icon">
                      </div>
                      <i class="fas fa-calendar-check operation-icon"></i>
-                     <span id="signInText">Daily Sign In</span> <!-- Added ID -->
-                 </button>
-                 <!-- Asset Center Button -->
-                 <a href="asset_center.html" class="operation-card"> <!-- Placeholder link -->
-                    <div class="icon">
+                     <span id="signInText">Daily Sign In</span> </button>
+                 <a href="asset_center.html" class="operation-card"> <div class="icon">
                          <img src="icon_asset.svg" alt="Asset Center Icon">
                     </div>
                     <span>Asset Center</span>
                 </a>
-                 <!-- Feeling Lucky Button -->
                  <a href="spinning_wheel_game.html" class="operation-card">
                     <div class="icon">
                          <img src="icon_lucky_wheel.svg" alt="Feeling Lucky Icon">
                     </div>
                     <span>Feeling Lucky</span>
                 </a>
-                 <!-- My team Button -->
-                 <a href="my_team.html" class="operation-card"> <!-- Placeholder link -->
-                    <div class="icon">
+                 <a href="my_team.html" class="operation-card"> <div class="icon">
                         <img src="icon_team.png" alt="My Team Icon">
                     </div>
                     <span>My team</span>
                 </a>
-                 <!-- Receive salary Button -->
-                 <a href="#" class="operation-card"> <!-- Placeholder link -->
-                    <div class="icon">
+                 <a href="#" class="operation-card"> <div class="icon">
                         <img src="icon_salary.svg" alt="Receive Salary Icon">
                     </div>
                     <span>Receive salary (coming soon)</span>
@@ -96,7 +86,6 @@
         <section class="dashboard-section">
              <h2>Service</h2>
              <div class="service-grid">
-                 <!-- Main Service Card - Linked to Starter Bot -->
                  <div class="service-card main-service">
                      <div class="service-header">
                          <h3>Suitable for new members</h3>
@@ -105,19 +94,15 @@
                      <div class="service-price">20.00 %</div>
                      <a href="ai_products.html?from=dashboard-promotion" class="btn btn-buy">Buy it now</a>
                  </div>
-                 <!-- Contact Card -->
                  <div class="service-card side-service">
-                     <a href="mailto:a7a5096@googlemail.com"> <!-- Email link -->
-                        <div class="icon">
+                     <a href="mailto:a7a5096@googlemail.com"> <div class="icon">
                             <img src="icon_contact.svg" alt="Contact Icon">
                         </div>
                         Contact
                      </a>
                  </div>
-                 <!-- Company Info Card -->
-                  <div class="service-card side-service">
-                     <a href="company_info.html"> <!-- Link to new page -->
-                         <div class="icon">
+                 <div class="service-card side-service">
+                     <a href="company_info.html"> <div class="icon">
                             <img src="icon_notification.svg" alt="Company Info Icon">
                          </div>
                         Company Info
@@ -128,7 +113,6 @@
 
     </main>
     <script src="js/config.js"></script>
-    <!-- Removed eruda-init.js for production -->
     <script src="js/auth.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/dailySignIn_updated.js"></script>
