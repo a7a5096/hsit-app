@@ -1,273 +1,149 @@
 import express from 'express';
-import auth from '../middleware/auth.js';
-import User from '../models/User.js';
+import authMiddleware from '../middleware/auth.js';
 import Transaction from '../models/Transaction.js';
-import ExchangeRate from '../models/ExchangeRate.js';
-import config from '../config/config.js';
-import { sendWithdrawalNotification } from '../utils/smsService.js';
-import { sendWithdrawalNotificationEmail, sendExchangeNotificationEmail } from '../utils/emailService.js';
+import User from '../models/User.js';
+import { sendWithdrawalNotificationEmail } from '../utils/emailService.js';
+// Corrected import name from smsService.js
+import { sendWithdrawalNotificationSms } from '../utils/smsService.js'; 
+import { ObjectId } from 'mongodb';
 
 const router = express.Router();
 
-// Helper functions for UBT exchange rate calculations
-function calculateUBTExchangeRate(withdrawalCount, initialRate, increaseAmount) {
-  return initialRate + (withdrawalCount * increaseAmount);
-}
-
-function calculateUBTBuyRate(sellRate, buyRateFactor) {
-  return sellRate * buyRateFactor;
-}
-
-// @route   GET api/transactions
-// @desc    Get all user transactions
+// @route   POST api/transactions/withdrawal
+// @desc    Create a new withdrawal request
 // @access  Private
-router.get('/', auth, async (req, res) => {
+router.post('/withdrawal', authMiddleware, async (req, res) => {
   try {
-    const transactions = await Transaction.find({ user: req.user.id }).sort({ createdAt: -1 });
-    res.json(transactions);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
-});
+    const { amount, currency, walletAddress } = req.body;
+    const userId = req.user.id;
 
-// @route   POST api/transactions/withdraw
-// @desc    Request a withdrawal
-// @access  Private
-router.post('/withdraw', auth, async (req, res) => {
-  const { currency, amount, walletAddress } = req.body;
-  try {
-    const user = await User.findById(req.user.id);
+    // Basic validation
+    if (!amount || !currency || !walletAddress) {
+      return res.status(400).json({ success: false, message: 'Amount, currency, and wallet address are required.' });
+    }
+    if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid withdrawal amount.' });
+    }
+
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+      return res.status(404).json({ success: false, message: 'User not found.' });
     }
-    // Validate currency
-    if (!['BTC', 'ETH', 'USDT', 'UBT'].includes(currency)) {
-      return res.status(400).json({ msg: 'Invalid currency' });
-    }
-    // Check if user has sufficient balance
-    const balanceField = currency.toLowerCase();
-    if (user.balances[balanceField] < amount) {
-      return res.status(400).json({ msg: 'Insufficient balance' });
-    }
-    
-    // Check if this is an internal exchange (UBT to USDT)
-    const isInternalExchange = walletAddress === 'INTERNAL_EXCHANGE' && currency === 'UBT';
-    
-    // If withdrawing UBT, update exchange rate
-    let exchangeRate = null;
-    if (currency === 'UBT') {
-      // Get or create exchange rate record
-      let rateRecord = await ExchangeRate.findOne({});
-      if (!rateRecord) {
-        rateRecord = new ExchangeRate({
-          withdrawalCount: 0,
-          currentRate: config.UBT_INITIAL_EXCHANGE_RATE,
-          buyRate: config.UBT_INITIAL_EXCHANGE_RATE * config.UBT_BUY_RATE_FACTOR
-        });
-      }
-      // Increment withdrawal count and update rates
-      rateRecord.withdrawalCount += 1;
-      rateRecord.currentRate = calculateUBTExchangeRate(
-        rateRecord.withdrawalCount,
-        config.UBT_INITIAL_EXCHANGE_RATE,
-        config.UBT_EXCHANGE_RATE_INCREASE
-      );
-      rateRecord.buyRate = calculateUBTBuyRate(
-        rateRecord.currentRate,
-        config.UBT_BUY_RATE_FACTOR
-      );
-      rateRecord.lastUpdated = Date.now();
-      
-      await rateRecord.save();
-      exchangeRate = rateRecord.currentRate;
+
+    // Check user balance (simplified - assumes balances are directly on user model for now)
+    // You might have a more complex balance calculation involving transactions or a separate balances collection
+    let currentBalance = 0;
+    if (currency.toUpperCase() === 'BTC' && user.balances) currentBalance = user.balances.bitcoin || 0;
+    else if (currency.toUpperCase() === 'ETH' && user.balances) currentBalance = user.balances.ethereum || 0;
+    else if (currency.toUpperCase() === 'USDT' && user.balances) currentBalance = user.balances.usdt || 0;
+    else if (currency.toUpperCase() === 'UBT' && user.balances) currentBalance = user.balances.ubt || 0;
+    else {
+        return res.status(400).json({ success: false, message: 'Unsupported currency for withdrawal.'});
     }
     
-    // Create withdrawal transaction
+    if (currentBalance < parseFloat(amount)) {
+      return res.status(400).json({ success: false, message: `Insufficient ${currency} balance.` });
+    }
+
+    // Create and save the withdrawal transaction
     const transaction = new Transaction({
-      user: req.user.id,
-      type: isInternalExchange ? 'exchange' : 'withdrawal',
+      userId,
+      type: 'withdrawal',
+      amount: parseFloat(amount),
       currency,
-      amount,
-      status: 'pending',
-      walletAddress,
-      exchangeRate,
-      description: isInternalExchange 
-        ? `Exchange request for ${amount} ${currency} to USDT` 
-        : `Withdrawal request for ${amount} ${currency}`
+      status: 'pending', // Withdrawals are pending until processed by admin
+      description: `Withdrawal of ${amount} ${currency} to ${walletAddress}`,
+      relatedAddress: walletAddress
     });
     await transaction.save();
-    
-    // Deduct from user's balance
-    user.balances[balanceField] -= amount;
-    
-    // If this is an internal exchange, create a corresponding USDT transaction
-    if (isInternalExchange) {
-      const usdtAmount = amount * exchangeRate;
-      
-      // Create USDT transaction (pending until admin approves)
-      const usdtTransaction = new Transaction({
-        user: req.user.id,
-        type: 'exchange',
-        currency: 'USDT',
-        amount: usdtAmount,
-        status: 'pending',
-        exchangeRate,
-        description: `Pending receipt of ${usdtAmount.toFixed(2)} USDT from ${amount} UBT exchange`
-      });
-      
-      await usdtTransaction.save();
-      
-      // Send exchange notification to admin
-      const exchangeData = {
-        userId: user._id,
+
+    // Send notification email to admin
+    try {
+      await sendWithdrawalNotificationEmail({
+        userId,
         username: user.username,
-        fromAmount: amount,
-        fromCurrency: 'UBT',
-        toAmount: usdtAmount.toFixed(2),
-        toCurrency: 'USDT'
-      };
-      
-      // Send email notification for exchange
-      await sendExchangeNotificationEmail(exchangeData);
-    } else {
-      // Send notification to admin for regular withdrawal
-      const withdrawalData = {
-        userId: user._id,
-        username: user.username,
-        amount,
+        amount: parseFloat(amount),
         currency,
         walletAddress
-      };
-      
-      // Send SMS notification
-      await sendWithdrawalNotification(withdrawalData);
-      
-      // Send email notification
-      await sendWithdrawalNotificationEmail(withdrawalData);
+      });
+    } catch (emailError) {
+        console.error("Failed to send withdrawal notification email:", emailError);
+        // Continue even if email fails, but log it.
     }
     
-    await user.save();
-    
-    res.json({
-      msg: isInternalExchange ? 'Exchange request submitted successfully' : 'Withdrawal request submitted successfully',
-      transaction
+    // Send notification SMS to admin (using the corrected function name)
+    try {
+      await sendWithdrawalNotificationSms({ // Corrected function call
+        userId,
+        username: user.username,
+        amount: parseFloat(amount),
+        currency,
+        walletAddress
+      });
+    } catch (smsError) {
+        console.error("Failed to send withdrawal notification SMS:", smsError);
+        // Continue even if SMS fails, but log it.
+    }
+
+
+    // For now, do not deduct balance until admin approves.
+    // When admin approves, a separate process will update the transaction status to 'completed'
+    // and adjust the user's balance.
+
+    res.status(201).json({ 
+        success: true, 
+        message: 'Withdrawal request submitted successfully. It will be processed by an administrator.',
+        transaction 
     });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
+
+  } catch (error) {
+    console.error('Withdrawal error:', error);
+    res.status(500).json({ success: false, message: 'Server error during withdrawal request.' });
   }
 });
 
-// @route   POST api/transactions/buy-ubt
-// @desc    Buy UBT with crypto balance
+
+// @route   GET api/transactions
+// @desc    Get user's transaction history
 // @access  Private
-router.post('/buy-ubt', auth, async (req, res) => {
-  const { sourceCurrency, amount } = req.body;
+router.get('/', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
-    }
-    // Validate source currency
-    if (!['BTC', 'ETH', 'USDT'].includes(sourceCurrency)) {
-      return res.status(400).json({ msg: 'Invalid source currency' });
-    }
-    // Check if user has sufficient balance
-    const balanceField = sourceCurrency.toLowerCase();
-    if (user.balances[balanceField] < amount) {
-      return res.status(400).json({ msg: 'Insufficient balance' });
-    }
-    // Get current UBT buy rate
-    let rateRecord = await ExchangeRate.findOne({});
-    if (!rateRecord) {
-      rateRecord = new ExchangeRate({
-        withdrawalCount: 0,
-        currentRate: config.UBT_INITIAL_EXCHANGE_RATE,
-        buyRate: config.UBT_INITIAL_EXCHANGE_RATE * config.UBT_BUY_RATE_FACTOR
-      });
-      await rateRecord.save();
-    }
-    // Calculate UBT amount based on buy rate
-    const ubtAmount = amount / rateRecord.buyRate;
-    // Create transaction records
-    const sourceTransaction = new Transaction({
-      user: req.user.id,
-      type: 'exchange',
-      currency: sourceCurrency,
-      amount: -amount,
-      status: 'completed',
-      exchangeRate: rateRecord.buyRate,
-      description: `Exchanged ${amount} ${sourceCurrency} for UBT`
-    });
-    const ubtTransaction = new Transaction({
-      user: req.user.id,
-      type: 'exchange',
-      currency: 'UBT',
-      amount: ubtAmount,
-      status: 'completed',
-      exchangeRate: rateRecord.buyRate,
-      description: `Received ${ubtAmount.toFixed(2)} UBT from ${amount} ${sourceCurrency}`
-    });
-    
-    // Update user balances
-    user.balances[balanceField] -= amount;
-    user.balances.ubt += ubtAmount;
-    
-    // Send exchange notification to admin
-    const exchangeData = {
-      userId: user._id,
-      username: user.username,
-      fromAmount: amount,
-      fromCurrency: sourceCurrency,
-      toAmount: ubtAmount.toFixed(2),
-      toCurrency: 'UBT'
-    };
-    
-    // Send email notification for exchange
-    await sendExchangeNotificationEmail(exchangeData);
-    
-    // Save all changes
-    await sourceTransaction.save();
-    await ubtTransaction.save();
-    await user.save();
-    
-    res.json({
-      msg: 'UBT purchase successful',
-      ubtAmount,
-      exchangeRate: rateRecord.buyRate,
-      transactions: [sourceTransaction, ubtTransaction]
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
+    const transactions = await Transaction.find({ userId: req.user.id })
+      .sort({ date: -1 }) // Sort by most recent
+      .limit(50); // Limit to last 50 transactions for performance
+
+    res.json({ success: true, transactions });
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ success: false, message: 'Server error while fetching transactions.' });
   }
 });
 
-// @route   GET api/transactions/exchange-rates
-// @desc    Get current UBT exchange rates
-// @access  Public
-router.get('/exchange-rates', async (req, res) => {
-  try {
-    let rateRecord = await ExchangeRate.findOne({});
-    if (!rateRecord) {
-      rateRecord = new ExchangeRate({
-        withdrawalCount: 0,
-        currentRate: config.UBT_INITIAL_EXCHANGE_RATE,
-        buyRate: config.UBT_INITIAL_EXCHANGE_RATE * config.UBT_BUY_RATE_FACTOR
-      });
-      await rateRecord.save();
+// @route   GET api/transactions/:id
+// @desc    Get a specific transaction by ID
+// @access  Private 
+// (Ensuring user can only access their own transactions)
+router.get('/:id', authMiddleware, async (req, res) => {
+    try {
+        if (!ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ success: false, message: 'Invalid transaction ID format.' });
+        }
+
+        const transaction = await Transaction.findOne({ 
+            _id: req.params.id, 
+            userId: req.user.id 
+        });
+
+        if (!transaction) {
+            return res.status(404).json({ success: false, message: 'Transaction not found or access denied.' });
+        }
+
+        res.json({ success: true, transaction });
+    } catch (error) {
+        console.error('Error fetching transaction by ID:', error);
+        res.status(500).json({ success: false, message: 'Server error while fetching transaction.' });
     }
-    res.json({
-      sellRate: rateRecord.currentRate,
-      buyRate: rateRecord.buyRate,
-      withdrawalCount: rateRecord.withdrawalCount,
-      lastUpdated: rateRecord.lastUpdated
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
 });
+
 
 export default router;
