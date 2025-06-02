@@ -1,96 +1,51 @@
-/**
- * Deposit handling logic
- */
 import express from 'express';
-import auth from '../middleware/auth.js';
-import User from '../models/User.js';
-import Transaction from '../models/Transaction.js';
-import { processDeposit, getCurrentUBTRate } from '../utils/ubtExchange.js';
+import authMiddleware from '../middleware/auth.js';
+import addressAssignmentService from '../services/addressAssignmentService.js'; // Corrected import name
+import User from '../models/User.js'; // Ensure User model is imported if needed by service
 
 const router = express.Router();
 
-// @route   GET api/deposit/addresses
-// @desc    Get user's deposit addresses
-// @access  Private
-router.get('/addresses', auth, async (req, res) => {
+/**
+ * @route   GET /api/deposit/addresses
+ * @desc    Get user's crypto addresses or assign if not already assigned
+ * @access  Private
+ */
+router.get('/addresses', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('walletAddresses');
+    const userId = req.user.id;
+    // Ensure user exists (optional, addressAssignmentService might do this)
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
-    if (!user.walletAddresses || !user.walletAddresses.bitcoin || !user.walletAddresses.ethereum) {
-      return res.status(400).json({ message: 'Crypto addresses not yet assigned to this user.' });
-    }
-    return res.json({
-      btcAddress: user.walletAddresses.bitcoin,
-      ethAddress: user.walletAddresses.ethereum,
-      usdtAddress: user.walletAddresses.ethereum
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
 
-// @route   GET api/deposit/balance
-// @desc    Get user's UBT balance
-// @access  Private
-router.get('/balance', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const addresses = await addressAssignmentService.getUserAddresses(userId);
+    
+    // Check if addresses were successfully retrieved or assigned
+    if (!addresses || (!addresses.BTC && !addresses.ETH && !addresses.USDT)) {
+        // This case might indicate that addresses couldn't be assigned (e.g., none available)
+        // addressAssignmentService should ideally throw an error in such cases that we catch below
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Could not retrieve or assign deposit addresses. No addresses available or user not found.' 
+        });
     }
-    const currentRate = await getCurrentUBTRate();
-    return res.json({
-      ubtBalance: user.balances.ubt,
-      currentRate
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
 
-// @route   POST api/deposit/simulate
-// @desc    Simulate a deposit (for testing purposes)
-// @access  Private
-router.post('/simulate', auth, async (req, res) => {
-  const { cryptoType, amount } = req.body;
-  if (!cryptoType || !amount) {
-    return res.status(400).json({ message: 'Please provide crypto type and amount' });
-  }
-  if (!['BTC', 'ETH', 'USDT'].includes(cryptoType.toUpperCase())) {
-    return res.status(400).json({ message: 'Invalid crypto type' });
-  }
-  if (isNaN(amount) || amount <= 0) {
-    return res.status(400).json({ message: 'Amount must be a positive number' });
-  }
-  try {
-    const { ubtAmount, newBalance, newRate } = await processDeposit(
-      req.user.id,
-      cryptoType,
-      parseFloat(amount)
-    );
-    const transaction = new Transaction({
-      user: req.user.id,
-      type: 'deposit',
-      cryptoType: cryptoType.toUpperCase(),
-      cryptoAmount: parseFloat(amount),
-      ubtAmount,
-      ubtRate: newRate,
-      status: 'completed'
+    res.json({
+      success: true,
+      // Ensure consistent naming with frontend expectations if they differ from service's return
+      btcAddress: addresses.BTC,
+      ethAddress: addresses.ETH,
+      usdtAddress: addresses.USDT 
     });
-    await transaction.save();
-    return res.json({
-      message: `Deposit of ${amount} ${cryptoType.toUpperCase()} converted to ${ubtAmount.toFixed(2)} UBT`,
-      ubtAmount,
-      newBalance,
-      newRate
+
+  } catch (error) {
+    console.error(`Error in GET /api/deposit/addresses: ${error.message}`, error.stack);
+    // Ensure a JSON response is sent for any caught error
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Server error while retrieving deposit addresses.'
     });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: 'Server error' });
   }
 });
 
