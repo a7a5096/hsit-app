@@ -15,6 +15,7 @@ import usersRoutes from './routes/users.js';
 import ubtRoutes from './routes/ubt.js';
 import exchangeRatesRoutes from './routes/exchangeRates.js';
 import depositRoutes from './routes/deposit.js';
+import teamRoutes from './routes/team.js'; // <-- IMPORT TEAM ROUTES
 
 // Load environment variables
 dotenv.config();
@@ -40,6 +41,8 @@ app.use((req, res, next) => {
 });
 
 // Global error handler middleware to ensure consistent JSON responses
+// This should ideally be placed after all routes, or it might not catch all errors.
+// For now, keeping its original position as per the provided file structure.
 app.use((err, req, res, next) => {
   console.error('Request error:', err);
   res.status(500).json({
@@ -59,6 +62,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/ubt', ubtRoutes);
 app.use('/api/exchange-rates', exchangeRatesRoutes);
 app.use('/api/deposit', depositRoutes);
+app.use('/api/team', teamRoutes); // <-- REGISTER TEAM ROUTES
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -69,7 +73,7 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend API is working!' });
 });
 
-// *** FIX: Serve static files specifically from the frontend/public directory ***
+// Serve static files specifically from the frontend/public directory
 const publicPath = path.join(__dirname, '../frontend/public');
 app.use(express.static(publicPath));
 
@@ -78,12 +82,12 @@ app.get('/api/*', (req, res) => {
   res.status(404).json({ success: false, message: 'API endpoint not found.' });
 });
 
-// *** FIX: Update fallback to serve index.html from the correct public path ***
+// Update fallback to serve index.html from the correct public path
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(publicPath, 'index.html'));
 });
 
-// Error handling middleware
+// Error handling middleware (this is a more common placement for a general error handler)
 app.use((err, req, res, next) => {
   console.error('Server error:', err.stack);
   res.status(500).json({ 
@@ -93,7 +97,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
+// 404 handler for non-API routes not caught by static or '*' GET
 app.use((req, res) => {
   res.status(404).json({
     success: false,
