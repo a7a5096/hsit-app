@@ -1,123 +1,130 @@
 document.addEventListener('DOMContentLoaded', () => {
     const productsGrid = document.getElementById('productsGrid');
     const productsLoadingIndicator = document.getElementById('productsLoadingIndicator');
-    const statusMessage = document.getElementById('statusMessage'); // For general messages
+    const pageStatusMessage = document.getElementById('statusMessage'); // For general page messages
     
-    // Modal elements
+    // Modal elements (ensure these IDs match your AI Products - HSIT.html)
     const purchaseModal = document.getElementById('purchaseModal');
     const modalProductName = document.getElementById('modalProductName');
     const modalProductCost = document.getElementById('modalProductCost');
     const modalUserBalance = document.getElementById('modalUserBalance');
     const confirmPurchaseBtn = document.getElementById('confirmPurchaseBtn');
+    const cancelPurchaseBtn = document.getElementById('cancelPurchaseBtn'); // Added for explicit cancel
     const purchaseError = document.getElementById('purchaseError');
-    const closeModalBtn = purchaseModal ? purchaseModal.querySelector('.close-modal-btn') : null;
+    const closeModalBtn = document.getElementById('closePurchaseModalBtn'); // Ensure this ID exists on your modal's close (X) button
 
     let currentProductToPurchase = null;
     let currentUserUbtBalance = 0;
 
-    // Function to display messages
-    function showAppMessage(message, type = 'info', duration = 5000) {
-        if (statusMessage) {
-            statusMessage.textContent = message;
-            statusMessage.className = `status-message ${type}`; // Applies 'error' or 'success' class
-            statusMessage.style.display = 'block';
+    // Function to display messages on the page
+    function showAppMessage(message, type = 'info', duration = 7000) {
+        if (pageStatusMessage) {
+            pageStatusMessage.textContent = message;
+            pageStatusMessage.className = `status-message ${type}`;
+            pageStatusMessage.style.display = 'block';
             setTimeout(() => {
-                statusMessage.style.display = 'none';
+                pageStatusMessage.style.display = 'none';
             }, duration);
         } else {
             console.log(`AppMessage (${type}): ${message}`);
         }
     }
     
+    // Function to display errors within the modal
     function showModalError(message) {
         if (purchaseError) {
             purchaseError.textContent = message;
             purchaseError.style.display = 'block';
+        } else {
+            console.error("Modal error display element not found. Message:", message);
         }
     }
 
     // Fetch products from the backend
     async function fetchProducts() {
-        if (!productsLoadingIndicator) {
-            console.error("Loading indicator not found");
-        } else {
-            productsLoadingIndicator.style.display = 'block';
-        }
-        productsGrid.innerHTML = ''; // Clear previous products
+        if (productsLoadingIndicator) productsLoadingIndicator.style.display = 'block';
+        if (productsGrid) productsGrid.innerHTML = ''; // Clear previous products
 
         try {
             if (typeof API_URL === 'undefined') {
-                throw new Error('API_URL is not defined. Ensure config.js is loaded.');
+                throw new Error('API_URL is not defined. Ensure config.js is loaded before this script.');
             }
-            const response = await fetch(`${API_URL}/api/bots`); // Assuming this is your endpoint for AI products
+            // Assuming your API endpoint for AI products/bots is /api/bots
+            const response = await fetch(`${API_URL}/api/bots`); 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                throw new Error(errorData?.message || `Failed to fetch AI products. Status: ${response.status}`);
+                const errorData = await response.json().catch(() => ({ message: `Failed to fetch AI products. Status: ${response.status}` }));
+                throw new Error(errorData.message);
             }
-            const products = await response.json();
-            if (products.success && Array.isArray(products.bots)) {
-                displayProducts(products.bots);
+            const result = await response.json();
+            if (result.success && Array.isArray(result.bots)) {
+                displayProducts(result.bots);
             } else {
-                throw new Error('Invalid product data received.');
+                throw new Error(result.message || 'Invalid product data received from server.');
             }
         } catch (error) {
             console.error('Error fetching products:', error);
             showAppMessage(error.message || 'Could not load AI products. Please try again later.', 'error');
-            if (productsGrid) productsGrid.innerHTML = '<p style="text-align:center; color: var(--light-text-emphasis);">Failed to load products.</p>';
+            if (productsGrid) productsGrid.innerHTML = '<p style="text-align:center; color: #ccc;">Failed to load products. Please refresh.</p>';
         } finally {
             if (productsLoadingIndicator) productsLoadingIndicator.style.display = 'none';
         }
     }
 
     // Display products on the page
-    function displayProducts(products) {
+    function displayProducts(bots) {
         if (!productsGrid) {
-            console.error("Products grid not found");
+            console.error("Products grid element (#productsGrid) not found in HTML.");
             return;
         }
-        productsGrid.innerHTML = ''; // Clear loading or old products
+        productsGrid.innerHTML = ''; // Clear loading indicator or old products
 
-        if (products.length === 0) {
-            productsGrid.innerHTML = '<p style="text-align:center; color: var(--light-text-emphasis);">No AI products available at the moment.</p>';
+        if (bots.length === 0) {
+            productsGrid.innerHTML = '<p style="text-align:center; color: #ccc;">No AI products available at the moment.</p>';
             return;
         }
 
-        products.forEach(product => {
+        bots.forEach(bot => {
+            const productId = bot._id || bot.id; // Use _id or id based on your backend
+            if (!productId) {
+                console.warn("Skipping bot with no ID:", bot);
+                return; // Skip rendering if no ID
+            }
+
             const card = document.createElement('div');
             card.className = 'product-card';
-            // Use product._id or product.id depending on your backend response structure
-            const productId = product._id || product.id; 
             card.dataset.productId = productId;
 
-            // Determine logo class, default to 'logo-generic' or use product.logoStyle if available
-            const logoClass = product.logoStyle || `logo-${product.name.toLowerCase().split(' ')[0] || 'generic'}`;
+            const logoClass = bot.logoStyle || `logo-${(bot.name || 'generic').toLowerCase().split(' ')[0].replace(/[^a-z0-9]/gi, '')}`;
+            
+            // Handle potentially non-numeric or string earnings like "1.2% Daily"
+            let dailyEarningsText = 'N/A';
+            if (typeof bot.dailyEarnings === 'number') {
+                dailyEarningsText = `${bot.dailyEarnings.toFixed(2)} UBT`;
+            } else if (typeof bot.dailyEarnings === 'string') {
+                dailyEarningsText = bot.dailyEarnings; // e.g., "1.2% Daily"
+            }
 
-            // Ensure earnings and investment are numbers and format them
-            const dailyEarnings = typeof product.dailyEarnings === 'number' ? product.dailyEarnings.toFixed(2) : (product.dailyEarnings || 'N/A');
-            const investmentAmount = typeof product.investmentAmount === 'number' ? product.investmentAmount.toFixed(2) : (product.investmentAmount || 'N/A');
-            const cycle = product.cycleDays || product.cycle || 'N/A';
-            const purchaseLimitInfo = product.purchaseLimit ? `Limited to ${product.purchaseLimit} per user.` : 'Available now!';
-
+            const investmentAmount = typeof bot.investmentAmount === 'number' ? bot.investmentAmount.toFixed(2) : (bot.investmentAmount || 'N/A');
+            const cycle = bot.cycleDays || bot.cycle || 'N/A';
+            const shortTagline = bot.tagline || (bot.purchaseLimit ? `Limited to ${bot.purchaseLimit} per user.` : 'Available!');
 
             card.innerHTML = `
                 <div class="product-logo ${logoClass}">
-                    <span>${product.name || 'Unnamed Bot'}</span>
+                    <span>${bot.name || 'Unnamed Bot'}</span>
                 </div>
                 <div class="product-info-stats">
-                    <div><span>${dailyEarnings} UBT</span><label>Daily Earnings</label></div>
+                    <div><span>${dailyEarningsText}</span><label>Daily</label></div>
                     <div><span>${cycle} day(s)</span><label>Cycle</label></div>
-                    <div><span>${investmentAmount} UBT</span><label>Investment</label></div>
+                    <div><span>${investmentAmount} UBT</span><label>Cost</label></div>
                 </div>
-                <div class="product-purchases">
-                    ${purchaseLimitInfo}
-                </div>
+                <div class="product-purchases">${shortTagline}</div>
                 <div class="product-details">
                     <h3>Product Details</h3>
-                    <p>${product.description || 'No description available.'}</p>
-                    ${product.features && Array.isArray(product.features) && product.features.length > 0 ? 
+                    <p>${bot.description || 'No description available.'}</p>
+                    ${bot.features && Array.isArray(bot.features) && bot.features.length > 0 ? 
                         `<ul class="bot-features">
-                            ${product.features.map(feature => `<li><strong>${feature.name || ''}:</strong> ${feature.detail || ''}</li>`).join('')}
-                        </ul>` : ''
+                            ${bot.features.map(feature => `<li><strong>${feature.name || 'Feature'}:</strong> ${feature.detail || ''}</li>`).join('')}
+                        </ul>` : '<p>No specific features listed.</p>'
                     }
                 </div>
                 <div class="product-actions">
@@ -129,8 +136,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const buyButton = card.querySelector('.btn-buy');
             if (buyButton) {
                 buyButton.addEventListener('click', () => {
-                    currentProductToPurchase = product; // Store the whole product object
-                    openPurchaseModal(product);
+                    currentProductToPurchase = bot;
+                    openPurchaseModal(bot);
                 });
             }
         });
@@ -139,34 +146,45 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch user's UBT balance
     async function fetchUserUbtBalance() {
         const token = localStorage.getItem('token');
-        if (!token) return 0; // Default to 0 if not logged in
+        if (!token) { 
+            console.warn("No token found for fetching user balance.");
+            return 0; 
+        }
 
         try {
-            const response = await fetch(`${API_URL}/api/auth`, { // Your endpoint that returns user data including balances
+            if (typeof API_URL === 'undefined') throw new Error('API_URL is not defined.');
+            const response = await fetch(`${API_URL}/api/auth`, {
                 headers: { 'x-auth-token': token }
             });
-            if (!response.ok) return 0;
+            if (!response.ok) {
+                 console.error(`Failed to fetch user balance. Status: ${response.status}`);
+                 return 0;
+            }
             const data = await response.json();
             return (data.success && data.balances && typeof data.balances.ubt === 'number') ? data.balances.ubt : 0;
         } catch (error) {
-            console.error('Error fetching user balance:', error);
+            console.error('Error fetching user UBT balance:', error);
             return 0;
         }
     }
 
     // Open purchase confirmation modal
     async function openPurchaseModal(product) {
-        if (!purchaseModal || !product) return;
+        if (!purchaseModal || !product) {
+            console.error("Purchase modal or product data missing.");
+            return;
+        }
+
+        const investmentAmount = typeof product.investmentAmount === 'number' ? product.investmentAmount.toFixed(2) : 'N/A';
 
         if (modalProductName) modalProductName.textContent = product.name || 'N/A';
-        if (modalProductCost) modalProductCost.textContent = (typeof product.investmentAmount === 'number' ? product.investmentAmount.toFixed(2) : 'N/A');
+        if (modalProductCost) modalProductCost.textContent = investmentAmount;
         
-        // Fetch current balance
         if(modalUserBalance) modalUserBalance.textContent = 'Loading...';
         currentUserUbtBalance = await fetchUserUbtBalance();
         if(modalUserBalance) modalUserBalance.textContent = currentUserUbtBalance.toFixed(2);
 
-        if (purchaseError) purchaseError.style.display = 'none'; // Hide previous errors
+        if (purchaseError) purchaseError.style.display = 'none'; 
         purchaseModal.style.display = 'flex';
     }
 
@@ -174,64 +192,82 @@ document.addEventListener('DOMContentLoaded', () => {
     async function confirmPurchase() {
         const token = localStorage.getItem('token');
         if (!token || !currentProductToPurchase) {
-            showModalError('Error: Product or authentication token missing.');
+            showModalError('Error: Product information or authentication is missing. Please try again.');
             return;
         }
 
         const productId = currentProductToPurchase._id || currentProductToPurchase.id;
+        const investmentAmount = parseFloat(currentProductToPurchase.investmentAmount);
+
         if (!productId) {
-            showModalError('Error: Product ID missing.');
+            showModalError('Error: Product ID is missing.');
+            return;
+        }
+        if (isNaN(investmentAmount)) {
+            showModalError('Error: Product investment amount is invalid.');
             return;
         }
         
-        if (currentUserUbtBalance < currentProductToPurchase.investmentAmount) {
+        if (currentUserUbtBalance < investmentAmount) {
             showModalError('Insufficient UBT balance for this purchase.');
             return;
         }
 
-        confirmPurchaseBtn.disabled = true;
-        confirmPurchaseBtn.textContent = 'Processing...';
+        if (confirmPurchaseBtn) {
+            confirmPurchaseBtn.disabled = true;
+            confirmPurchaseBtn.textContent = 'Processing...';
+        }
         if (purchaseError) purchaseError.style.display = 'none';
 
         try {
+            if (typeof API_URL === 'undefined') throw new Error('API_URL is not defined.');
             const response = await fetch(`${API_URL}/api/bots/${productId}/purchase`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-auth-token': token,
                 },
-                // body: JSON.stringify({ amount: currentProductToPurchase.investmentAmount }) // Backend might not need amount if it uses bot's price
+                // The backend /api/bots/:botId/purchase should know the cost of the bot.
+                // Sending amount in body is optional unless your backend explicitly requires it.
+                // body: JSON.stringify({ amount: investmentAmount }) 
             });
 
             const data = await response.json();
 
             if (response.ok && data.success) {
-                showAppMessage(data.message || 'Purchase successful!', 'success');
+                showAppMessage(data.message || 'Purchase successful! Your new bot is active.', 'success');
                 if (purchaseModal) purchaseModal.style.display = 'none';
-                fetchProducts(); // Refresh products list (e.g., if purchase limits change)
-                // Optionally, update a global balance display if you have one
+                fetchProducts(); // Refresh products list (e.g., if purchase limits change or to show owned status)
             } else {
                 showModalError(data.message || 'Purchase failed. Please try again.');
             }
         } catch (error) {
-            console.error('Error during purchase:', error);
-            showModalError('An error occurred during purchase. Please try again.');
+            console.error('Error during purchase confirmation:', error);
+            showModalError('An unexpected error occurred during purchase. Please try again.');
         } finally {
-            confirmPurchaseBtn.disabled = false;
-            confirmPurchaseBtn.textContent = 'Confirm';
+            if (confirmPurchaseBtn) {
+                confirmPurchaseBtn.disabled = false;
+                confirmPurchaseBtn.textContent = 'Confirm Purchase';
+            }
         }
     }
 
-    // Event listeners for modal
+    // Event listeners for modal close/cancel
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', () => {
+            if (purchaseModal) purchaseModal.style.display = 'none';
+        });
+    }
+    if (cancelPurchaseBtn) { // Assuming you have a cancel button with id="cancelPurchaseBtn" in your modal
+        cancelPurchaseBtn.addEventListener('click', () => {
             if (purchaseModal) purchaseModal.style.display = 'none';
         });
     }
     if (confirmPurchaseBtn) {
         confirmPurchaseBtn.addEventListener('click', confirmPurchase);
     }
-    // Close modal if clicked outside of it
+    
+    // Close modal if user clicks outside of the modal content
     if (purchaseModal) {
         window.addEventListener('click', (event) => {
             if (event.target === purchaseModal) {
@@ -240,7 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
-    // Initial load
+    // Initial load of products
     fetchProducts();
 });
