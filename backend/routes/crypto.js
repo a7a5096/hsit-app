@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Import crypto addresses from database to database
+ * Import crypto addresses from JSON to database
  * This endpoint should be used with admin privileges
  */
 router.post('/import-addresses', authMiddleware, async (req, res) => {
@@ -30,42 +30,52 @@ router.post('/import-addresses', authMiddleware, async (req, res) => {
     // Get addresses from request body
     const { bitcoin, ethereum, usdt } = req.body;
     
-    if (!bitcoin || !ethereum || !usdt) {
+    if (!bitcoin && !ethereum && !usdt) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Missing address data. Please provide bitcoin, ethereum, and usdt arrays.'
+        message: 'Missing address data. Please provide at least one of: bitcoin, ethereum, or usdt arrays.'
       });
     }
     
-    // Import Bitcoin addresses
-    const bitcoinResults = await CryptoAddressService.importAddresses(
-      bitcoin.map(address => ({
-        address,
-        currency: 'BTC',
-        isAssigned: false,
-        isActive: true
-      }))
-    );
+    let bitcoinResults = { imported: 0, duplicates: 0, errors: [] };
+    let ethereumResults = { imported: 0, duplicates: 0, errors: [] };
+    let usdtResults = { imported: 0, duplicates: 0, errors: [] };
     
-    // Import Ethereum addresses
-    const ethereumResults = await CryptoAddressService.importAddresses(
-      ethereum.map(address => ({
-        address,
-        currency: 'ETH',
-        isAssigned: false,
-        isActive: true
-      }))
-    );
+    // Import Bitcoin addresses if provided
+    if (bitcoin && Array.isArray(bitcoin) && bitcoin.length > 0) {
+      bitcoinResults = await CryptoAddressService.importAddresses(
+        bitcoin.map(address => ({
+          address,
+          currency: 'bitcoin',
+          used: false,
+          isActive: true
+        }))
+      );
+    }
     
-    // Import USDT addresses
-    const usdtResults = await CryptoAddressService.importAddresses(
-      usdt.map(address => ({
-        address,
-        currency: 'USDT',
-        isAssigned: false,
-        isActive: true
-      }))
-    );
+    // Import Ethereum addresses if provided
+    if (ethereum && Array.isArray(ethereum) && ethereum.length > 0) {
+      ethereumResults = await CryptoAddressService.importAddresses(
+        ethereum.map(address => ({
+          address,
+          currency: 'ethereum',
+          used: false,
+          isActive: true
+        }))
+      );
+    }
+    
+    // Import USDT addresses if provided
+    if (usdt && Array.isArray(usdt) && usdt.length > 0) {
+      usdtResults = await CryptoAddressService.importAddresses(
+        usdt.map(address => ({
+          address,
+          currency: 'usdt',
+          used: false,
+          isActive: true
+        }))
+      );
+    }
     
     res.json({
       success: true,

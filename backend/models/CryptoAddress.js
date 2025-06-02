@@ -8,7 +8,7 @@ const CryptoAddressSchema = new mongoose.Schema({
   },
   privateKey: {
     type: String,
-    required: true
+    required: false // Modified to make privateKey optional
   },
   currency: {
     type: String,

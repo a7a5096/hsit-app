@@ -86,6 +86,7 @@ class CryptoAddressService {
         addr.metadata = addr.metadata || {};
         addr.metadata.importBatch = importBatch;
         
+        // privateKey is now optional, so we don't need to check for it
         await CryptoAddress.create(addr);
         results.imported++;
       } catch (error) {
