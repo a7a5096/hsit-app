@@ -4,12 +4,12 @@
 
 // Configuration
 const UPDATE_INTERVAL = 5 * 60 * 1000; // Update every 5 minutes
-const API_ENDPOINT = '/api/exchange-rates/ubt-usdt';
 
 // Function to fetch the current exchange rate
 async function fetchExchangeRate() {
   try {
-    const response = await fetch(API_ENDPOINT);
+    // Use the global API_URL from config.js
+    const response = await fetch(`${API_URL}/api/exchange-rates/ubt-usdt`);
     
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
