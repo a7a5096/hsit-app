@@ -1,96 +1,106 @@
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("Asset Center page loaded.");
-    displayUserBalances();
-    // Placeholder for other Asset Center functionalities like displaying purchased bots
-});
+document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('token');
 
-function displayUserBalances() {
-    const balancesListElement = document.querySelector(".balances-list");
-    const totalValueElement = document.querySelector(".total-value"); // For estimated total value
+    // DOM Elements for displaying balances
+    const totalValueDisplay = document.getElementById('totalValueDisplay');
+    const totalValueInUsdDisplay = document.getElementById('totalValueInUsd');
+    const ubtBalanceDisplay = document.getElementById('ubtBalanceAmount');
+    const ubtEstValueDisplay = document.getElementById('ubtEstValue');
+    const btcBalanceDisplay = document.getElementById('btcBalanceAmount');
+    const btcEstValueDisplay = document.getElementById('btcEstValue');
+    const ethBalanceDisplay = document.getElementById('ethBalanceAmount');
+    const ethEstValueDisplay = document.getElementById('ethEstValue');
+    const statusMessageDisplay = document.getElementById('statusMessage');
 
-    if (!balancesListElement) {
-        console.error("Balances list element not found.");
-        return;
+    function showStatusMessage(message, type = 'info') {
+        if (statusMessageDisplay) {
+            statusMessageDisplay.textContent = message;
+            statusMessageDisplay.className = `status-message ${type}`;
+            statusMessageDisplay.style.display = 'block';
+            setTimeout(() => {
+                statusMessageDisplay.style.display = 'none';
+            }, 5000);
+        } else {
+            console.log(`Status (${type}): ${message}`);
+        }
     }
 
-    balancesListElement.innerHTML = ''; // Clear any existing content
+    async function fetchAndDisplayBalances() {
+        if (!token) {
+            showStatusMessage('Authentication token not found. Please log in.', 'error');
+            // Optionally redirect to login
+            // window.location.href = 'index.html'; 
+            return;
+        }
 
-    try {
-        const userDataString = localStorage.getItem("userData");
-        if (userDataString) {
-            const userData = JSON.parse(userDataString);
-            console.log("User data from localStorage:", userData);
+        if (typeof API_URL === 'undefined') {
+            showStatusMessage('API configuration is missing. Unable to fetch data.', 'error');
+            return;
+        }
 
-            if (userData && userData.balances) {
-                let estimatedTotalUSD = 0;
+        try {
+            const response = await fetch(`${API_URL}/api/auth`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-auth-token': token,
+                },
+            });
 
-                // Display UBT balance
-                if (typeof userData.balances.ubt !== "undefined") {
-                    const ubtBalance = parseFloat(userData.balances.ubt);
-                    const listItem = document.createElement("li");
-                    listItem.innerHTML = `
-                        <div class="balance-item">
-                            <span class="currency-name">UBT (Un-Buyable Token)</span>
-                            <span class="currency-amount">${ubtBalance.toFixed(2)} UBT</span>
-                        </div>
-                    `;
-                    balancesListElement.appendChild(listItem);
-                    console.log("UBT Balance displayed:", ubtBalance.toFixed(2));
-                    // Assuming 1 UBT = $1 for simplicity in total estimation, adjust if there's a conversion rate
-                    estimatedTotalUSD += ubtBalance; 
-                } else {
-                    console.warn("UBT balance not found in userData.balances");
-                     const listItem = document.createElement("li");
-                    listItem.innerHTML = `
-                        <div class="balance-item">
-                            <span class="currency-name">UBT (Un-Buyable Token)</span>
-                            <span class="currency-amount">N/A</span>
-                        </div>
-                    `;
-                    balancesListElement.appendChild(listItem);
-                }
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
+                throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.user && data.balances) {
+                const balances = data.balances;
+                const ubtAmount = parseFloat(balances.ubt) || 0;
+                const btcAmount = parseFloat(balances.bitcoin) || 0;
+                const ethAmount = parseFloat(balances.ethereum) || 0;
+
+                // Update UBT display
+                if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = `${ubtAmount.toFixed(8)} UBT`;
+                // For UBT, totalValueDisplay is essentially the UBT amount
+                if (totalValueDisplay) totalValueDisplay.textContent = `${ubtAmount.toFixed(2)}`;
+
+
+                // Update BTC display
+                if (btcBalanceDisplay) btcBalanceDisplay.textContent = `${btcAmount.toFixed(8)} BTC`;
                 
-                // Add other currency balances here if they exist in userData.balances
-                // Example for BTC (if it were present):
-                // if (typeof userData.balances.btc !== "undefined") {
-                //     const btcBalance = parseFloat(userData.balances.btc);
-                //     // Assume you have a function to get BTC to USD rate
-                //     // const btcToUsdRate = await getCryptoRate("BTC"); 
-                //     // estimatedTotalUSD += btcBalance * btcToUsdRate;
-                //     const listItem = document.createElement("li");
-                //     listItem.innerHTML = `
-                //         <div class="balance-item">
-                //             <span class="currency-name">Bitcoin (BTC)</span>
-                //             <span class="currency-amount">${btcBalance.toFixed(8)} BTC</span>
-                //         </div>
-                //     `;
-                //     balancesListElement.appendChild(listItem);
-                // }
+                // Update ETH display
+                if (ethBalanceDisplay) ethBalanceDisplay.textContent = `${ethAmount.toFixed(8)} ETH`;
 
-                if (totalValueElement) {
-                    totalValueElement.innerHTML = `$ ${estimatedTotalUSD.toFixed(2)} <span class="currency-note">USD</span>`;
-                }
+                // Placeholder for USD values - requires exchange rate integration
+                // You would need to fetch exchange rates (e.g., UBT/USDT, BTC/USDT, ETH/USDT)
+                // and then USDT/USD if necessary to calculate these.
+                // For now, we'll leave them as "N/A" or you can integrate rate fetching.
+                const notAvailableText = "≈ N/A USD";
+                if (ubtEstValueDisplay) ubtEstValueDisplay.textContent = notAvailableText;
+                if (btcEstValueDisplay) btcEstValueDisplay.textContent = notAvailableText;
+                if (ethEstValueDisplay) ethEstValueDisplay.textContent = notAvailableText;
+                if (totalValueInUsdDisplay) totalValueInUsdDisplay.textContent = `Equivalent to: N/A USD`;
+
+                // Example: If you had a UBT to USD rate (e.g. from a config or another API call)
+                // const ubtToUsdRate = 0.0325; // Example rate
+                // if (ubtEstValueDisplay) ubtEstValueDisplay.textContent = `≈ $${(ubtAmount * ubtToUsdRate).toFixed(2)} USD`;
+                // if (totalValueInUsdDisplay) totalValueInUsdDisplay.textContent = `Equivalent to: $${(ubtAmount * ubtToUsdRate).toFixed(2)} USD`;
+
 
             } else {
-                console.warn("Balances object not found in userData:", userData);
-                balancesListElement.innerHTML = "<li>No balance data available.</li>";
+                throw new Error(data.message || 'Failed to parse user data or balances missing.');
             }
-        } else {
-            console.warn("User data not found in localStorage.");
-            balancesListElement.innerHTML = "<li>Please log in to see your balances.</li>";
-            if (totalValueElement) {
-                 totalValueElement.innerHTML = `$ 0.00 <span class="currency-note">USD</span>`;
-            }
+        } catch (error) {
+            console.error('Error fetching asset data:', error);
+            showStatusMessage(`Error loading balances: ${error.message}`, 'error');
+            // Set display to error state
+            if (totalValueDisplay) totalValueDisplay.textContent = 'Error';
+            if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = 'Error UBT';
+            if (btcBalanceDisplay) btcBalanceDisplay.textContent = 'Error BTC';
+            if (ethBalanceDisplay) ethBalanceDisplay.textContent = 'Error ETH';
         }
-    } catch (error) {
-        console.error("Error displaying user balances:", error);
-        balancesListElement.innerHTML = "<li>Error loading balances.</li>";
     }
-}
 
-// Placeholder for fetching purchased bots - to be implemented if needed
-function displayPurchasedBots() {
-    const botsContainer = document.querySelector(".purchased-bots-container");
-    // Logic to fetch and display bots
-}
-
+    fetchAndDisplayBalances();
+});
