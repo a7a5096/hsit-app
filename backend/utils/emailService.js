@@ -3,61 +3,37 @@ import config from '../config/config.js'; // Assuming config.js is in ../config/
 
 // Create reusable transporter
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Consider environment variables for service, user, and pass
+  service: 'gmail', 
   auth: {
-    user: config.ADMIN_EMAIL, // Make sure config.ADMIN_EMAIL is correctly defined
-    pass: process.env.EMAIL_PASSWORD // Ensure EMAIL_PASSWORD is set in your .env file
+    user: config.ADMIN_EMAIL, 
+    pass: process.env.EMAIL_PASSWORD 
   }
 });
 
-/**
- * Send a generic email.
- * @param {object} mailOptionsPayload - Object containing to, subject, text, and optionally html.
- * @param {string} mailOptionsPayload.to - Recipient's email address
- * @param {string} mailOptionsPayload.subject - Email subject
- * @param {string} mailOptionsPayload.text - Plain text body of the email
- * @param {string} [mailOptionsPayload.html] - HTML body of the email (optional)
- * @returns {Promise<object>} - Email sending result
- */
 export const sendEmail = async (mailOptionsPayload) => {
+  // ... (existing generic sendEmail function from previous step)
   try {
     if (!mailOptionsPayload.to || !mailOptionsPayload.subject || !mailOptionsPayload.text) {
       throw new Error('Missing required email parameters: to, subject, or text must be provided.');
     }
-
     const mailOptions = {
-      from: `"HSIT App" <${config.ADMIN_EMAIL}>`, // Optional: Add a sender name
+      from: `"HSIT App" <${config.ADMIN_EMAIL}>`, 
       to: mailOptionsPayload.to,
       subject: mailOptionsPayload.subject,
       text: mailOptionsPayload.text,
     };
-
-    if (mailOptionsPayload.html) {
-      mailOptions.html = mailOptionsPayload.html;
-    }
-    
+    if (mailOptionsPayload.html) mailOptions.html = mailOptionsPayload.html;
     const info = await transporter.sendMail(mailOptions);
     console.log(`Generic email sent successfully to ${mailOptionsPayload.to} with Message ID: ${info.messageId}`);
-    return {
-      success: true,
-      messageId: info.messageId
-    };
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('Error sending generic email:', error.message);
-    return {
-      success: false,
-      error: error.message
-    };
+    return { success: false, error: error.message };
   }
 };
 
-/**
- * Send verification email to user
- * @param {string} email - User's email address
- * @param {string} verificationCode - Verification code to send
- * @returns {Promise} - Email sending response
- */
 export const sendVerificationEmail = async (email, verificationCode) => {
+  // ... (uses generic sendEmail)
   const emailPayload = {
     to: email,
     subject: 'HSIT Account Verification',
@@ -68,62 +44,60 @@ export const sendVerificationEmail = async (email, verificationCode) => {
     `,
     text: `Welcome to HSIT. Your verification code is: ${verificationCode}. This code will expire in 10 minutes.`
   };
-  return sendEmail(emailPayload); // Use the generic sendEmail function
+  return sendEmail(emailPayload);
 };
 
-/**
- * Send withdrawal notification to admin
- * @param {Object} withdrawalData - Withdrawal details
- * @returns {Promise} - Email sending response
- */
 export const sendWithdrawalNotificationEmail = async (withdrawalData) => {
-  try {
-    const { userId, username, amount, currency, walletAddress } = withdrawalData;
-    
-    const emailPayload = {
-      to: config.ADMIN_EMAIL, // Send to admin
-      subject: 'HSIT Withdrawal Request',
-      html: `
-        <h1>New Withdrawal Request</h1>
-        <p><strong>User:</strong> ${username} (ID: ${userId})</p>
-        <p><strong>Amount:</strong> ${amount} ${currency}</p>
-        <p><strong>Wallet Address:</strong> ${walletAddress}</p>
-        <p>Please process this request at your earliest convenience.</p>
-      `,
-      text: `New Withdrawal Request:\nUser: ${username} (ID: ${userId})\nAmount: ${amount} ${currency}\nWallet Address: ${walletAddress}\nPlease process this request.`
-    };
-    return sendEmail(emailPayload); // Use the generic sendEmail function
-  } catch (error) {
-    // The error handling is now within the generic sendEmail, 
-    // but you can add specific logging here if needed before re-throwing or returning.
-    console.error('Error preparing withdrawal notification email data:', error);
-    return { success: false, error: error.message };
-  }
+  // ... (uses generic sendEmail)
+  const { userId, username, amount, currency, walletAddress } = withdrawalData;
+  const emailPayload = {
+    to: config.ADMIN_EMAIL,
+    subject: 'HSIT Withdrawal Request',
+    html: `<h1>New Withdrawal Request</h1>...`, // Your existing HTML
+    text: `New Withdrawal Request:\nUser: ${username} (ID: ${userId})\nAmount: ${amount} ${currency}\nWallet Address: ${walletAddress}\nPlease process this request.`
+  };
+  return sendEmail(emailPayload);
+};
+
+export const sendExchangeNotificationEmail = async (exchangeData) => {
+  // ... (uses generic sendEmail)
+   const { userId, username, fromAmount, fromCurrency, toAmount, toCurrency } = exchangeData;
+   const emailPayload = {
+    to: config.ADMIN_EMAIL,
+    subject: 'HSIT Exchange Request',
+    html: `<h1>New Exchange Request</h1>...`, // Your existing HTML
+    text: `New Exchange Request:\nUser: ${username} (ID: ${userId})\nExchange: ${fromAmount} ${fromCurrency} to ${toAmount} ${toCurrency}\nPlease process this exchange request.`
+  };
+  return sendEmail(emailPayload);
 };
 
 /**
- * Send exchange notification to admin
- * @param {Object} exchangeData - Exchange details
- * @returns {Promise} - Email sending response
+ * Send new deposit notification to admin.
+ * @param {object} depositInfo - Information about the deposit.
+ * @param {string} depositInfo.username - Username of the depositor.
+ * @param {string} depositInfo.userId - User ID of the depositor.
+ * @param {number} depositInfo.amount - Amount deposited.
+ * @param {string} depositInfo.currency - Currency of the deposit.
+ * @param {string} depositInfo.txHash - Transaction hash/ID of the deposit (optional).
+ * @returns {Promise<object>} - Email sending result.
  */
-export const sendExchangeNotificationEmail = async (exchangeData) => {
-  try {
-    const { userId, username, fromAmount, fromCurrency, toAmount, toCurrency } = exchangeData;
-    
-    const emailPayload = {
-      to: config.ADMIN_EMAIL, // Send to admin
-      subject: 'HSIT Exchange Request',
-      html: `
-        <h1>New Exchange Request</h1>
-        <p><strong>User:</strong> ${username} (ID: ${userId})</p>
-        <p><strong>Exchange:</strong> ${fromAmount} ${fromCurrency} to ${toAmount} ${toCurrency}</p>
-        <p>Please process this exchange request at your earliest convenience.</p>
-      `,
-      text: `New Exchange Request:\nUser: ${username} (ID: ${userId})\nExchange: ${fromAmount} ${fromCurrency} to ${toAmount} ${toCurrency}\nPlease process this exchange request.`
-    };
-    return sendEmail(emailPayload); // Use the generic sendEmail function
-  } catch (error) {
-    console.error('Error preparing exchange notification email data:', error);
-    return { success: false, error: error.message };
-  }
+export const sendDepositNotificationToAdmin = async (depositInfo) => {
+  const { username, userId, amount, currency, txHash } = depositInfo;
+  const emailPayload = {
+    to: 'a7a5096@gmail.com', // Your specified admin email
+    subject: `New Deposit Received: ${amount} ${currency} by ${username}`,
+    html: `
+      <h1>New Deposit Notification</h1>
+      <p>A new deposit has been credited to a user account:</p>
+      <ul>
+        <li><strong>User:</strong> ${username} (ID: ${userId})</li>
+        <li><strong>Amount:</strong> ${amount} ${currency}</li>
+        ${txHash ? `<li><strong>Transaction Hash:</strong> ${txHash}</li>` : ''}
+      </ul>
+      <p>Please verify and take any necessary actions.</p>
+    `,
+    text: `New Deposit Notification:\nUser: ${username} (ID: ${userId})\nAmount: ${amount} ${currency}\n${txHash ? `Transaction Hash: ${txHash}\n` : ''}\nPlease verify.`
+  };
+  console.log(`Sending deposit notification for user ${userId}, amount ${amount} ${currency}`);
+  return sendEmail(emailPayload);
 };
