@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---> THIS IS THE KEY PART <---
   // For production (like on hsitapp.link), API_BASE_URL will be an empty string.
   // The fetch URL will correctly become: '/api/deposit/addresses'
+  //Force deposit.js fix
   const API_BASE_URL = window.location.hostname.includes('localhost') ? 'http://localhost:5000' : '';
 
   // Coin details
