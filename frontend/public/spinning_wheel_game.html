@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feeling Lucky! - Spin Wheel Game</title>
     <link rel="stylesheet" href="css/style.css"> </head>
-<body class="page-background"> <header class="standard-header">
+<body class="page-background">
+    <header class="standard-header">
         <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
         <h1>Feeling Lucky!</h1>
         <div></div> </header>
@@ -15,26 +16,46 @@
             <h2>Spin the Wheel!</h2>
             <div style="text-align: center; margin-bottom: 20px;">
                 <p>Your UBT Balance: <span id="ubtBalanceDisplay">Loading...</span> UBT</p>
-                <p>Cost per Spin: <span id="spinCostDisplay">10</span> UBT</p> </div>
-
-            <div class="wheel-container" style="text-align: center; margin-bottom: 20px;">
-                <img src="images/wheel_placeholder.png" alt="Spinning Wheel" id="wheelImage" style="width: 250px; height: 250px; border: 5px solid #444; border-radius: 50%;">
-                <div id="wheelPointer" style="width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #ffcc00; margin: -15px auto 0; position: relative; z-index:10;"></div>
+                <p>Cost per Spin: <span id="spinCostDisplay">10</span> UBT</p> 
             </div>
 
-            <div style="text-align: center;">
-                <button id="spinButton" class="btn btn-primary btn-spin">Spin the Wheel!</button>
+            <div class="wheel-container" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                <div id="wheel" style="position: relative; width: 300px; height: 300px; border-radius: 50%; overflow: hidden; border: 5px solid #444;">
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(0, 0, 0); transform-origin: 100% 100%; transform: translateX(-50%) rotate(0deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(0, 0, 255); transform-origin: 100% 100%; transform: translateX(-50%) rotate(30deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(0, 0, 0); transform-origin: 100% 100%; transform: translateX(-50%) rotate(60deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(255, 255, 0); transform-origin: 100% 100%; transform: translateX(-50%) rotate(90deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(0, 0, 0); transform-origin: 100% 100%; transform: translateX(-50%) rotate(120deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(0, 0, 255); transform-origin: 100% 100%; transform: translateX(-50%) rotate(150deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(0, 0, 0); transform-origin: 100% 100%; transform: translateX(-50%) rotate(180deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(255, 0, 0); transform-origin: 100% 100%; transform: translateX(-50%) rotate(210deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(0, 0, 0); transform-origin: 100% 100%; transform: translateX(-50%) rotate(240deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(0, 0, 255); transform-origin: 100% 100%; transform: translateX(-50%) rotate(270deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(0, 0, 0); transform-origin: 100% 100%; transform: translateX(-50%) rotate(300deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-segment" style="position: absolute; width: 50%; height: 50%; background-color: rgb(255, 255, 0); transform-origin: 100% 100%; transform: translateX(-50%) rotate(330deg) skewY(-60deg); left: 50%; top: 0;"></div>
+                    <div class="wheel-center" style="position: absolute; width: 50px; height: 50px; background-color: #ccc; border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%, -50%); border: 3px solid #333;"></div>
+                </div>
+                <div class="pointer" style="font-size: 24px; color: #ffcc00; margin-top: -15px; z-index: 10; transform: translateY(-100%);">▼</div>
+                <button id="spinButton" class="btn btn-primary btn-spin" style="margin-top: 10px;">Spin Now!</button> 
             </div>
-            
-            <div id="wheelStatus" style="text-align: center; margin-top: 15px; font-weight: bold; min-height: 1.5em;">
-                </div>
-            <div id="prizeResult" class="wheel-results" style="text-align: center; margin-top: 10px; font-size: 1.2rem; color: #50fa7b; min-height: 2em;">
-                </div>
+            <div id="result-area" class="result-area" style="text-align: center; margin-top: 20px;">
+                <h3>Result:</h3>
+                <p id="result-message" style="min-height: 1.5em;"></p>
+                <p>Winnings: <span id="winningsAmount">0</span> UBT</p>
+                <p>New Balance: <span id="newUbtBalance">N/A</span> UBT</p>
+            </div>
              <p id="spinError" class="error-message" style="display:none; color: red; text-align:center; margin-top: 10px;"></p>
         </section>
+
+        <div id="prize-legend" class="content-section card-style" style="margin-top: 20px;">
+            <h3>Prize Legend</h3>
+            <div class="legend-item" style="display: flex; align-items: center; margin-bottom: 5px;"><span class="color-box" style="display: inline-block; width: 20px; height: 20px; background-color: rgb(255, 0, 0); margin-right: 10px; border: 1px solid #555;"></span><span class="prize-description">10x your wager</span></div>
+            <div class="legend-item" style="display: flex; align-items: center; margin-bottom: 5px;"><span class="color-box" style="display: inline-block; width: 20px; height: 20px; background-color: rgb(255, 255, 0); margin-right: 10px; border: 1px solid #555;"></span><span class="prize-description">2x your wager</span></div>
+            <div class="legend-item" style="display: flex; align-items: center; margin-bottom: 5px;"><span class="color-box" style="display: inline-block; width: 20px; height: 20px; background-color: rgb(0, 0, 255); margin-right: 10px; border: 1px solid #555;"></span><span class="prize-description">1x your wager</span></div>
+            <div class="legend-item" style="display: flex; align-items: center; margin-bottom: 5px;"><span class="color-box" style="display: inline-block; width: 20px; height: 20px; background-color: rgb(0, 0, 0); margin-right: 10px; border: 1px solid #555;"></span><span class="prize-description">Sorry, you lost</span></div>
+        </div>
         
         <div id="statusMessage" class="status-message" style="display: none; margin-top: 20px;"></div>
-
     </main>
 
     <script src="js/config.js"></script>
