@@ -1,12 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
 
-    // DOM Elements for displaying balances (ensure these IDs match your asset_center.html)
-    const totalUbtValueDisplay = document.getElementById('totalUbtValueDisplay');
-    const totalUsdEquivalentDisplay = document.getElementById('totalUsdEquivalentDisplay');
-    const statusMessageDisplay = document.getElementById('statusMessage'); // For general messages
+    // Corrected DOM Element IDs to match your HTML
+    const totalValueDisplay = document.getElementById('totalValueDisplay'); // Was totalUbtValueDisplay
+    const totalUsdEquivalentDisplay = document.getElementById('totalValueInUsd'); // Was totalUsdEquivalentDisplay
+    
+    // These are for the list item, which we might not strictly need if we only show the total card
+    const ubtBalanceInListItem = document.getElementById('ubtBalanceAmount');
+    const ubtEstValueInListItem = document.getElementById('ubtEstValue');
 
-    const UBT_TO_USD_RATE = 1.0; // Given: 1 UBT = 1 USD
+    const statusMessageDisplay = document.getElementById('statusMessage'); 
+
+    const UBT_TO_USD_RATE = 1.0; 
 
     function showStatusMessage(message, type = 'info', duration = 7000) {
         if (statusMessageDisplay) {
@@ -21,11 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function fetchExchangeRate(pair) { // e.g., btc-usdt, eth-usdt
+    async function fetchExchangeRate(pair) { 
         console.log(`AssetCenter: Fetching exchange rate for ${pair}...`);
         try {
             if (typeof API_URL === 'undefined') throw new Error('API_URL is not defined.');
-            const response = await fetch(`${API_URL}/api/exchange-rates/${pair}`);
+            const response = await fetch(`<span class="math-inline">\{API\_URL\}/api/exchange\-rates/</span>{pair}`);
             console.log(`AssetCenter: Response status for ${pair} rate: ${response.status}`);
             if (!response.ok) {
                 const errorData = await response.json().catch(() => null);
@@ -41,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error(`AssetCenter: Error fetching ${pair} rate:`, error);
             showStatusMessage(`Could not load exchange rate for ${pair.toUpperCase()}. Calculations may be incomplete.`, 'warning');
-            return null; // Return null if rate fetching fails
+            return null; 
         }
     }
 
@@ -49,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("AssetCenter: Starting fetchAndDisplayTotalUbtBalance...");
         if (!token) {
             showStatusMessage('Authentication token not found. Please log in.', 'error');
-            if (totalUbtValueDisplay) totalUbtValueDisplay.textContent = 'Auth Error';
+            if (totalValueDisplay) totalValueDisplay.textContent = 'Auth Error';
             if (totalUsdEquivalentDisplay) totalUsdEquivalentDisplay.textContent = 'Equivalent to: $0.00 USD';
             console.log("AssetCenter: No token found.");
             return;
@@ -58,14 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof API_URL === 'undefined') {
             showStatusMessage('API configuration is missing. Unable to fetch data.', 'error');
             console.error("AssetCenter: API_URL is not defined.");
-            if (totalUbtValueDisplay) totalUbtValueDisplay.textContent = 'Config Error';
+            if (totalValueDisplay) totalValueDisplay.textContent = 'Config Error';
             if (totalUsdEquivalentDisplay) totalUsdEquivalentDisplay.textContent = 'Equivalent to: $0.00 USD';
             return;
         }
         console.log("AssetCenter: API_URL is defined:", API_URL);
 
         try {
-            // 1. Fetch user balances
             console.log("AssetCenter: Fetching user balances...");
             const balanceResponse = await fetch(`${API_URL}/api/auth`, {
                 method: 'GET',
@@ -86,13 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const ubtAmount = parseFloat(balances.ubt) || 0;
             const btcAmount = parseFloat(balances.bitcoin) || 0;
             const ethAmount = parseFloat(balances.ethereum) || 0;
-            // Assuming backend provides 'usdt' in balances object. If not, this will be 0.
             const usdtAmount = parseFloat(balances.usdt) || 0; 
             console.log(`AssetCenter: Parsed balances - UBT: ${ubtAmount}, BTC: ${btcAmount}, ETH: ${ethAmount}, USDT: ${usdtAmount}`);
 
-            // 2. Fetch exchange rates
-            // Assuming 1 UBT = 1 USDT for conversion purposes, or direct UBT rates if available
-            // If UBT is pegged 1:1 with USD, and USDT is pegged 1:1 with USD, then UBT_PER_USDT = 1
             const UBT_PER_USDT = 1.0; 
             
             let btcToUbtRate = 0;
@@ -106,43 +106,45 @@ document.addEventListener('DOMContentLoaded', () => {
             if (ethUsdtRate !== null) {
                 ethToUbtRate = ethUsdtRate * UBT_PER_USDT;
             }
-            
             console.log(`AssetCenter: Calculated conversion rates - BTC to UBT: ${btcToUbtRate}, ETH to UBT: ${ethToUbtRate}`);
 
-            // 3. Perform conversions
             const ubtFromBtc = btcAmount * btcToUbtRate;
             const ubtFromEth = ethAmount * ethToUbtRate;
-            const ubtFromUsdt = usdtAmount * UBT_PER_USDT; // USDT converted to UBT
+            const ubtFromUsdt = usdtAmount * UBT_PER_USDT; 
             console.log(`AssetCenter: UBT equivalents - from BTC: ${ubtFromBtc}, from ETH: ${ubtFromEth}, from USDT: ${ubtFromUsdt}`);
 
-            // 4. Calculate total UBT
             const totalUbtBalance = ubtAmount + ubtFromBtc + ubtFromEth + ubtFromUsdt;
-            const totalUsdValue = totalUbtBalance * UBT_TO_USD_RATE; // UBT_TO_USD_RATE is 1.0
+            const totalUsdValue = totalUbtBalance * UBT_TO_USD_RATE;
             console.log(`AssetCenter: Total UBT Balance calculated: ${totalUbtBalance}, Total USD Value: ${totalUsdValue}`);
-
-            // 5. Display total UBT balance
-            if (totalUbtValueDisplay) {
-                console.log("AssetCenter: Updating totalUbtValueDisplay DOM element.");
-                totalUbtValueDisplay.textContent = `${totalUbtBalance.toFixed(8)}`; // UBT can have more precision
+            
+            // Update the main total display card
+            if (totalValueDisplay) {
+                console.log("AssetCenter: Updating totalValueDisplay DOM element.");
+                totalValueDisplay.textContent = `${totalUbtBalance.toFixed(8)}`; 
             } else {
-                console.error("AssetCenter: totalUbtValueDisplay DOM element not found!");
+                console.error("AssetCenter: totalValueDisplay DOM element (ID: totalValueDisplay) not found!");
             }
             if (totalUsdEquivalentDisplay) {
                 console.log("AssetCenter: Updating totalUsdEquivalentDisplay DOM element.");
                 totalUsdEquivalentDisplay.textContent = `Equivalent to: $${totalUsdValue.toFixed(2)} USD`;
             } else {
-                console.error("AssetCenter: totalUsdEquivalentDisplay DOM element not found!");
+                console.error("AssetCenter: totalUsdEquivalentDisplay DOM element (ID: totalValueInUsd) not found!");
+            }
+
+            // Also update the UBT list item if it's still part of the simplified display logic
+            if (ubtBalanceInListItem) {
+                ubtBalanceInListItem.textContent = `${ubtAmount.toFixed(8)} UBT`;
+            }
+            if (ubtEstValueInListItem) {
+                 // If only UBT is shown in the list, its USD value is ubtAmount * UBT_TO_USD_RATE
+                ubtEstValueInListItem.textContent = `≈ $${(ubtAmount * UBT_TO_USD_RATE).toFixed(2)} USD`;
             }
             console.log("AssetCenter: DOM updates presumably complete.");
 
         } catch (error) {
             console.error('AssetCenter: Error in fetchAndDisplayTotalUbtBalance:', error.message, error.stack);
             showStatusMessage(`Error loading asset values: ${error.message}`, 'error');
-            if (totalUbtValueDisplay) totalUbtValueDisplay.textContent = 'Error';
+            if (totalValueDisplay) totalValueDisplay.textContent = 'Error';
             if (totalUsdEquivalentDisplay) totalUsdEquivalentDisplay.textContent = 'Equivalent to: $0.00 USD';
-        }
-    }
-
-    // Initial call to load data when the page is ready
-    fetchAndDisplayTotalUbtBalance();
-});
+            if (ubtBalanceInListItem) ubtBalanceInListItem.textContent = 'Error UBT';
+            if (ubtEstValueIn
