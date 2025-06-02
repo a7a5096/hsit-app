@@ -3,328 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Investment Products - HSIT</title>
-    <link rel="stylesheet" href="css/style.css">
-    </head>
+    <title>AI Products - HSIT</title>
+    <link rel="stylesheet" href="style.css">
+</head>
 <body class="ai-products-page">
-
-    <header class="standard-header ai-header">
-        <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
+    <header class="ai-header">
+        <a href="dashboard.html" class="back-btn">&larr; Back</a>
         <h1>AI Investment Products</h1>
-        <div></div> </header>
+        <div></div> <!-- Empty div for spacing -->
+    </header>
 
     <main class="products-main">
-        <div id="statusMessage" class="status-message" style="display: none; margin-bottom: 20px;"></div>
+        <div class="products-grid">
 
-        <div id="productsGrid" class="products-grid">
-
-            <div class="product-card" data-product-id="ubtYieldStarter01">
-                <div class="product-logo logo-yield"><span>UBT Yield<br>Starter</span></div>
+            <!-- Bot 1: Starter Bot (100 UBT) -->
+            <div class="product-card">
+                <div class="product-logo logo-bot">Starter<br>Bot</div>
                 <div class="product-info-stats">
-                    <div><span>0.5 UBT</span><label>Daily Avg.</label></div>
-                    <div><span>1 day(s)</span><label>Cycle</label></div>
-                    <div><span>50 UBT</span><label>Investment</label></div>
+                    <div><span>10 UBT</span><label>Daily</label></div>
+                    <div><span>2 days</span><label>Lock</label></div>
+                    <div><span>100 UBT</span><label>Cost</label></div>
                 </div>
-                <div class="product-purchases">Ideal for beginners.</div>
+                <div class="product-purchases">Recommended for new users</div>
                 <div class="product-details">
                     <h3>Product Details</h3>
-                    <p>Start your AI investment journey with stable daily UBT yields. Low entry, consistent returns.</p>
+                    <p>
+                        Our entry-level AI trading bot is perfect for new users looking to experience the benefits of automated trading with minimal commitment.
+                    </p>
                     <ul class="bot-features">
-                        <li><strong>Strategy:</strong> Conservative Yield Farming</li>
-                        <li><strong>Risk Level:</strong> Low</li>
+                        <li><strong>Lock-in Period:</strong> 2 days</li>
+                        <li><strong>Daily Profit:</strong> 10 UBT credited to your account each day</li>
+                        <li><strong>Total Return:</strong> 120 UBT (20 UBT profit + 100 UBT principal)</li>
+                        <li><strong>UBT Exchange:</strong> All profits can be immediately exchanged for USDT</li>
                     </ul>
+                    <p class="bot-note">
+                        This bot is linked to the "20% interest for new users" promotion on the dashboard.
+                    </p>
                 </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="ubtYieldStarter01">Invest Now</button>
-                </div>
-            </div>
-
-            <div class="product-card" data-product-id="btcMomentum02">
-                <div class="product-logo logo-btc"><span>BTC Momentum<br>Rider</span></div>
-                <div class="product-info-stats">
-                    <div><span>1.2% Daily</span><label>Target Profit</label></div>
-                    <div><span>3 days</span><label>Cycle</label></div>
-                    <div><span>200 UBT</span><label>Investment</label></div>
-                </div>
-                <div class="product-purchases">Ride the Bitcoin waves.</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>Leverages AI to identify and act on short-term Bitcoin price momentum. Potential for higher returns.</p>
-                    <ul class="bot-features">
-                        <li><strong>Strategy:</strong> Trend Following (BTC)</li>
-                        <li><strong>Risk Level:</strong> Medium</li>
-                    </ul>
-                </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="btcMomentum02">Invest Now</button>
-                </div>
+                <a href="#" class="btn btn-buy full-width" data-bot-id="1">Buy Now (100 UBT)</a>
             </div>
 
-            <div class="product-card" data-product-id="ethDeFi03">
-                <div class="product-logo logo-eth"><span>ETH DeFi<br>Explorer</span></div>
+            <!-- Bot 2: Standard Bot (500 UBT) -->
+            <div class="product-card">
+                <div class="product-logo logo-bot">Standard<br>Bot</div>
                 <div class="product-info-stats">
-                    <div><span>~2.5 UBT</span><label>Daily Avg.</label></div>
-                    <div><span>7 days</span><label>Cycle</label></div>
-                    <div><span>500 UBT</span><label>Investment</label></div>
+                    <div><span>10 UBT</span><label>Daily</label></div>
+                    <div><span>14 days</span><label>Lock</label></div>
+                    <div><span>500 UBT</span><label>Cost</label></div>
                 </div>
-                <div class="product-purchases">Tap into DeFi yields.</div>
+                <div class="product-purchases">Principal returned after lock period</div>
                 <div class="product-details">
                     <h3>Product Details</h3>
-                    <p>Engages in various Ethereum-based DeFi protocols to seek out optimal yield opportunities.</p>
+                    <p>
+                        Our standard AI trading bot offers a balanced approach to automated trading with a moderate lock-in period and guaranteed principal return.
+                    </p>
                     <ul class="bot-features">
-                        <li><strong>Strategy:</strong> Multi-protocol Yield Aggregation</li>
-                        <li><strong>Risk Level:</strong> Medium-High</li>
+                        <li><strong>Lock-in Period:</strong> 14 days</li>
+                        <li><strong>Daily Profit:</strong> 10 UBT credited to your account each day</li>
+                        <li><strong>Principal Return:</strong> Your full 500 UBT investment returned after 14 days</li>
+                        <li><strong>Total Return:</strong> 640 UBT (140 UBT profit + 500 UBT principal)</li>
+                        <li><strong>UBT Exchange:</strong> All profits can be immediately exchanged for USDT</li>
                     </ul>
                 </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="ethDeFi03">Invest Now</button>
-                </div>
+                <a href="#" class="btn btn-buy full-width" data-bot-id="2">Buy Now (500 UBT)</a>
             </div>
 
-            <div class="product-card" data-product-id="stableArb04">
-                <div class="product-logo logo-stable"><span>Stablecoin<br>Arbitrageur</span></div>
+            <!-- Bot 3: Premium Bot (3000 UBT) -->
+            <div class="product-card">
+                <div class="product-logo logo-bot">Premium<br>Bot</div>
                 <div class="product-info-stats">
-                    <div><span>0.3% Daily</span><label>Target Profit</label></div>
-                    <div><span>1 day</span><label>Cycle</label></div>
-                    <div><span>1000 UBT</span><label>Investment</label></div>
+                    <div><span>10 UBT</span><label>Daily</label></div>
+                    <div><span>30 days</span><label>Lock</label></div>
+                    <div><span>3000 UBT</span><label>Cost</label></div>
                 </div>
-                <div class="product-purchases">Low volatility, steady gains.</div>
+                <div class="product-purchases">Includes 300 UBT bonus on day 3</div>
                 <div class="product-details">
                     <h3>Product Details</h3>
-                    <p>Exploits tiny price differences of stablecoins across various exchanges for low-risk profits.</p>
+                    <p>
+                        Our premium AI trading bot is designed for serious investors looking for consistent returns with an early bonus payment.
+                    </p>
                     <ul class="bot-features">
-                        <li><strong>Strategy:</strong> Cross-Exchange Arbitrage</li>
-                        <li><strong>Risk Level:</strong> Very Low</li>
+                        <li><strong>Lock-in Period:</strong> 30 days</li>
+                        <li><strong>Daily Profit:</strong> 10 UBT credited to your account each day</li>
+                        <li><strong>Early Bonus:</strong> 300 UBT bonus paid on day 3</li>
+                        <li><strong>Principal Return:</strong> Your full 3000 UBT investment returned after 30 days</li>
+                        <li><strong>Total Return:</strong> 3600 UBT (300 UBT bonus + 300 UBT daily profits + 3000 UBT principal)</li>
+                        <li><strong>UBT Exchange:</strong> All profits can be immediately exchanged for USDT</li>
                     </ul>
                 </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="stableArb04">Invest Now</button>
-                </div>
-            </div>
-            
-            <div class="product-card" data-product-id="aiBalancer05">
-                <div class="product-logo logo-portfolio"><span>AI Portfolio<br>Balancer</span></div>
-                <div class="product-info-stats">
-                    <div><span>Var. UBT</span><label>Distribution</label></div>
-                    <div><span>30 days</span><label>Rebalance</label></div>
-                    <div><span>1500 UBT</span><label>Min. Investment</label></div>
-                </div>
-                <div class="product-purchases">Diversified, managed growth.</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>Automatically rebalances a diversified portfolio of crypto assets to maintain target allocations and optimize returns.</p>
-                    <ul class="bot-features">
-                        <li><strong>Strategy:</strong> Dynamic Asset Allocation</li>
-                        <li><strong>Risk Level:</strong> Medium</li>
-                    </ul>
-                </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="aiBalancer05">Invest Now</button>
-                </div>
+                <a href="#" class="btn btn-buy full-width" data-bot-id="3">Buy Now (3000 UBT)</a>
             </div>
 
-            <div class="product-card" data-product-id="ubtLongHold06">
-                <div class="product-logo logo-ubt-plus"><span>UBT Long<br>Hold Plus</span></div>
+            <!-- Bot 4: Advanced Bot (10000 UBT) -->
+            <div class="product-card">
+                <div class="product-logo logo-bot">Advanced<br>Bot</div>
                 <div class="product-info-stats">
-                    <div><span>5% Bonus</span><label>End of Cycle</label></div>
-                    <div><span>90 days</span><label>Lock-in</label></div>
-                    <div><span>2500 UBT</span><label>Investment</label></div>
+                    <div><span>15 UBT</span><label>Daily</label></div>
+                    <div><span>100 days</span><label>Lock</label></div>
+                    <div><span>10000 UBT</span><label>Cost</label></div>
                 </div>
-                <div class="product-purchases">For true UBT believers.</div>
+                <div class="product-purchases">Three 500 UBT bonuses included</div>
                 <div class="product-details">
                     <h3>Product Details</h3>
-                    <p>A long-term UBT holding strategy with a significant bonus payout at the end of the lock-in period.</p>
+                    <p>
+                        Our advanced AI trading bot offers higher daily returns and multiple bonus payments throughout the lock-in period.
+                    </p>
                     <ul class="bot-features">
-                        <li><strong>Strategy:</strong> Fixed-Term Hold & Bonus</li>
-                        <li><strong>Risk Level:</strong> Low</li>
+                        <li><strong>Lock-in Period:</strong> 100 days</li>
+                        <li><strong>Daily Profit:</strong> 15 UBT credited to your account each day</li>
+                        <li><strong>Bonus Payments:</strong> 500 UBT paid on days 3, 33, and 63</li>
+                        <li><strong>Principal Return:</strong> Your full 10000 UBT investment returned after 100 days</li>
+                        <li><strong>Total Return:</strong> 13000 UBT (1500 UBT bonuses + 1500 UBT daily profits + 10000 UBT principal)</li>
+                        <li><strong>UBT Exchange:</strong> All profits can be immediately exchanged for USDT</li>
                     </ul>
                 </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="ubtLongHold06">Invest Now</button>
-                </div>
+                <a href="#" class="btn btn-buy full-width" data-bot-id="4">Buy Now (10000 UBT)</a>
             </div>
 
-            <div class="product-card" data-product-id="gemHunter07">
-                <div class="product-logo logo-gem"><span>MicroCap<br>Gem Hunter</span></div>
+            <!-- Bot 5: Elite Bot (100000 UBT) -->
+            <div class="product-card premium-card">
+                <div class="product-logo logo-bot">Elite<br>Bot</div>
                 <div class="product-info-stats">
-                    <div><span>High ROI</span><label>Potential</label></div>
-                    <div><span>Flexible</span><label>Cycle</label></div>
-                    <div><span>300 UBT</span><label>Investment</label></div>
+                    <div><span>100 UBT</span><label>Daily</label></div>
+                    <div><span>300 days</span><label>Lock</label></div>
+                    <div><span>100000 UBT</span><label>Cost</label></div>
                 </div>
-                <div class="product-purchases">High risk, high reward.</div>
+                <div class="product-purchases">VIP status with dedicated advisor</div>
                 <div class="product-details">
                     <h3>Product Details</h3>
-                    <p>AI-driven scanner for identifying promising low-cap cryptocurrencies with high growth potential.</p>
+                    <p>
+                        Our elite AI trading bot is our premium offering for high-net-worth investors seeking substantial returns with VIP benefits.
+                    </p>
                     <ul class="bot-features">
-                        <li><strong>Strategy:</strong> Altcoin Scouting</li>
-                        <li><strong>Risk Level:</strong> Very High</li>
+                        <li><strong>Lock-in Period:</strong> 300 days</li>
+                        <li><strong>Daily Profit:</strong> 100 UBT credited to your account each day</li>
+                        <li><strong>Monthly Bonus:</strong> 1000 UBT bonus every 30 days (10 payments total)</li>
+                        <li><strong>Principal Return:</strong> Your full 100000 UBT investment returned after 300 days</li>
+                        <li><strong>Total Return:</strong> 140000 UBT (10000 UBT bonuses + 30000 UBT daily profits + 100000 UBT principal)</li>
+                        <li><strong>VIP Benefits:</strong> Dedicated investment advisor and priority exchange service</li>
+                        <li><strong>UBT Exchange:</strong> All profits can be immediately exchanged for USDT at preferential rates</li>
                     </ul>
                 </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="gemHunter07">Invest Now</button>
-                </div>
+                <a href="#" class="btn btn-buy full-width" data-bot-id="5">Buy Now (100000 UBT)</a>
             </div>
 
-            <div class="product-card" data-product-id="ecoMiner08">
-                <div class="product-logo logo-eco-btc"><span>EcoMiner<br>Green BTC</span></div>
-                <div class="product-info-stats">
-                    <div><span>Share</span><label>BTC Mined</label></div>
-                    <div><span>Daily</span><label>Payout</label></div>
-                    <div><span>1000 UBT</span><label>Contribution</label></div>
-                </div>
-                <div class="product-purchases">Sustainable Bitcoin mining.</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>Contribute to eco-friendly Bitcoin mining operations and earn a share of the mined BTC, paid in UBT.</p>
-                    <ul class="bot-features">
-                        <li><strong>Strategy:</strong> Green Energy Mining Pool</li>
-                        <li><strong>Risk Level:</strong> Low-Medium</li>
-                    </ul>
-                </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="ecoMiner08">Invest Now</button>
-                </div>
-            </div>
-            
-            <div class="product-card" data-product-id="solarEthStaking09">
-                <div class="product-logo logo-solar-eth"><span>SolarFlare<br>ETH Staking</span></div>
-                <div class="product-info-stats">
-                    <div><span>~4% APR</span><label>ETH Rewards</label></div>
-                    <div><span>Ongoing</span><label>Cycle</label></div>
-                    <div><span>500 UBT</span><label>Min. Stake (in UBT)</label></div>
-                </div>
-                <div class="product-purchases">Stake ETH, earn ETH (paid in UBT).</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>Participate in ETH staking via a curated validator pool, with rewards converted and paid in UBT.</p>
-                    <ul class="bot-features">
-                        <li><strong>Strategy:</strong> ETH Proof-of-Stake</li>
-                        <li><strong>Risk Level:</strong> Low</li>
-                    </ul>
-                </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="solarEthStaking09">Invest Now</button>
-                </div>
-            </div>
-
-            <div class="product-card" data-product-id="quantumScaler10">
-                <div class="product-logo logo-quantum"><span>Quantum UBT<br>Scaler</span></div>
-                <div class="product-info-stats">
-                    <div><span>10 UBT</span><label>Daily Fixed</label></div>
-                    <div><span>15 days</span><label>Cycle</label></div>
-                    <div><span>5000 UBT</span><label>Investment</label></div>
-                </div>
-                <div class="product-purchases">Premium fixed returns.</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>A high-tier bot offering consistent, fixed daily UBT returns through advanced (simulated) quantum computing strategies.</p>
-                    <ul class="bot-features">
-                        <li><strong>Strategy:</strong> Fixed High-Yield UBT Generation</li>
-                        <li><strong>Risk Level:</strong> Medium (Tech Complexity)</li>
-                    </ul>
-                </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="quantumScaler10">Invest Now</button>
-                </div>
-            </div>
-
-            <div class="product-card" data-product-id="nftAlpha11">
-                <div class="product-logo logo-nft"><span>NFT Alpha<br>Hunter</span></div>
-                <div class="product-info-stats">
-                    <div><span>Projected</span><label>ROI</label></div>
-                    <div><span>Per Flip</span><label>Cycle</label></div>
-                    <div><span>1000 UBT</span><label>Min. Fund</label></div>
-                </div>
-                <div class="product-purchases">Exclusive NFT insights.</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>AI analyzes NFT market trends and mints to identify potential high-return NFT flips. Profits shared in UBT.</p>
-                    <ul class="bot-features">
-                        <li><strong>Strategy:</strong> NFT Market Analysis & Trading</li>
-                        <li><strong>Risk Level:</strong> High</li>
-                    </ul>
-                </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="nftAlpha11">Invest Now</button>
-                </div>
-            </div>
-            
-            <div class="product-card" data-product-id="lpPro12">
-                <div class="product-logo logo-liquidity"><span>Liquidity<br>Provision Pro</span></div>
-                <div class="product-info-stats">
-                    <div><span>Fees + Rewards</span><label>Earnings</label></div>
-                    <div><span>Ongoing</span><label>Cycle</label></div>
-                    <div><span>2000 UBT</span><label>Min. Deposit</label></div>
-                </div>
-                <div class="product-purchases">Earn from trading fees.</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>Provides liquidity to selected AMM pools, earning trading fees and potential LP farming rewards. Paid in UBT.</p>
-                    <ul class="bot-features">
-                        <li><strong>Strategy:</strong> Automated Liquidity Management</li>
-                        <li><strong>Risk Level:</strong> Medium (Impermanent Loss)</li>
-                    </ul>
-                </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="lpPro12">Invest Now</button>
-                </div>
-            </div>
-
-            <div class="product-card" data-product-id="ubtSentry13">
-                <div class="product-logo logo-sentry"><span>UBT Sentry<br>Shield</span></div>
-                <div class="product-info-stats">
-                    <div><span>Capital</span><label>Protection Focus</label></div>
-                    <div><span>30 Days</span><label>Strategy Cycle</label></div>
-                    <div><span>500 UBT</span><label>Investment</label></div>
-                </div>
-                <div class="product-purchases">Conservative UBT Growth.</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>A defensive strategy AI bot focused on UBT capital preservation with modest growth through low-risk avenues.</p>
-                    <ul class="bot-features">
-                        <li><strong>Strategy:</strong> Capital Preservation & Staking</li>
-                        <li><strong>Risk Level:</strong> Very Low</li>
-                    </ul>
-                </div>
-                <div class="product-actions">
-                    <button type="button" class="btn btn-primary btn-buy full-width" data-product-id="ubtSentry13">Invest Now</button>
-                </div>
-            </div>
-            
-            <div id="productsLoadingIndicator" class="loading-indicator" style="display: none;"> <p>Loading AI Products...</p>
-            </div>
-
-        </div> <div class="promo-info-card card-style" style="margin-top: 30px;">
-            <h2>⭐ Limited Time Promotion! ⭐</h2>
-            <p>To celebrate our new platform launch, we're offering enhanced rates on selected AI bots!</p>
-            <h3>Interest Rates Doubled on Top 3 Most Expensive Bots:</h3>
-            <ul>
-                <li><strong>Premium Bot (normally 3000 UBT):</strong> Daily profit: 10 UBT &rarr; <strong class="promo-highlight">20 UBT</strong>, Early bonus: 300 UBT &rarr; <strong class="promo-highlight">600 UBT</strong></li>
-                <li><strong>Advanced Bot (normally 10000 UBT):</strong> Daily profit: 15 UBT &rarr; <strong class="promo-highlight">30 UBT</strong>, Bonus payments: 500 UBT &rarr; <strong class="promo-highlight">1000 UBT</strong> each</li>
-                <li><strong>Elite Bot (normally 100000 UBT):</strong> Daily profit: 100 UBT &rarr; <strong class="promo-highlight">200 UBT</strong>, Monthly bonus: 1000 UBT &rarr; <strong class="promo-highlight">2000 UBT</strong></li>
-            </ul>
-            <p><em>Note: Promotional rates are applied automatically upon purchase during the campaign period. Check bot details for current effective rates.</em></p>
         </div>
-
     </main>
 
-    <div id="purchaseModal" class="modal" style="display:none;">
+    <!-- Purchase Modal -->
+    <div id="purchaseModal" class="modal">
         <div class="modal-content">
-            <span class="close-modal-btn" id="closePurchaseModalBtn">&times;</span> <h2>Confirm Purchase</h2>
-            <div id="purchaseDetails">
-                <p>Product: <span id="modalProductName"></span></p>
-                <p>Cost: <span id="modalProductCost"></span> UBT</p>
-                <p>Your UBT Balance: <span id="modalUserBalance"></span> UBT</p>
-            </div>
-            <p id="purchaseError" class="error-message" style="display:none; color: red; margin-top: 10px;"></p>
-            <div class="button-group" style="margin-top: 20px; text-align: right;">
-                <button type="button" class="btn btn-secondary" id="cancelPurchaseBtn" style="margin-right: 10px;">Cancel</button>
-                <button id="confirmPurchaseBtn" class="btn btn-primary">Confirm Purchase</button>
+            <h2>Confirm Purchase</h2>
+            <div id="purchaseDetails"></div>
+            <div class="button-group">
+                <button id="confirmPurchase" class="btn btn-primary">Confirm Purchase</button>
+                <button id="cancelPurchase" class="btn btn-secondary">Cancel</button>
             </div>
         </div>
     </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/ai_products.js"></script> 
+    <script src="js/ai_products.js"></script>
 </body>
 </html>
