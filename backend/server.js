@@ -14,7 +14,7 @@ import botsRoutes from './routes/bots.js';
 import usersRoutes from './routes/users.js';
 import ubtRoutes from './routes/ubt.js';
 import exchangeRatesRoutes from './routes/exchangeRates.js';
-import depositRoutes from './routes/deposit.js'; // <-- THIS LINE IS NOW CORRECT
+import depositRoutes from './routes/deposit.js';
 
 // Load environment variables
 dotenv.config();
@@ -69,18 +69,18 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend API is working!' });
 });
 
-// Serve static files from the project root directory
-const projectRoot = path.join(__dirname, '../');
-app.use(express.static(projectRoot));
+// *** FIX: Serve static files specifically from the frontend/public directory ***
+const publicPath = path.join(__dirname, '../frontend/public');
+app.use(express.static(publicPath));
 
 // API 404 handler for unhandled API routes - only for GET requests
 app.get('/api/*', (req, res) => {
   res.status(404).json({ success: false, message: 'API endpoint not found.' });
 });
 
-// Fallback to serving index.html from the project root
+// *** FIX: Update fallback to serve index.html from the correct public path ***
 app.get('*', (req, res) => {
-  res.sendFile(path.resolve(projectRoot, 'index.html'));
+  res.sendFile(path.resolve(publicPath, 'index.html'));
 });
 
 // Error handling middleware
