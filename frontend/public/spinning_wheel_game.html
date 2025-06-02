@@ -3,45 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spin to Win UBT!</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/spinning_wheel.css">
-</head>
-<body>
-    <header>
-        <h1>Spin to Win UBT!</h1>
-        <nav>
-            <a href="dashboard.html">Home</a>
-        </nav>
-    </header>
-    <main>
-        <section id="game-section">
-            <h2>Place Your Bet & Spin the Wheel!</h2>
-            <div class="balance-info"><p>Your UBT Balance: <span id="ubt-balance">Loading...</span></p></div>
-            <div class="wager-area">
-                <label for="wager-amount">Wager Amount (1-100 UBT):</label>
-                <input type="number" id="wager-amount" name="wager-amount" min="1" max="100" value="10">
+    <title>Feeling Lucky! - Spin Wheel Game</title>
+    <link rel="stylesheet" href="css/style.css"> </head>
+<body class="page-background"> <header class="standard-header">
+        <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
+        <h1>Feeling Lucky!</h1>
+        <div></div> </header>
+
+    <main class="page-main">
+        <section class="content-section card-style">
+            <h2>Spin the Wheel!</h2>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <p>Your UBT Balance: <span id="ubtBalanceDisplay">Loading...</span> UBT</p>
+                <p>Cost per Spin: <span id="spinCostDisplay">10</span> UBT</p> </div>
+
+            <div class="wheel-container" style="text-align: center; margin-bottom: 20px;">
+                <img src="images/wheel_placeholder.png" alt="Spinning Wheel" id="wheelImage" style="width: 250px; height: 250px; border: 5px solid #444; border-radius: 50%;">
+                <div id="wheelPointer" style="width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #ffcc00; margin: -15px auto 0; position: relative; z-index:10;"></div>
             </div>
-            <div class="wheel-container">
-                <div id="wheel">
-                    <!-- Segments will be added by JavaScript -->
-                    <!-- Center circle will be added by JavaScript -->
+
+            <div style="text-align: center;">
+                <button id="spinButton" class="btn btn-primary btn-spin">Spin the Wheel!</button>
+            </div>
+            
+            <div id="wheelStatus" style="text-align: center; margin-top: 15px; font-weight: bold; min-height: 1.5em;">
                 </div>
-                <div class="pointer">▼</div>
-                <button id="spin-button">Spin Now!</button>
-            </div>
-            <div id="result-area" class="result-area">
-                <h3>Result:</h3>
-                <p id="result-message"></p>
-                <p>Winnings: <span id="winnings-amount">0</span> UBT</p>
-                <p>New Balance: <span id="new-ubt-balance">N/A</span></p>
-            </div>
-            <div id="prize-legend">
-                <!-- Legend will be added by JavaScript -->
-            </div>
+            <div id="prizeResult" class="wheel-results" style="text-align: center; margin-top: 10px; font-size: 1.2rem; color: #50fa7b; min-height: 2em;">
+                </div>
+             <p id="spinError" class="error-message" style="display:none; color: red; text-align:center; margin-top: 10px;"></p>
         </section>
+        
+        <div id="statusMessage" class="status-message" style="display: none; margin-top: 20px;"></div>
+
     </main>
-    <footer><p>&copy; 2025 HSIT App. All rights reserved.</p></footer>
-    <script src="js/spinning_wheel.js"></script>
+
+    <script src="js/config.js"></script>
+    <script src="js/spinning_wheel.js"></script> 
 </body>
 </html>
