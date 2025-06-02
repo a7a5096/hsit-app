@@ -1,0 +1,46 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient definitions -->
+  <defs>
+    <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="highlightGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.3);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.1);stop-opacity:1" />
+    </linearGradient>
+    <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(0,0,0,0.2)"/>
+    </filter>
+  </defs>
+  
+  <!-- Outer shadow circle -->
+  <circle cx="200" cy="200" r="180" fill="rgba(29,78,216,0.1)" filter="url(#dropShadow)"/>
+  
+  <!-- Main background circle -->
+  <circle cx="200" cy="200" r="160" fill="url(#mainGradient)" stroke="#1e40af" stroke-width="3"/>
+  
+  <!-- Inner circle with gradient -->
+  <circle cx="200" cy="200" r="140" fill="url(#highlightGradient)" opacity="0.3"/>
+  
+  <!-- UBT Text with enhanced styling -->
+  <text x="200" y="220" 
+        font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" 
+        font-size="72" 
+        font-weight="700" 
+        fill="white" 
+        text-anchor="middle" 
+        dominant-baseline="middle"
+        style="letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">UBT</text>
+  
+  <!-- Subtle accent elements -->
+  <circle cx="140" cy="140" r="4" fill="rgba(255,255,255,0.4)" opacity="0.8"/>
+  <circle cx="260" cy="140" r="4" fill="rgba(255,255,255,0.4)" opacity="0.8"/>
+  <circle cx="200" cy="100" r="3" fill="rgba(255,255,255,0.3)" opacity="0.6"/>
+  
+  <!-- Bottom accent line -->
+  <path d="M 160 260 Q 200 270 240 260" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none"/>
+  
+  <!-- Outer ring highlight -->
+  <circle cx="200" cy="200" r="160" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+</svg>
