@@ -163,10 +163,27 @@ img {
 }
 
 .banner {
+    position: relative; /* Needed to position the video background */
     margin-bottom: 30px;
     border-radius: 8px;
     overflow: hidden;
 }
+
+.banner-background-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Cover the entire area */
+    z-index: 1; /* Behind the content */
+}
+
+.banner-content {
+    position: relative;
+    z-index: 2; /* In front of the video */
+}
+
 .banner img {
     display: block; /* Remove extra space below image */
     width: 100%;
@@ -738,5 +755,374 @@ img {
 
 .info-text {
     font-size: 0.9rem;
-    color: 
-(Content truncated due to size limit. Use line ranges to read in chunks)
+    color: #666;
+    margin-top: 15px;
+    line-height: 1.5;
+}
+
+/* --- My Team Page Styles --- */
+.invite-code-display {
+    background-color: #e9ecef;
+    border: 1px dashed #ccc;
+    padding: 10px 15px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.invite-code-display span {
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: #fff;
+    padding: 5px 10px; /* Smaller button */
+    font-size: 0.85rem;
+}
+.btn-secondary:hover {
+    background-color: #5a6268;
+    text-decoration: none;
+}
+
+.generate-code-btn {
+    margin-top: 10px;
+}
+
+.team-table-container {
+    overflow-x: auto; /* Allow horizontal scrolling on small screens */
+}
+
+.team-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.team-table th, .team-table td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+.team-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    color: #495057;
+}
+
+.team-table tbody tr:nth-child(even) {
+    background-color: #fdfdfd;
+}
+
+.team-table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* --- Asset Center Page Styles --- */
+.total-balance-card {
+    text-align: center;
+    background: linear-gradient(135deg, #a678de, #8e44ad); /* Purple gradient */
+    color: #fff;
+}
+.total-balance-card h2 {
+    color: #f0e6ff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+.total-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 10px 0;
+}
+.currency-note {
+    font-size: 1rem;
+    font-weight: normal;
+    opacity: 0.8;
+    margin-left: 5px;
+}
+.total-balance-card .info-text {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+
+.balances-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.balance-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+}
+.balance-item:last-child {
+    border-bottom: none;
+}
+
+/* Style UBT differently if desired */
+.balance-item.ubt-balance .asset-name {
+    font-weight: bold;
+    color: #8e44ad; /* Example color */
+}
+
+
+.asset-info {
+    display: flex;
+    align-items: center;
+}
+
+.asset-icon {
+    width: 32px; /* Adjust icon size */
+    height: 32px;
+    margin-right: 15px;
+    border-radius: 50%; /* Make icons circular if they are square */
+    background-color: #eee; /* Placeholder bg */
+}
+
+.asset-name {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #333;
+}
+.asset-fullname {
+    font-size: 0.85rem;
+    color: #777;
+    margin-left: 5px;
+}
+
+.asset-value {
+    text-align: right;
+}
+
+.asset-amount {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #333;
+}
+.asset-est-value {
+     display: block;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.action-buttons {
+    text-align: center;
+    padding-top: 10px; /* Add some space if needed */
+}
+.action-buttons .btn {
+    margin: 5px 10px;
+}
+
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 600px) {
+    .standard-header h1 {
+        font-size: 1.1rem;
+    }
+    .total-value {
+        font-size: 2rem;
+    }
+    .asset-name {
+        font-size: 1rem;
+    }
+     .asset-amount {
+        font-size: 1rem;
+    }
+    .asset-icon {
+        width: 28px;
+        height: 28px;
+        margin-right: 10px;
+    }
+    .balances-list .asset-fullname {
+        display: none; /* Hide full name on very small screens */
+    }
+     .team-table th, .team-table td {
+        padding: 8px 6px;
+        font-size: 0.85rem;
+    }
+     .invite-code-display span {
+        font-size: 1rem;
+    }
+}
+
+/* Lucky Draw Wheel Styles */
+.wheel-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    background-color: #2c2c44; /* Match card background */
+    border-radius: 8px;
+    margin-top: 20px; /* Add space if needed */
+}
+
+.wheel-container {
+    position: relative;
+    width: 300px; /* Adjust size as needed */
+    height: 300px; /* Adjust size as needed */
+    margin-bottom: 20px;
+    display: flex; /* Center wheel div if smaller */
+    justify-content: center;
+    align-items: center;
+}
+
+.wheel-pointer {
+    position: absolute;
+    top: -15px; /* Position above the wheel */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px; /* Adjust size */
+    height: 50px; /* Adjust size */
+    z-index: 10; /* Ensure it's above the wheel */
+    /* Use a background image or CSS to style the pointer */
+    /* background: url('images/wheel-pointer.png') no-repeat center center; */
+    /* background-size: contain; */
+
+    /* Basic CSS Triangle Pointer Fallback */
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 25px solid #ffcc00; /* Yellow pointer */
+}
+
+.wheel {
+    width: 300px; /* Match container size */
+    height: 300px; /* Match container size */
+    border-radius: 50%;
+    border: 5px solid #444;
+    position: relative;
+    overflow: hidden; /* Hide segment parts outside the circle */
+    background-color: #ddd; /* Fallback background if no image */
+    background-size: cover; /* If using background-image */
+    /* transition is set by JS */
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+}
+
+/* Styling for Segments (if not using background image) */
+.segment {
+    position: absolute;
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    width: 50%; /* Radius */
+    height: 50px; /* Height of the text area */
+    transform-origin: 0% 0%; /* Rotate around the center */
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* background-color: rgba(255, 0, 0, 0.1); */ /* For debugging segment position */
+}
+
+.segment span {
+    display: block;
+    color: #333;
+    font-weight: bold;
+    font-size: 0.9rem;
+     /* transform: rotate(90deg); /* Rotate text to be readable */
+     /* Adjust positioning and rotation carefully */
+}
+
+
+/* Example manual rotation/styling if needed - JS handles primary rotation */
+/* .segment-1 { transform: rotate(0deg) skewY(-50deg); background-color: #ffdddd; } */
+/* .segment-2 { transform: rotate(40deg) skewY(-50deg); background-color: #ddffdd; } */
+/* ... and so on - This gets complex quickly, prefer JS or background image */
+
+
+.btn-spin {
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    margin-top: 10px;
+    background-color: #e74c3c; /* Reddish spin button */
+}
+.btn-spin:hover {
+    background-color: #c0392b;
+}
+.btn-spin:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+}
+
+
+.wheel-result {
+    margin-top: 20px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #50fa7b; /* Green result text */
+    min-height: 1.5em; /* Prevent layout shift */
+}
+
+/* --- Keep all previous CSS rules --- */
+
+/* Status Message Area Styles */
+.status-message {
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    text-align: center;
+    display: none; /* Hidden by default */
+    border: 1px solid transparent;
+}
+
+.status-message.info {
+    background-color: #2c3e50; /* Dark blue */
+    border-color: #34495e;
+    color: #ecf0f1; /* Light grey */
+}
+
+.status-message.success {
+    background-color: #16a085; /* Turquoise */
+    border-color: #1abc9c;
+    color: #ffffff;
+}
+
+.status-message.error {
+    background-color: #c0392b; /* Red */
+    border-color: #e74c3c;
+    color: #ffffff;
+}
+
+
+/* Disabled State for Operation Cards (specifically for Sign In) */
+.operation-card.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #444; /* Darker grey background */
+    pointer-events: none; /* Make absolutely sure it's not clickable */
+}
+
+/* Optional: Style hover state only for non-disabled cards */
+.operation-card:not(.disabled):hover {
+    background-color: #3a3a5a;
+    transform: translateY(-3px);
+    text-decoration: none;
+    color: #fff;
+}
+
+/* Adjust icon color for disabled state if desired */
+.operation-card.disabled .operation-icon {
+     color: #888; /* Grey out the icon */
+}
+
+/* Adjust text color for disabled state if desired */
+.operation-card.disabled span {
+     color: #aaa; /* Lighter grey text */
+}
+
+
+/* --- Ensure other styles (.dashboard-page, header, sections, etc.) remain --- */
