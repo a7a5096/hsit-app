@@ -1097,6 +1097,14 @@ img {
     color: #ffffff;
 }
 
+.forgot-password-link {
+    font-size: 0.9rem;
+    color: #a678de; /* Or your desired link color */
+    text-decoration: none;
+}
+.forgot-password-link:hover {
+    text-decoration: underline;
+}
 
 /* Disabled State for Operation Cards (specifically for Sign In) */
 .operation-card.disabled {
