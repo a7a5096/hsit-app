@@ -15,7 +15,8 @@ import usersRoutes from './routes/users.js';
 import ubtRoutes from './routes/ubt.js';
 import exchangeRatesRoutes from './routes/exchangeRates.js';
 import depositRoutes from './routes/deposit.js';
-import teamRoutes from './routes/team.js'; // <-- IMPORT TEAM ROUTES
+import teamRoutes from './routes/team.js'; 
+import cryptoRoutes from './routes/crypto.js'; // <-- Added import for crypto routes
 
 // Load environment variables
 dotenv.config();
@@ -62,7 +63,8 @@ app.use('/api/users', usersRoutes);
 app.use('/api/ubt', ubtRoutes);
 app.use('/api/exchange-rates', exchangeRatesRoutes);
 app.use('/api/deposit', depositRoutes);
-app.use('/api/team', teamRoutes); // <-- REGISTER TEAM ROUTES
+app.use('/api/team', teamRoutes);
+app.use('/api/crypto', cryptoRoutes); // <-- Added route registration for crypto routes
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
