@@ -4,33 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - HSIT</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="auth-page">
-    <div id="statusMessage" class="status-message"></div>
     <div class="auth-container">
-        <img src="logo.png" alt="HSIT Logo" class="logo">
-        <h1>Welcome Back</h1>
-        <form action="dashboard.html" method="get" id="loginForm"> <!-- Will be handled by JS -->
+        <img src="images/logo.png" alt="HSIT Logo" class="logo">
+        <h1>Login to Your Account</h1>
+        <form id="loginForm">
             <div class="form-group">
-                <!-- Reverted label and input type/id/name back to email -->
-                <label for="email">Email Address</label>
+                <label for="email">Email</label>
                 <input type="email" id="email" name="email" required>
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Log In</button>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Login</button>
+            </div>
+            <div class="form-group" style="text-align: center; margin-top: 15px;">
+                <a href="forgot_password.html" class="forgot-password-link">Forgot Password?</a>
+            </div>
         </form>
-        <p class="auth-switch">
+        <div class="auth-switch">
             Don't have an account? <a href="signup.html">Sign Up</a>
-        </p>
+        </div>
+        <div id="statusMessage" class="status-message" style="display: none;"></div>
     </div>
+
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/ubt-rate-updater.js"></script>
 </body>
 </html>
-
