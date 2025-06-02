@@ -6,8 +6,8 @@ import User from '../models/User.js';
 import authMiddleware from '../middleware/auth.js';
 import PendingRegistration from '../models/PendingRegistration.js';
 import { sendVerificationEmail, sendEmail } from '../utils/emailService.js';
-// Correctly import the default export from smsService.js
-import sendSms from '../utils/smsService.js'; // Changed this line
+// Change to a named import for sendSms
+import { sendSms } from '../utils/smsService.js'; // Corrected this line
 
 const router = express.Router();
 
@@ -17,7 +17,7 @@ const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '30d'; // Token expires in 
 
 
 // --- Your existing /register route or other routes that use SMS ---
-// Example of where you might be trying to use sendVerificationText:
+// Example of where you might be trying to use sendSms:
 router.post('/register', async (req, res) => {
     const { email, username, password, phoneNumber, inviteCode } = req.body;
 
@@ -32,15 +32,12 @@ router.post('/register', async (req, res) => {
             // Store pending registration with SMS code
             // ... (logic to save to PendingRegistration model) ...
 
-            // Use the imported sendSms function
+            // Use the imported sendSms function (now correctly imported)
             const smsResult = await sendSms(phoneNumber, `Your HSIT verification code is: ${verificationCode}`);
 
             if (!smsResult.success) {
-                // Handle SMS sending failure
                 console.error('Failed to send SMS verification code during registration:', smsResult.error);
-                // Decide on error response, maybe allow registration but mark phone as unverified
-                // For now, let's assume it should proceed but log the error.
-                // Or return res.status(500).json({ success: false, message: `Failed to send SMS: ${smsResult.error}` });
+                // Decide on error response
             }
         }
         
