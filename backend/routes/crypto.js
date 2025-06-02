@@ -293,8 +293,8 @@ router.get('/qrcode/:currency', authMiddleware, async (req, res) => {
       });
     }
     
-    // Generate QR code
-    const qrDir = path.join(__dirname, '../../public/qrcodes');
+    // *** FIX: Save QR codes to the frontend's public directory ***
+    const qrDir = path.join(__dirname, '../../frontend/public/qrcodes');
     
     // Ensure directory exists
     if (!fs.existsSync(qrDir)) {
