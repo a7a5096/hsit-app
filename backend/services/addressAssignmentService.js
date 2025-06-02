@@ -78,7 +78,7 @@ class AddressAssignmentService {
                 isActive: true
               },
               USDT: {
-                address: user.walletAddresses.ubt,
+                address: user.walletAddresses.ubt, // Assuming UBT field in User model maps to USDT here
                 assignedAt: new Date(),
                 isActive: true
               }
@@ -100,7 +100,7 @@ class AddressAssignmentService {
             isActive: true
           };
           userAddress.addresses.USDT = {
-            address: user.walletAddresses.ubt,
+            address: user.walletAddresses.ubt, // Assuming UBT field in User model maps to USDT here
             assignedAt: new Date(),
             isActive: true
           };
@@ -113,7 +113,7 @@ class AddressAssignmentService {
         await this.ensureAddressesAreMarkedAsAssigned(
           user.walletAddresses.bitcoin,
           user.walletAddresses.ethereum,
-          user.walletAddresses.ubt,
+          user.walletAddresses.ubt, // Assuming UBT field maps to USDT
           userId,
           session
         );
@@ -124,7 +124,7 @@ class AddressAssignmentService {
         return {
           BTC: user.walletAddresses.bitcoin,
           ETH: user.walletAddresses.ethereum,
-          USDT: user.walletAddresses.ubt
+          USDT: user.walletAddresses.ubt // Assuming UBT field maps to USDT
         };
       }
       
@@ -191,13 +191,14 @@ class AddressAssignmentService {
       }
       
       // Update user model with wallet addresses
+      // Ensure User model expects 'ubt' for USDT address if that's the convention
       await User.findByIdAndUpdate(
         userId,
         {
           walletAddresses: {
             bitcoin: btcAddress.address,
             ethereum: ethAddress.address,
-            ubt: usdtAddress.address
+            ubt: usdtAddress.address // This should consistently be 'usdt' or 'ubt' based on User model
           }
         },
         { session }
@@ -270,7 +271,7 @@ class AddressAssignmentService {
    * @param {string} userId - User ID
    * @param {string} btcAddress - Bitcoin address
    * @param {string} ethAddress - Ethereum address
-   * @param {string} usdtAddress - USDT address
+   * @param {string} usdtAddress - USDT address (used as UBT in User model historically)
    * @param {mongoose.ClientSession} session - Mongoose session
    */
   async syncUserModelAddresses(userId, btcAddress, ethAddress, usdtAddress, session) {
@@ -280,7 +281,7 @@ class AddressAssignmentService {
         walletAddresses: {
           bitcoin: btcAddress,
           ethereum: ethAddress,
-          ubt: usdtAddress
+          ubt: usdtAddress // Storing USDT address in 'ubt' field of User model walletAddresses
         }
       },
       { session }
@@ -340,11 +341,12 @@ class AddressAssignmentService {
     // If not found or incomplete, check User model
     const user = await User.findById(userId);
     
+    // Check User model, note that 'ubt' field in User model is treated as USDT here
     if (user && 
         user.walletAddresses && 
         user.walletAddresses.bitcoin && 
         user.walletAddresses.ethereum && 
-        user.walletAddresses.ubt) {
+        user.walletAddresses.ubt) { // 'ubt' field stores the USDT address in User model
       
       // Sync with UserAddress collection for future consistency
       const session = await mongoose.startSession();
@@ -355,7 +357,7 @@ class AddressAssignmentService {
           userId, 
           user.walletAddresses.bitcoin,
           user.walletAddresses.ethereum,
-          user.walletAddresses.ubt,
+          user.walletAddresses.ubt, // Pass the address from 'ubt' field as USDT
           session
         );
         
@@ -368,16 +370,18 @@ class AddressAssignmentService {
         }
         session.endSession();
         console.error('Error syncing UserAddress collection:', error);
+        // Decide if to throw or just log, for now, continue to return addresses
       }
       
       return {
         BTC: user.walletAddresses.bitcoin,
         ETH: user.walletAddresses.ethereum,
-        USDT: user.walletAddresses.ubt
+        USDT: user.walletAddresses.ubt // Return address from 'ubt' field as USDT
       };
     }
     
     // If still not found or incomplete, assign new addresses
+    // This will create records in UserAddress, CryptoAddress, and update User model
     return this.assignAddressesToUser(userId);
   }
   
@@ -386,10 +390,10 @@ class AddressAssignmentService {
    * @param {string} userId - User ID
    * @param {string} btcAddress - Bitcoin address
    * @param {string} ethAddress - Ethereum address
-   * @param {string} usdtAddress - USDT address
+   * @param {string} usdtAddressFromUserModelUbtField - USDT address (from User model's 'ubt' field)
    * @param {mongoose.ClientSession} session - Mongoose session
    */
-  async syncUserAddressCollection(userId, btcAddress, ethAddress, usdtAddress, session) {
+  async syncUserAddressCollection(userId, btcAddress, ethAddress, usdtAddressFromUserModelUbtField, session) {
     await UserAddress.findOneAndUpdate(
       { userId },
       {
@@ -406,7 +410,7 @@ class AddressAssignmentService {
             isActive: true
           },
           USDT: {
-            address: usdtAddress,
+            address: usdtAddressFromUserModelUbtField, // Use the address from User model's 'ubt' field for USDT
             assignedAt: new Date(),
             isActive: true
           }
@@ -420,7 +424,7 @@ class AddressAssignmentService {
     await this.ensureAddressesAreMarkedAsAssigned(
       btcAddress,
       ethAddress,
-      usdtAddress,
+      usdtAddressFromUserModelUbtField, // Use the address from User model's 'ubt' field for USDT
       userId,
       session
     );
@@ -455,14 +459,14 @@ class AddressAssignmentService {
       );
     }
     
-    // Check in User model
+    // Check in User model (note: 'ubt' field for USDT)
     const user = await User.findById(userId);
     
     if (user && user.walletAddresses) {
       return (
         user.walletAddresses.bitcoin === address ||
         user.walletAddresses.ethereum === address ||
-        user.walletAddresses.ubt === address
+        user.walletAddresses.ubt === address // 'ubt' field is treated as USDT
       );
     }
     
