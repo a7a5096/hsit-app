@@ -9,8 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Get auth token from localStorage
   const token = localStorage.getItem('token');
-
-  // Use the full, absolute path to the backend API
   const API_URL = 'https://hsit-backend.onrender.com';
 
   // Coin details
@@ -23,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch user's crypto addresses
   async function fetchUserAddresses() {
     try {
-      // Use the full API URL
       const response = await fetch(`${API_URL}/api/deposit/addresses`, {
         headers: {
           'x-auth-token': token
@@ -47,28 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Generate QR code
-  async function fetchQRCode(currency) {
-    try {
-      // Use the full API URL
-      const response = await fetch(`${API_URL}/api/crypto/qrcode/${currency}`, {
-        headers: {
-          'x-auth-token': token
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate QR code');
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error generating QR code:', error);
-      return null;
-    }
-  }
-
   // Update deposit info based on selected currency
   async function updateDepositInfo() {
     if (!addressInput || !copyButton || !qrCodeArea || !selectedCoinName || !minDepositSpan) {
@@ -77,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const selectedRadio = document.querySelector('input[name="crypto"]:checked');
     if (!selectedRadio) {
-      console.log('No crypto option selected yet.');
       return;
     }
     const selectedValue = selectedRadio.value;
@@ -109,12 +83,18 @@ document.addEventListener('DOMContentLoaded', () => {
       if (warningElement) {
         warningElement.innerHTML = `⚠️ Send only <strong>${detailsBase.name}</strong> to this address. Sending any other coin may result in permanent loss.`;
       }
-      const qrData = await fetchQRCode(selectedValue);
-      if (qrData && qrData.qrcode) {
-        qrCodeArea.innerHTML = `<img src="${API_URL}${qrData.qrcode}" alt="${selectedValue} QR Code" class="qr-code">`;
-      } else {
-        qrCodeArea.innerHTML = '<p>[QR Code unavailable]</p>';
-      }
+      
+      // *** FIX: Generate QR Code on the client-side ***
+      qrCodeArea.innerHTML = ''; // Clear previous QR code or "Loading" text
+      new QRCode(qrCodeArea, {
+        text: currentAddress,
+        width: 150,
+        height: 150,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
     } else {
       addressInput.value = 'Address not available';
       selectedCoinName.textContent = detailsBase ? detailsBase.name : 'Error';
@@ -142,13 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.clipboard.writeText(addressInput.value).then(() => {
           copyButton.textContent = 'Copied!';
           setTimeout(() => { copyButton.textContent = 'Copy'; }, 2000);
-        }).catch(err => {
-          if (document.execCommand('copy')) {
-            copyButton.textContent = 'Copied!';
-            setTimeout(() => { copyButton.textContent = 'Copy'; }, 2000);
-          } else {
-            alert('Failed to copy automatically. Please copy manually.');
-          }
         });
       } catch (err) {
         alert('Failed to copy address. Please copy it manually.');
