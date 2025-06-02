@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Get auth token from localStorage
   const token = localStorage.getItem('token');
 
+  // For production (like on hsitapp.link), API_BASE_URL will be an empty string.
+  const API_BASE_URL = window.location.hostname.includes('localhost') ? 'http://localhost:5000' : '';
+
   // Coin details
   const coinDetailsBase = {
     BTC: { name: 'Bitcoin (BTC)', min: '0.001 BTC'},
@@ -20,15 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch user's crypto addresses
   async function fetchUserAddresses() {
     try {
-      // Use the global API_URL from config.js
-      const response = await fetch(`${API_URL}/api/deposit/addresses`, {
+      const response = await fetch(`${API_BASE_URL}/api/deposit/addresses`, {
         headers: {
           'x-auth-token': token
         }
       });
 
       if (!response.ok) {
-        // This will be triggered by the 400 error if addresses aren't assigned
         throw new Error('Failed to fetch addresses');
       }
 
@@ -48,8 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Generate QR code
   async function fetchQRCode(currency) {
     try {
-        // Use the global API_URL from config.js
-      const response = await fetch(`${API_URL}/api/crypto/qrcode/${currency}`, {
+      const response = await fetch(`${API_BASE_URL}/api/crypto/qrcode/${currency}`, {
         headers: {
           'x-auth-token': token
         }
@@ -108,8 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
         warningElement.innerHTML = `⚠️ Send only <strong>${detailsBase.name}</strong> to this address. Sending any other coin may result in permanent loss.`;
       }
       const qrData = await fetchQRCode(selectedValue);
-      if (qrData && qrData.qrPath) {
-        qrCodeArea.innerHTML = `<img src="${qrData.qrPath}" alt="${selectedValue} QR Code" class="qr-code">`;
+      // *** FIX: Check for qrData.qrcode instead of qrData.qrPath ***
+      if (qrData && qrData.qrcode) {
+        // *** FIX: Use qrData.qrcode for the image source ***
+        qrCodeArea.innerHTML = `<img src="${qrData.qrcode}" alt="${selectedValue} QR Code" class="qr-code">`;
       } else {
         qrCodeArea.innerHTML = '<p>[QR Code unavailable]</p>';
       }
