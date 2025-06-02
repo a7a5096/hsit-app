@@ -4,50 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asset Center - HSIT</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="auth.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="page-background">
-    <div id="statusMessage" class="status-message"></div>
     <header class="standard-header">
         <a href="dashboard.html" class="back-btn">&larr; Back</a>
         <h1>Asset Center</h1>
-        <div></div> <!-- Spacer -->
-    </header>
+        <div></div> </header>
 
     <main class="page-main">
-        <section class="content-section card-style total-balance-card">
-            <h2>Estimated Total Value</h2>
-            <div class="total-value">
-                $ 0.00 <span class="currency-note">USD</span>
-            </div>
-            <p class="info-text">Note: Value is estimated based on current market rates and may fluctuate.</p>
-        </section>
-
-        <section class="content-section card-style">
-            <h2>Your Balances</h2>
-            <ul class="balances-list">
-                <!-- Will be populated dynamically by JavaScript -->
-            </ul>
-        </section>
-
-        <!-- New section for purchased bots -->
-        <section class="content-section card-style" id="purchased-bots-section">
-            <h2>Your AI Bots</h2>
-            <div class="purchased-bots-container">
-                <!-- Will be populated dynamically by JavaScript -->
-                <p class="empty-bots-message">You haven't purchased any AI bots yet. <a href="ai_products.html">Browse available bots</a></p>
+        <section class="content-section">
+            <div class="total-balance-card card-style">
+                <h2>Total UBT Value</h2>
+                <div class="total-value">
+                    <span id="totalValueDisplay">Loading...</span> <span class="currency-note">UBT</span>
+                </div>
+                <p class="info-text" id="totalValueInUsd">Equivalent to: Loading... USD</p>
             </div>
         </section>
 
-        <section class="content-section action-buttons">
-            <a href="deposit.html" class="btn btn-primary">Deposit</a>
-            <a href="#" class="btn btn-secondary">Withdraw</a>
-            <a href="transactions.html" class="btn btn-secondary">Transaction History</a>
-            <a href="ubt_exchange.html" class="btn btn-primary">UBT Exchange</a>
+        <section class="content-section">
+            <div class="card-style">
+                <h2>Your Balances</h2>
+                <ul class="balances-list">
+                    <li class="balance-item ubt-balance">
+                        <div class="asset-info">
+                            <img src="images/icon_ubt.svg" alt="UBT" class="asset-icon">
+                            <div>
+                                <span class="asset-name">UBT <span class="asset-fullname">(Utility Bot Token)</span></span>
+                            </div>
+                        </div>
+                        <div class="asset-value">
+                            <span class="asset-amount" id="ubtBalanceAmount">Loading... UBT</span>
+                            <span class="asset-est-value" id="ubtEstValue">≈ Loading... USD</span>
+                        </div>
+                    </li>
+                    <li class="balance-item">
+                        <div class="asset-info">
+                            <img src="images/icon_btc.svg" alt="BTC" class="asset-icon">
+                            <div>
+                                <span class="asset-name">BTC <span class="asset-fullname">(Bitcoin)</span></span>
+                            </div>
+                        </div>
+                        <div class="asset-value">
+                            <span class="asset-amount" id="btcBalanceAmount">Loading... BTC</span>
+                            <span class="asset-est-value" id="btcEstValue">≈ Loading... USD</span>
+                        </div>
+                    </li>
+                    <li class="balance-item">
+                        <div class="asset-info">
+                            <img src="images/icon_eth.svg" alt="ETH" class="asset-icon">
+                            <div>
+                                <span class="asset-name">ETH <span class="asset-fullname">(Ethereum)</span></span>
+                            </div>
+                        </div>
+                        <div class="asset-value">
+                            <span class="asset-amount" id="ethBalanceAmount">Loading... ETH</span>
+                            <span class="asset-est-value" id="ethEstValue">≈ Loading... USD</span>
+                        </div>
+                    </li>
+                    </ul>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <div class="card-style action-buttons">
+                <a href="deposit.html" class="btn btn-primary">Deposit</a>
+                <a href="#" class="btn btn-secondary">Withdraw (Coming Soon)</a>
+            </div>
         </section>
     </main>
 
+    <script src="js/config.js"></script> 
     <script src="js/asset_center.js"></script>
+    <div id="statusMessage" class="status-message" style="display: none;"></div>
 </body>
 </html>
