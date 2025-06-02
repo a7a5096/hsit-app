@@ -10,12 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Get auth token from localStorage
   const token = localStorage.getItem('token');
 
-  // ---> THIS IS THE KEY PART <---
-  // For production (like on hsitapp.link), API_BASE_URL will be an empty string.
-  // The fetch URL will correctly become: '/api/deposit/addresses'
-  //Force deposit.js fix
-  const API_BASE_URL = window.location.hostname.includes('localhost') ? 'http://localhost:5000' : '';
-
   // Coin details
   const coinDetailsBase = {
     BTC: { name: 'Bitcoin (BTC)', min: '0.001 BTC'},
@@ -26,8 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch user's crypto addresses
   async function fetchUserAddresses() {
     try {
-      // ---> THIS LINE BUILDS THE CORRECT URL <---
-      const response = await fetch(`${API_BASE_URL}/api/deposit/addresses`, {
+      // Use the global API_URL from config.js
+      const response = await fetch(`${API_URL}/api/deposit/addresses`, {
         headers: {
           'x-auth-token': token
         }
@@ -51,13 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- The rest of your deposit.js file ---
-  // (The following functions are the same as before and are correct)
-
   // Generate QR code
   async function fetchQRCode(currency) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/crypto/qrcode/${currency}`, {
+        // Use the global API_URL from config.js
+      const response = await fetch(`${API_URL}/api/crypto/qrcode/${currency}`, {
         headers: {
           'x-auth-token': token
         }
