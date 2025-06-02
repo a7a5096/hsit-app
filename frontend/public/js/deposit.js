@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Get auth token from localStorage
   const token = localStorage.getItem('token');
 
-  // For production (like on hsitapp.link), API_BASE_URL will be an empty string.
-  const API_BASE_URL = window.location.hostname.includes('localhost') ? 'http://localhost:5000' : '';
+  // Use the full, absolute path to the backend API
+  const API_URL = 'https://hsit-backend.onrender.com';
 
   // Coin details
   const coinDetailsBase = {
@@ -23,7 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch user's crypto addresses
   async function fetchUserAddresses() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/deposit/addresses`, {
+      // Use the full API URL
+      const response = await fetch(`${API_URL}/api/deposit/addresses`, {
         headers: {
           'x-auth-token': token
         }
@@ -49,7 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Generate QR code
   async function fetchQRCode(currency) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/crypto/qrcode/${currency}`, {
+      // Use the full API URL
+      const response = await fetch(`${API_URL}/api/crypto/qrcode/${currency}`, {
         headers: {
           'x-auth-token': token
         }
@@ -108,10 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
         warningElement.innerHTML = `⚠️ Send only <strong>${detailsBase.name}</strong> to this address. Sending any other coin may result in permanent loss.`;
       }
       const qrData = await fetchQRCode(selectedValue);
-      // *** FIX: Check for qrData.qrcode instead of qrData.qrPath ***
       if (qrData && qrData.qrcode) {
-        // *** FIX: Use qrData.qrcode for the image source ***
-        qrCodeArea.innerHTML = `<img src="${qrData.qrcode}" alt="${selectedValue} QR Code" class="qr-code">`;
+        qrCodeArea.innerHTML = `<img src="${API_URL}${qrData.qrcode}" alt="${selectedValue} QR Code" class="qr-code">`;
       } else {
         qrCodeArea.innerHTML = '<p>[QR Code unavailable]</p>';
       }
