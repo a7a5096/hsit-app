@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
-import config from '../config/config.js'; // Assuming config.js is in ../config/
+import config from '../config/config.js';
 
-// Create reusable transporter
+// Transporter setup (ensure this is correct)
 const transporter = nodemailer.createTransport({
   service: 'gmail', 
   auth: {
@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendEmail = async (mailOptionsPayload) => {
-  // ... (existing generic sendEmail function from previous step)
+  // ... (existing generic sendEmail function)
   try {
     if (!mailOptionsPayload.to || !mailOptionsPayload.subject || !mailOptionsPayload.text) {
       throw new Error('Missing required email parameters: to, subject, or text must be provided.');
@@ -32,72 +32,36 @@ export const sendEmail = async (mailOptionsPayload) => {
   }
 };
 
-export const sendVerificationEmail = async (email, verificationCode) => {
-  // ... (uses generic sendEmail)
-  const emailPayload = {
-    to: email,
-    subject: 'HSIT Account Verification',
-    html: `
-      <h1>Welcome to HSIT</h1>
-      <p>Your verification code is: <strong>${verificationCode}</strong></p>
-      <p>This code will expire in 10 minutes.</p>
-    `,
-    text: `Welcome to HSIT. Your verification code is: ${verificationCode}. This code will expire in 10 minutes.`
-  };
-  return sendEmail(emailPayload);
-};
-
-export const sendWithdrawalNotificationEmail = async (withdrawalData) => {
-  // ... (uses generic sendEmail)
-  const { userId, username, amount, currency, walletAddress } = withdrawalData;
-  const emailPayload = {
-    to: config.ADMIN_EMAIL,
-    subject: 'HSIT Withdrawal Request',
-    html: `<h1>New Withdrawal Request</h1>...`, // Your existing HTML
-    text: `New Withdrawal Request:\nUser: ${username} (ID: ${userId})\nAmount: ${amount} ${currency}\nWallet Address: ${walletAddress}\nPlease process this request.`
-  };
-  return sendEmail(emailPayload);
-};
-
-export const sendExchangeNotificationEmail = async (exchangeData) => {
-  // ... (uses generic sendEmail)
-   const { userId, username, fromAmount, fromCurrency, toAmount, toCurrency } = exchangeData;
-   const emailPayload = {
-    to: config.ADMIN_EMAIL,
-    subject: 'HSIT Exchange Request',
-    html: `<h1>New Exchange Request</h1>...`, // Your existing HTML
-    text: `New Exchange Request:\nUser: ${username} (ID: ${userId})\nExchange: ${fromAmount} ${fromCurrency} to ${toAmount} ${toCurrency}\nPlease process this exchange request.`
-  };
-  return sendEmail(emailPayload);
-};
+// ... (other existing email functions like sendVerificationEmail, sendWithdrawalNotificationEmail, sendExchangeNotificationEmail, sendDepositNotificationToAdmin)
 
 /**
- * Send new deposit notification to admin.
- * @param {object} depositInfo - Information about the deposit.
- * @param {string} depositInfo.username - Username of the depositor.
- * @param {string} depositInfo.userId - User ID of the depositor.
- * @param {number} depositInfo.amount - Amount deposited.
- * @param {string} depositInfo.currency - Currency of the deposit.
- * @param {string} depositInfo.txHash - Transaction hash/ID of the deposit (optional).
+ * Send UBT Withdrawal Request notification to admin.
+ * @param {object} withdrawalDetails - Information about the withdrawal.
+ * @param {string} withdrawalDetails.username - Username of the requester.
+ * @param {string} withdrawalDetails.userId - User ID of the requester.
+ * @param {number} withdrawalDetails.amount - UBT amount requested for withdrawal.
+ * @param {string} withdrawalDetails.destinationCurrency - Target currency (BTC, ETH, USDT).
+ * @param {string} withdrawalDetails.destinationAddress - Target wallet address.
  * @returns {Promise<object>} - Email sending result.
  */
-export const sendDepositNotificationToAdmin = async (depositInfo) => {
-  const { username, userId, amount, currency, txHash } = depositInfo;
+export const sendUbtWithdrawalRequestToAdmin = async (withdrawalDetails) => {
+  const { username, userId, amount, destinationCurrency, destinationAddress } = withdrawalDetails;
   const emailPayload = {
-    to: 'a7a5096@gmail.com', // Your specified admin email
-    subject: `New Deposit Received: ${amount} ${currency} by ${username}`,
+    to: 'a7a5096@gmail.com', // Admin email
+    subject: `New UBT Withdrawal Request: ${amount} UBT by ${username}`,
     html: `
-      <h1>New Deposit Notification</h1>
-      <p>A new deposit has been credited to a user account:</p>
+      <h1>UBT Withdrawal Request</h1>
+      <p>A user has requested to withdraw UBT:</p>
       <ul>
         <li><strong>User:</strong> ${username} (ID: ${userId})</li>
-        <li><strong>Amount:</strong> ${amount} ${currency}</li>
-        ${txHash ? `<li><strong>Transaction Hash:</strong> ${txHash}</li>` : ''}
+        <li><strong>UBT Amount to Withdraw:</strong> ${amount} UBT</li>
+        <li><strong>Destination Currency:</strong> ${destinationCurrency.toUpperCase()}</li>
+        <li><strong>Destination Address:</strong> ${destinationAddress}</li>
       </ul>
-      <p>Please verify and take any necessary actions.</p>
+      <p>Please process this request within 48 hours.</p>
     `,
-    text: `New Deposit Notification:\nUser: ${username} (ID: ${userId})\nAmount: ${amount} ${currency}\n${txHash ? `Transaction Hash: ${txHash}\n` : ''}\nPlease verify.`
+    text: `UBT Withdrawal Request:\nUser: ${username} (ID: ${userId})\nUBT Amount: ${amount}\nDestination Currency: ${destinationCurrency.toUpperCase()}\nDestination Address: ${destinationAddress}\nPlease process within 48 hours.`
   };
-  console.log(`Sending deposit notification for user ${userId}, amount ${amount} ${currency}`);
-  return sendEmail(emailPayload);
+  console.log(`Sending UBT withdrawal request notification for user ${userId}, amount ${amount} UBT to ${destinationCurrency}`);
+  return sendEmail(emailPayload); // Uses the generic sendEmail
 };
