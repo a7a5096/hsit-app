@@ -24,25 +24,26 @@ class AddressAssignmentService {
         throw new Error('User not found for address assignment.');
       }
 
-      // Scenario 1: UserAddress record exists and is complete (BTC, ETH, and USDT points to ETH)
       if (userAddressDoc && 
           userAddressDoc.addresses.BTC?.address && 
           userAddressDoc.addresses.ETH?.address && 
           userAddressDoc.addresses.USDT?.address &&
           userAddressDoc.addresses.ETH.address === userAddressDoc.addresses.USDT.address) {
-        // Ensure linked CryptoAddress entries are correctly marked and User model is synced
-        await this.ensureAddressesAreMarkedAsAssigned(
+        
+        // Ensure primary CryptoAddress entries (BTC, ETH) are correctly marked.
+        // USDT uses ETH address, so no separate marking for USDT in CryptoAddress pool needed beyond ETH.
+        await this.ensureDistinctAddressesAreMarkedAsAssigned(
           userAddressDoc.addresses.BTC.address,
-          userAddressDoc.addresses.ETH.address,
-          userAddressDoc.addresses.USDT.address, // This will be the ETH address
+          userAddressDoc.addresses.ETH.address, // ETH address string
           userId,
           session
         );
+        // Ensure User model is synced correctly with ETH address for USDT/UBT field
         await this.syncUserModelAddresses(
           userId,
           userAddressDoc.addresses.BTC.address,
           userAddressDoc.addresses.ETH.address,
-          userAddressDoc.addresses.USDT.address, // This will be the ETH address
+          userAddressDoc.addresses.ETH.address, // Pass ETH address as the USDT address
           session
         );
         await session.commitTransaction();
@@ -50,45 +51,37 @@ class AddressAssignmentService {
         return {
           BTC: userAddressDoc.addresses.BTC.address,
           ETH: userAddressDoc.addresses.ETH.address,
-          USDT: userAddressDoc.addresses.USDT.address,
+          USDT: userAddressDoc.addresses.ETH.address, // USDT is ETH address
         };
       }
 
-      // Scenario 2: User model has addresses (legacy or primary source), sync/create UserAddress
-      // And ensure USDT (stored in user.walletAddresses.ubt) is made same as ETH if different,
-      // or if ETH exists and ubt (USDT) doesn't, set ubt to ETH.
       if (user.walletAddresses && user.walletAddresses.bitcoin && user.walletAddresses.ethereum) {
         let btc = user.walletAddresses.bitcoin;
         let eth = user.walletAddresses.ethereum;
-        let usdt = user.walletAddresses.ethereum; // USDT is now ETH address
+        let usdtForSync = eth; // USDT is now ETH address
 
-        // If legacy ubt field exists and is different, prefer ETH address for USDT.
-        // Or if ubt field doesn't exist, it will be set to ETH address.
-        user.walletAddresses.ubt = eth; // Ensure ubt field in User model reflects ETH address for USDT
+        user.walletAddresses.ubt = eth; 
 
-        await this.syncUserAddressCollection(userId, btc, eth, usdt, session); // This will create/update UserAddress
-        await user.save({ session }); // Save updated user.walletAddresses.ubt
+        await this.syncUserAddressCollection(userId, btc, eth, usdtForSync, session);
+        await user.save({ session }); 
 
         await session.commitTransaction();
         session.endSession();
-        return { BTC: btc, ETH: eth, USDT: usdt };
+        return { BTC: btc, ETH: eth, USDT: usdtForSync };
       }
 
-      // Scenario 3: No complete addresses found, assign new ones from the pool
       console.log(`Assigning new pooled addresses for user ${userId}`);
       const btcAddressPoolDoc = await this.findAndReserveAddress('BTC', userId, session);
       const ethAddressPoolDoc = await this.findAndReserveAddress('ETH', userId, session);
       
-      // Crucial: If we couldn't get both a BTC and ETH address from the pool, assignment fails.
       if (!btcAddressPoolDoc || !ethAddressPoolDoc) {
         throw new Error('Not enough BTC or ETH addresses available in the pool for assignment.');
       }
 
       const newBtcAddress = btcAddressPoolDoc.address;
       const newEthAddress = ethAddressPoolDoc.address;
-      const newUsdtAddress = newEthAddress; // USDT address is the same as ETH address
+      const newUsdtAddress = newEthAddress; 
 
-      // Create or update UserAddress record
       userAddressDoc = await UserAddress.findOneAndUpdate(
         { userId },
         {
@@ -97,31 +90,21 @@ class AddressAssignmentService {
             'addresses.BTC': { address: newBtcAddress, assignedAt: new Date(), isActive: true },
             'addresses.ETH': { address: newEthAddress, assignedAt: new Date(), isActive: true },
             'addresses.USDT': { address: newUsdtAddress, assignedAt: new Date(), isActive: true },
-            totalAssigned: 3 // Counting BTC, ETH, USDT as distinct logical assignments for the user
+            totalAssigned: 3 
           }
         },
         { upsert: true, new: true, session }
       );
       
-      // Update User model (walletAddresses.ubt will store the ETH/USDT address)
       user.walletAddresses = {
         bitcoin: newBtcAddress,
         ethereum: newEthAddress,
-        ubt: newUsdtAddress, // ubt field now stores the ETH address for USDT compatibility
+        ubt: newUsdtAddress, 
       };
       await user.save({ session });
       
-      // ensureAddressesAreMarkedAsAssigned is effectively done by findAndReserveAddress for BTC & ETH.
-      // If we want a distinct CryptoAddress entry for USDT (even with same address string),
-      // we can call it for USDT separately here, using the ETH address string.
-      // This will create a CryptoAddress doc with currency: 'USDT' and address: newEthAddress.
-      await CryptoAddress.findOneAndUpdate(
-        { address: newEthAddress, currency: 'USDT' }, // Query specifically for a USDT typed entry
-        { isAssigned: true, assignedTo: userId, assignedAt: new Date(), isActive: true },
-        { upsert: true, new: true, session } // Create if doesn't exist
-      );
-      // Note: The ETH address itself (currency: 'ETH') was already marked by findAndReserveAddress.
-
+      // findAndReserveAddress already marks BTC and ETH. No separate marking for USDT in CryptoAddress pool needed.
+      
       await session.commitTransaction();
       session.endSession();
       
@@ -136,11 +119,15 @@ class AddressAssignmentService {
       }
       session.endSession();
       console.error(`Error in assignAddressesToUser for ${userId}:`, error.message, error.stack);
-      throw error; // Re-throw to be caught by the route handler
+      throw error; 
     }
   }
   
-  async ensureAddressesAreMarkedAsAssigned(btcAddress, ethAddress, usdtAddress, userId, session) {
+  /**
+   * Ensures only the distinct pooled addresses (BTC, ETH) are marked/upserted in CryptoAddress.
+   * USDT reuses the ETH address and does not need a separate CryptoAddress entry if address is globally unique.
+   */
+  async ensureDistinctAddressesAreMarkedAsAssigned(btcAddress, ethAddress, userId, session) {
     const operations = [];
     if (btcAddress) {
       operations.push(CryptoAddress.findOneAndUpdate(
@@ -156,31 +143,22 @@ class AddressAssignmentService {
         { upsert: true, new: true, session }
       ));
     }
-    // If usdtAddress is the same as ethAddress, this will create/update a CryptoAddress document
-    // with currency 'USDT' and the shared address string.
-    if (usdtAddress) {
-      operations.push(CryptoAddress.findOneAndUpdate(
-        { address: usdtAddress, currency: 'USDT' },
-        { $set: { isAssigned: true, assignedTo: userId, assignedAt: new Date(), isActive: true } },
-        { upsert: true, new: true, session }
-      ));
-    }
+    // No operation for USDT here as it shares the ETH address, and its CryptoAddress entry is the ETH one.
     await Promise.all(operations);
   }
   
-  async syncUserModelAddresses(userId, btcAddress, ethAddress, usdtAddress, session) {
-    // Here, usdtAddress is the string that should be stored for USDT, which is now the ETH address.
-    // The User model stores this in the 'ubt' field.
+  async syncUserModelAddresses(userId, btcAddress, ethAddress, usdtAddressForUserUbtField, session) {
+    // usdtAddressForUserUbtField is the ETH address string.
     await User.findByIdAndUpdate(
       userId,
       {
-        $set: { // Use $set for targeted updates
+        $set: { 
           'walletAddresses.bitcoin': btcAddress,
           'walletAddresses.ethereum': ethAddress,
-          'walletAddresses.ubt': usdtAddress, // ubt field gets the ETH/USDT address
+          'walletAddresses.ubt': usdtAddressForUserUbtField, 
         }
       },
-      { session, new: true } // new: true to return the modified document if needed elsewhere
+      { session, new: true } 
     );
   }
   
@@ -191,10 +169,9 @@ class AddressAssignmentService {
       { new: true, session, sort: { createdAt: 1 } }
     );
     if (!addressDoc) {
-        // This is a critical state if the pool is empty for a required currency.
-        console.warn(`No available addresses in pool for currency: ${currency}`);
+        console.warn(`POOL EMPTY: No available addresses in pool for currency: ${currency}`);
     }
-    return addressDoc; // Can be null if no address is found
+    return addressDoc; 
   }
   
   async getUserAddresses(userId) {
@@ -204,14 +181,12 @@ class AddressAssignmentService {
             throw new Error("User not found in getUserAddresses.");
         }
 
-        // Prefer UserAddress if available and complete
         const userAddressDoc = await UserAddress.findOne({ userId });
         if (userAddressDoc && 
             userAddressDoc.addresses.BTC?.address && 
             userAddressDoc.addresses.ETH?.address &&
-            userAddressDoc.addresses.USDT?.address && /* Ensure USDT exists */
-            userAddressDoc.addresses.ETH.address === userAddressDoc.addresses.USDT.address /* Ensure USDT is ETH */
-            ) {
+            userAddressDoc.addresses.USDT?.address &&
+            userAddressDoc.addresses.ETH.address === userAddressDoc.addresses.USDT.address) {
             return {
                 BTC: userAddressDoc.addresses.BTC.address,
                 ETH: userAddressDoc.addresses.ETH.address,
@@ -219,20 +194,22 @@ class AddressAssignmentService {
             };
         }
 
-        // If User model has ETH and BTC, derive USDT from ETH and ensure consistency
         if (user.walletAddresses && user.walletAddresses.bitcoin && user.walletAddresses.ethereum) {
             const btc = user.walletAddresses.bitcoin;
             const eth = user.walletAddresses.ethereum;
-            const usdt = eth; // USDT is the ETH address
+            const usdt = eth; 
 
-            // If user.walletAddresses.ubt (which stores USDT) is not set or differs, update it
-            // This also triggers syncUserAddressCollection to update/create UserAddress doc
             if (user.walletAddresses.ubt !== eth) {
-                console.log(`Syncing user ${userId}: ubt field will be updated to ETH address for USDT.`);
+                console.log(`Syncing user ${userId}: ubt field in User model will be updated to ETH address for USDT.`);
                 const session = await mongoose.startSession();
                 await session.withTransaction(async () => {
-                    user.walletAddresses.ubt = eth;
-                    await user.save({ session }); // Save updated user model
+                    // Update User model first
+                    await User.updateOne( // Use updateOne for targeted field update
+                        { _id: userId }, 
+                        { $set: { 'walletAddresses.ubt': eth } }, 
+                        { session }
+                    );
+                    // Then sync UserAddress collection, which internally calls ensureDistinctAddressesAreMarkedAsAssigned
                     await this.syncUserAddressCollection(userId, btc, eth, usdt, session);
                 });
                 session.endSession();
@@ -240,21 +217,17 @@ class AddressAssignmentService {
             return { BTC: btc, ETH: eth, USDT: usdt };
         }
 
-        // Fallback: If no consistent addresses found, try to assign new ones.
         console.log(`No complete or consistent addresses found for user ${userId}, attempting fresh assignment.`);
         return this.assignAddressesToUser(userId);
 
     } catch (error) {
         console.error(`Error in getUserAddresses for ${userId}: ${error.message}`, error.stack);
-        // Depending on how critical this is, you might re-throw or return an error structure
-        // For now, re-throwing so the route handler can decide on the HTTP response.
         throw error;
     }
   }
   
   async syncUserAddressCollection(userId, btcAddress, ethAddress, usdtAddress, session) {
     // usdtAddress parameter here is the ETH address string.
-    // UserAddress.addresses.USDT.address will store this ETH address.
     await UserAddress.findOneAndUpdate(
       { userId },
       {
@@ -262,19 +235,19 @@ class AddressAssignmentService {
             userId,
             'addresses.BTC': { address: btcAddress, assignedAt: new Date(), isActive: true },
             'addresses.ETH': { address: ethAddress, assignedAt: new Date(), isActive: true },
-            'addresses.USDT': { address: usdtAddress, assignedAt: new Date(), isActive: true }, // USDT address is ETH address
+            'addresses.USDT': { address: usdtAddress, assignedAt: new Date(), isActive: true }, 
             totalAssigned: 3,
         }
       },
       { upsert: true, new: true, session }
     );
     
-    // Mark these actual addresses in the CryptoAddress pool
-    // This will create a 'USDT' typed CryptoAddress entry with the ETH address if it doesn't exist
-    await this.ensureAddressesAreMarkedAsAssigned(
+    // Only ensure the distinct pooled addresses (BTC, ETH) are marked.
+    // The knowledge that ETH address is also USDT address is handled at User/UserAddress level.
+    await this.ensureDistinctAddressesAreMarkedAsAssigned(
       btcAddress,
       ethAddress,
-      usdtAddress, // This is the ETH address string, will create/update a USDT typed CryptoAddress
+      // No usdtAddress string needed here as we don't mark a separate USDT entity in CryptoAddress pool
       userId,
       session
     );
@@ -284,20 +257,19 @@ class AddressAssignmentService {
     const user = await User.findById(userId).select('+walletAddresses');
     if (!user || !user.walletAddresses) return false;
 
+    // ETH address now serves as USDT address (stored in ubt field)
     if (user.walletAddresses.bitcoin === address || 
-        user.walletAddresses.ethereum === address ||
-        user.walletAddresses.ubt === address) { // ubt field (now ETH/USDT address) is checked
+        user.walletAddresses.ethereum === address || // Check against ETH
+        user.walletAddresses.ubt === address) { // Check against ubt (which is ETH for USDT)
         return true;
     }
     
-    // Optional: Check UserAddress collection as a secondary source if needed,
-    // but User model should be the primary source of truth after sync.
     const userAddressDoc = await UserAddress.findOne({ userId });
     if (userAddressDoc) {
       return (
         userAddressDoc.addresses.BTC?.address === address ||
-        userAddressDoc.addresses.ETH?.address === address ||
-        userAddressDoc.addresses.USDT?.address === address 
+        userAddressDoc.addresses.ETH?.address === address || // Check against ETH
+        userAddressDoc.addresses.USDT?.address === address  // Check against USDT (which is ETH)
       );
     }
     return false;
