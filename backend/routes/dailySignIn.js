@@ -13,15 +13,38 @@ const router = express.Router();
  */
 router.post('/', auth, async (req, res) => {
   try {
+    // Extract and validate reward
     const { reward, consecutiveDays } = req.body;
     
-    // Validate reward amount
-    const validatedReward = parseFloat(reward);
-    if (isNaN(validatedReward) || validatedReward < 0.5 || validatedReward > 1.5) {
+    // Validate reward amount - ensure it's a valid number
+    let validatedReward;
+    try {
+      validatedReward = parseFloat(reward);
+      if (isNaN(validatedReward) || validatedReward < 0.5 || validatedReward > 1.5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid reward amount. Must be between 0.5-1.5 UBT.'
+        });
+      }
+    } catch (error) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid reward amount. Must be between 0.5-1.5 UBT.'
+        message: 'Invalid reward format. Must be a valid number.'
       });
+    }
+    
+    // Validate consecutiveDays - ensure it's a valid number if provided
+    let validatedConsecutiveDays = 1; // Default to 1 if not provided
+    if (consecutiveDays !== undefined) {
+      try {
+        validatedConsecutiveDays = parseInt(consecutiveDays);
+        if (isNaN(validatedConsecutiveDays) || validatedConsecutiveDays < 1) {
+          validatedConsecutiveDays = 1; // Reset to default if invalid
+        }
+      } catch (error) {
+        // Silently handle parsing errors by using the default value
+        validatedConsecutiveDays = 1;
+      }
     }
     
     // Get user from database
@@ -61,7 +84,7 @@ router.post('/', auth, async (req, res) => {
       userId: user._id,
       date: Date.now(),
       reward: validatedReward,
-      consecutiveDays: consecutiveDays || 1
+      consecutiveDays: validatedConsecutiveDays
     });
     
     await newSignIn.save();
@@ -72,7 +95,7 @@ router.post('/', auth, async (req, res) => {
       type: 'reward',
       amount: validatedReward,
       currency: 'ubt',
-      description: `Daily sign-in reward (Day ${consecutiveDays || 1})`,
+      description: `Daily sign-in reward (Day ${validatedConsecutiveDays})`,
       status: 'completed',
       date: Date.now()
     });
