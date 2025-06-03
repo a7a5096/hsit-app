@@ -1,0 +1,142 @@
+/* css/new_spinning_wheel.css */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #2c3e50;
+    color: white;
+    margin: 0;
+}
+
+.game-container {
+    text-align: center;
+    background-color: #34495e;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    width: 90%;
+    max-width: 400px;
+}
+
+h1 {
+    margin-top: 0;
+}
+
+.balance-display {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 8px;
+}
+
+#ubt-balance {
+    font-weight: bold;
+}
+
+.wheel-area {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 20px auto;
+}
+
+.pointer {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-top: 35px solid #f1c40f;
+    z-index: 10;
+    filter: drop-shadow(0 -2px 2px rgba(0,0,0,0.3));
+}
+
+.wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 8px solid #ecf0f1;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.5), 0 0 15px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+    transition: transform 5s cubic-bezier(0.33, 1, 0.68, 1); /* Ease-out-back like effect */
+    /*
+        Segment Distribution:
+        - 50% Black (#2c3e50): No Prize
+        - 25% Green (#27ae60): 1x Bet
+        - 15% Blue (#2980b9): 2x Bet
+        - 10% Red (#c0392b): 10x Bet
+    */
+    background: conic-gradient(
+        #2c3e50 0% 50%,    /* Black */
+        #27ae60 50% 75%,    /* Green */
+        #2980b9 75% 90%,    /* Blue */
+        #c0392b 90% 100%    /* Red */
+    );
+}
+
+.controls {
+    margin-top: 25px;
+}
+
+.bet-control {
+    margin-bottom: 20px;
+}
+
+.bet-control label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+#bet-amount {
+    padding: 10px;
+    border-radius: 5px;
+    border: 2px solid #bdc3c7;
+    background-color: #ecf0f1;
+    width: 120px;
+    text-align: center;
+    font-size: 1.1em;
+}
+
+#spin-button {
+    padding: 12px 35px;
+    font-size: 1.3em;
+    font-weight: bold;
+    border-radius: 8px;
+    border: none;
+    background-color: #e74c3c;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px #c0392b;
+}
+
+#spin-button:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+    box-shadow: 0 4px #7f8c8d;
+}
+
+#spin-button:hover:not(:disabled) {
+    background-color: #ff6347;
+}
+
+#spin-button:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px #c0392b;
+}
+
+.result-message {
+    margin-top: 20px;
+    font-size: 1.5em;
+    font-weight: bold;
+    min-height: 40px;
+    transition: color 0.5s;
+}
