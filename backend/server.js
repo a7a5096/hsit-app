@@ -16,6 +16,7 @@ import ubtRoutes from './routes/ubt.js';
 import exchangeRatesRoutes from './routes/exchangeRates.js';
 import depositRoutes from './routes/deposit.js';
 import wheelRoutes from './routes/wheel.js';
+import cryptoAssetRoutes from './routes/cryptoAsset.js';
 
 // Initialize Express app
 const app = express();
@@ -23,7 +24,11 @@ const app = express();
 // --- Middleware ---
 
 // 1. CORS Middleware - To allow requests from your frontend
-app.use(cors());
+app.use(cors({
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
+}));
 
 // 2. Body Parser Middleware - THIS IS THE CRITICAL FIX
 // This line MUST come BEFORE you define your routes. It allows the server
@@ -41,6 +46,7 @@ app.use('/api/ubt', ubtRoutes);
 app.use('/api/exchange-rates', exchangeRatesRoutes);
 app.use('/api/deposit', depositRoutes);
 app.use('/api/wheel', wheelRoutes);
+app.use('/api/direct_crypto_asset', cryptoAssetRoutes);
 
 // --- Basic Root Route ---
 app.get('/', (req, res) => {
