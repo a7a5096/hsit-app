@@ -1,6 +1,6 @@
 /**
  * auth.js
- * 
+ *
  * Authentication utilities for the application.
  * Handles login, logout, and auth token management.
  */
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", function() {
         console.log("auth.js: Event listener attached to signupForm"); // DEBUG
     } else {
         // This is not an error on the login page
-        // console.log("auth.js: signupForm not found (this is okay on login page)"); 
+        // console.log("auth.js: signupForm not found (this is okay on login page)");
     }
 });
 
@@ -47,30 +47,30 @@ document.addEventListener("DOMContentLoaded", function() {
 function handleLogin(event) {
     console.log("auth.js: handleLogin function called"); // DEBUG
     event.preventDefault();
-    
+
     var statusMessage = document.getElementById("statusMessage");
-    var emailValue = document.getElementById("email").value.trim(); 
+    var emailValue = document.getElementById("email").value.trim();
     var passwordValue = document.getElementById("password").value;
 
     console.log("auth.js: Email value -", emailValue); // DEBUG
     console.log("auth.js: Password value -", passwordValue ? "[PRESENT]" : "[EMPTY]"); // DEBUG
-    
+
     // Clear previous status messages
     if (statusMessage) {
         statusMessage.textContent = "";
         statusMessage.style.display = "none";
     }
-    
+
     // Validate form data
     if (!emailValue || !passwordValue) {
         showStatus("Please enter both email and password", "error");
         console.error("auth.js: Email or password empty"); // DEBUG
         return;
     }
-    
+
     showStatus("Signing in...", "info");
     console.log("auth.js: Attempting to sign in..."); // DEBUG
-    
+
     // Use fetch API instead of XMLHttpRequest for better error handling
     fetch(`${API_URL}/api/auth`, {
         method: 'POST',
@@ -85,7 +85,7 @@ function handleLogin(event) {
     })
     .then(response => {
         console.log("auth.js: Login API response received, status:", response.status); // DEBUG
-        
+
         // Check if response is ok (status in the range 200-299)
         if (!response.ok) {
             return response.json().then(errorData => {
@@ -95,16 +95,16 @@ function handleLogin(event) {
                 throw new Error(`Login failed (Status: ${response.status})`);
             });
         }
-        
+
         return response.json();
     })
     .then(data => {
         console.log("auth.js: Login API success, data:", data); // DEBUG
-        
+
         if (data.token && data.user) {
             localStorage.setItem("token", data.token);
             localStorage.setItem("userData", JSON.stringify(data.user));
-            
+
             showStatus("Login successful! Redirecting...", "success");
             setTimeout(function() {
                 window.location.href = "dashboard.html";
@@ -116,7 +116,7 @@ function handleLogin(event) {
     })
     .catch(error => {
         console.error("auth.js: Login error:", error.message); // DEBUG
-        
+
         // Handle network errors specifically
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
             showStatus("Network error: Could not connect to the server. Please check your internet connection.", "error");
@@ -132,7 +132,7 @@ function handleLogin(event) {
  */
 function handleSignup(event) {
     console.log("auth.js: handleSignup function called"); // DEBUG
-    
+
     console.log("auth.js: Attempting to prevent default form submission..."); // DEBUG
     event.preventDefault();
     console.log("auth.js: Default form submission prevented. event.defaultPrevented:", event.defaultPrevented); // DEBUG
@@ -185,14 +185,16 @@ function handleSignup(event) {
         body: JSON.stringify({
             username: usernameValue,
             email: emailValue,
-            phone: phoneValue,
+            // --- CRITICAL FIX HERE: Change 'phone' to 'phoneNumber' ---
+            phoneNumber: phoneValue, // THIS WAS THE MISMATCH!
+            // --- END FIX ---
             password: passwordValue,
-            invitationCode: invitationCodeValue || null
+            invitationCode: invitationCodeValue || null // This is correctly handled as optional/nullable
         })
     })
     .then(response => {
         console.log("auth.js: Signup API response received, status:", response.status); // DEBUG
-        
+
         // Check if response is ok (status in the range 200-299)
         if (!response.ok) {
             return response.json().then(errorData => {
@@ -202,17 +204,17 @@ function handleSignup(event) {
                 throw new Error(`Signup failed (Status: ${response.status})`);
             });
         }
-        
+
         return response.json();
     })
     .then(data => {
         console.log("auth.js: Signup API success, data:", data); // DEBUG
-        
+
         // Store token and user data immediately if available
         if (data.token && data.user) {
             localStorage.setItem("token", data.token);
             localStorage.setItem("userData", JSON.stringify(data.user));
-            
+
             showStatus("Account created successfully! Redirecting to dashboard...", "success");
             setTimeout(function() {
                 window.location.href = "dashboard.html";
@@ -227,7 +229,7 @@ function handleSignup(event) {
     })
     .catch(error => {
         console.error("auth.js: Signup error:", error.message); // DEBUG
-        
+
         // Handle network errors specifically
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
             showStatus("Network error: Could not connect to the server. Please check your internet connection.", "error");
@@ -291,7 +293,7 @@ document.addEventListener("DOMContentLoaded", function() {
         window.location.href = "index.html?require_login=true";
         return;
     }
-    
+
     var logoutButton = document.getElementById("logout-button");
     if (logoutButton) {
         console.log("auth.js: Logout button found, attaching listener"); // DEBUG
