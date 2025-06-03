@@ -98,5 +98,52 @@ router.post('/spin', authMiddleware, async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error during spin.', error: error.message });
     }
 });
+// Add this inside backend/routes/wheel.js, before the `export default router;` line.
 
+import User from '../models/User.js'; // Ensure User model is imported
+
+// @route   POST api/wheel/new-spin
+// @desc    Process a spin from the new wheel game and update balance securely
+// @access  Private
+router.post('/new-spin', auth, async (req, res) => {
+    const { betAmount, winnings } = req.body;
+
+    // --- Server-side validation ---
+    if (typeof betAmount !== 'number' || typeof winnings !== 'number' || betAmount <= 0) {
+        return res.status(400).json({ msg: 'Invalid bet or winnings amount provided.' });
+    }
+
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        // Verify user has enough UBT for the bet
+        if (user.balances.ubt < betAmount) {
+            return res.status(400).json({ msg: 'Insufficient balance. Transaction rejected.' });
+        }
+
+        // Calculate the net change in balance
+        const netChange = winnings - betAmount;
+
+        // Apply the change to the user's balance
+        user.balances.ubt += netChange;
+
+        // Save the updated user data to the database
+        await user.save();
+
+        // Send back a success response with the new authoritative balance
+        res.json({
+            success: true,
+            msg: `Spin processed. Net change: ${netChange.toFixed(2)} UBT.`,
+            balances: user.balances
+        });
+
+    } catch (err) {
+        console.error('New wheel spin server error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
 export default router;
