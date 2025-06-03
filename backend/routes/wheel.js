@@ -6,12 +6,15 @@ import Transaction from '../models/Transaction.js'; // Assuming path to Transact
 const router = express.Router();
 
 const SPIN_COST = 10; // UBT cost per spin, must match frontend
-const PRIZES = [ // Define possible prizes
-    { name: "Jackpot!", amount: 100, weight: 10 },  // 100 UBT
-    { name: "Big Win!", amount: 50, weight: 5 },    // 50 UBT
-    { name: "Small Win", amount: 20, weight: 15 },  // 20 UBT (COST_PER_SPIN * 2)
-    { name: "Spin Again", amount: 10, weight: 20 },  // Refund spin cost
-    { name: "Try Again", amount: 0, weight: 50 }   // No win
+
+// Updated prize list with "Spin Again"
+const PRIZES = [
+    { name: "Jackpot!", amount: 100, weight: 1 },         // 100 UBT
+    { name: "Big Win!", amount: 50, weight: 4 },           // 50 UBT
+    { name: "Small Win", amount: 20, weight: 15 },         // 20 UBT (COST_PER_SPIN * 2)
+    { name: "Free Spin", amount: 10, weight: 20 },         // Wins cost back
+    { name: "Spin Again", amount: 10, weight: 10, isSpinAgain: true }, // New prize, refunds spin cost
+    { name: "Try Again", amount: 0, weight: 50 }          // No win (weight adjusted)
 ];
 
 // Helper to select a prize based on weight
@@ -37,9 +40,8 @@ router.post('/spin', authMiddleware, async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        // Ensure balances object exists and initialize ubt if not present
         if (!user.balances) {
-            user.balances = { ubt: 0, bitcoin: 0, ethereum: 0, usdt: 0 };
+            user.balances = { ubt: 0 };
         } else if (typeof user.balances.ubt !== 'number') {
             user.balances.ubt = 0;
         }
@@ -50,11 +52,10 @@ router.post('/spin', authMiddleware, async (req, res) => {
         }
         user.balances.ubt -= SPIN_COST;
 
-        // Record transaction for the cost of playing
         const costTransaction = new Transaction({
             userId,
             type: 'game_cost',
-            amount: -SPIN_COST, // Negative amount for cost
+            amount: -SPIN_COST,
             currency: 'UBT',
             description: 'Feeling Lucky - Spin Cost',
             status: 'completed',
@@ -63,27 +64,24 @@ router.post('/spin', authMiddleware, async (req, res) => {
 
         // 2. Determine Prize
         const prize = selectPrize();
-        let prizeMessage;
-
-        if (prize.name === 'Spin Again') {
-            prizeMessage = 'You landed on Spin Again! Your spin was free.';
+        let prizeMessage = `You won ${prize.name}!`;
+        if(prize.isSpinAgain) {
+            prizeMessage = "You landed on Spin Again!";
         } else if (prize.amount > 0) {
-            prizeMessage = `You won ${prize.name}! (+${prize.amount} UBT)`;
+            prizeMessage = `You won ${prize.amount} UBT!`;
         } else {
-            prizeMessage = `Sorry, you landed on Try Again.`;
+            prizeMessage = "Sorry, try again!";
         }
 
-
-        // 3. Add Prize Winnings (if any)
+        // 3. Add Prize Winnings
         if (prize.amount > 0) {
             user.balances.ubt += prize.amount;
-            // Record transaction for winnings
             const prizeTransaction = new Transaction({
                 userId,
                 type: 'game_win',
                 amount: prize.amount,
                 currency: 'UBT',
-                description: `Feeling Lucky - Won ${prize.name}`,
+                description: `Feeling Lucky - ${prize.name}`,
                 status: 'completed',
             });
             await prizeTransaction.save();
@@ -91,12 +89,14 @@ router.post('/spin', authMiddleware, async (req, res) => {
         
         await user.save();
 
+        // 4. Send Response
         res.json({
             success: true,
             message: prizeMessage,
             prizeName: prize.name,
             prizeAmount: prize.amount,
-            newBalance: user.balances.ubt
+            newBalance: user.balances.ubt,
+            isSpinAgain: prize.isSpinAgain || false // Send the flag to the frontend
         });
 
     } catch (error) {
