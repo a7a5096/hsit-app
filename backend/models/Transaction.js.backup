@@ -22,8 +22,7 @@ const TransactionSchema = new mongoose.Schema({
   currency: {
     type: String,
     required: true,
-    enum: ['BTC', 'ETH', 'UBT', 'USDT'], // Added USDT to support all currencies
-    uppercase: true // Automatically convert currency to uppercase
+    enum: ['BTC', 'ETH', 'UBT']
   },
   ubtAmount: {
     type: Number,
@@ -38,19 +37,6 @@ const TransactionSchema = new mongoose.Schema({
   timestamp: {
     type: Date,
     default: Date.now
-  },
-  type: {
-    type: String,
-    enum: ['deposit', 'withdrawal', 'reward', 'wager'],
-    default: 'deposit'
-  },
-  description: {
-    type: String,
-    default: ''
-  },
-  relatedAddress: {
-    type: String,
-    default: ''
   }
 });
 

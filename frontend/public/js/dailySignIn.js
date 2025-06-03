@@ -1,4 +1,4 @@
-// Updated frontend code to ensure reward is always sent as a number
+// Updated dailySignIn.js to fix currency enum issue and improve error handling
 document.addEventListener('DOMContentLoaded', function() {
     initializeDailySignIn();
 });
@@ -134,6 +134,16 @@ async function sendSignInDataToServer(token, ubtReward, consecutiveDays) {
     console.log("API_URL value:", typeof API_URL !== "undefined" ? API_URL : "API_URL is UNDEFINED");
     
     try {
+        // Initialize eruda for debugging if it exists and isn't already initialized
+        if (typeof eruda !== 'undefined' && !eruda._isInit) {
+            try {
+                eruda.init();
+                console.log("Eruda initialized successfully");
+            } catch (erudaError) {
+                console.warn("Failed to initialize eruda:", erudaError);
+            }
+        }
+        
         const fetchOptions = {
             method: 'POST',
             headers: {
@@ -143,7 +153,8 @@ async function sendSignInDataToServer(token, ubtReward, consecutiveDays) {
             mode: 'cors',
             body: JSON.stringify({
                 reward: parseFloat(ubtReward), // Ensure reward is sent as a number
-                consecutiveDays: parseInt(consecutiveDays) // Ensure consecutiveDays is sent as a number
+                consecutiveDays: parseInt(consecutiveDays), // Ensure consecutiveDays is sent as a number
+                currency: 'UBT' // Ensure currency is uppercase to match schema enum
             })
         };
         console.log("Fetch options:", JSON.stringify(fetchOptions, null, 2)); // Log fetch options
