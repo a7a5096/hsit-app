@@ -189,26 +189,15 @@ function initializeTeamPage(userData, token) {
     // Ensure bonus info section exists
     const bonusInfoSection = ensureBonusInfoSection();
 
-    // --- Modification: Use username as the referral code --- 
+    // --- Use username as the referral code --- 
     const referralCode = userData.username;
     if (inviteCodeDisplay) {
       inviteCodeDisplay.textContent = referralCode;
     } else {
       console.error("Invite code display element not found.");
     }
-    // --- End Modification --- 
-
-    // --- Modification: Remove Generate/Custom Code Button Logic --- 
-    const generateButton = document.querySelector('.generate-code-btn');
-    if (generateButton) {
-      generateButton.remove(); // Remove the button from the DOM
-    }
-    // Remove any dynamically added custom code elements if they existed previously
-    const customCodeContainer = document.querySelector('.custom-code-container');
-    if (customCodeContainer) {
-      customCodeContainer.remove();
-    }
-    // --- End Modification --- 
+    
+    // --- Removed Generate New Code Button from HTML ---
 
     // Fetch team data using the token
     fetchTeamData(token, bonusInfoSection, teamTable);
@@ -224,7 +213,14 @@ function initializeTeamPage(userData, token) {
     }
 
     // Add Share button functionality
-    setupShareButton(referralCode);
+    const shareButton = document.querySelector('.share-code-btn');
+    if (shareButton) {
+        shareButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            const shareLink = createShareableLink(referralCode);
+            showShareModal(shareLink);
+        });
+    }
   } catch (error) {
     console.error("Error initializing team page:", error);
     showMessage("Error initializing page. Please refresh and try again.", "error");
@@ -374,37 +370,6 @@ function addTeamMember(member, level, teamTable) {
   `;
   
   teamTable.appendChild(row);
-}
-
-// Setup Share Button
-function setupShareButton(referralCode) {
-  try {
-    const section = document.querySelector('.content-section.card-style'); // First section
-    if (!section) return;
-
-    // Check if share button already exists
-    if (section.querySelector('.share-code-btn')) return;
-
-    const shareButton = document.createElement('button');
-    shareButton.className = 'btn btn-primary share-code-btn';
-    shareButton.textContent = 'Share Referral Link';
-    shareButton.style.marginTop = '10px'; // Add some spacing
-
-    // Add after the invite code display container
-    const inviteCodeContainer = document.querySelector('.invite-code-display');
-    if (inviteCodeContainer && inviteCodeContainer.parentNode) {
-      inviteCodeContainer.parentNode.insertBefore(shareButton, inviteCodeContainer.nextSibling);
-    }
-
-    // Add share button event listener
-    shareButton.addEventListener('click', function(e) {
-      e.preventDefault();
-      const shareLink = createShareableLink(referralCode);
-      showShareModal(shareLink);
-    });
-  } catch (error) {
-    console.error("Error setting up share button:", error);
-  }
 }
 
 // Create shareable link
