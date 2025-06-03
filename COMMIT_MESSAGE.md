@@ -1,9 +1,3 @@
-# Implement static file solution for GIF behind banner
+# Update GIF path for dashboard banner
 
-This commit simplifies the previous approach by using a static file solution to play the GIF behind the banner on the dashboard page:
-
-1. Removed all database-driven banner asset code
-2. Implemented a simple CSS solution to layer the GIF behind the banner using z-index positioning
-3. Kept the static file references in the HTML
-
-This solution ensures the GIF plays behind the banner while using a simpler static file approach as requested.
+Updated the path to IMG_6204.gif to use the file from the same directory as banner.png on the dashboard page.
