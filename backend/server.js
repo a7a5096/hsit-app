@@ -1,131 +1,63 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-// Import custom CORS middleware
-import corsMiddleware from './middleware/cors.js';
-// Import routes
-import authRoutes from './routes/auth.js';
-import directSmsVerification from './routes/direct-sms-verification.js';
-import dailySignInRoutes from './routes/dailySignInRoutes.js';
-import transactionsRoutes from './routes/transactions.js';
-import botsRoutes from './routes/bots.js';
-import usersRoutes from './routes/users.js';
-import ubtRoutes from './routes/ubt.js';
-import exchangeRatesRoutes from './routes/exchangeRates.js';
-import depositRoutes from './routes/deposit.js';
-import teamRoutes from './routes/team.js'; 
-import cryptoRoutes from './routes/crypto.js'; // <-- Added import for crypto routes
+import cors from 'cors';
+import connectDB from './config/db.js';
 
 // Load environment variables
 dotenv.config();
 
-// ES Module equivalent for __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Import routes
+import authRoutes from './routes/auth.js';
+import transactionRoutes from './routes/transactions.js';
+import teamRoutes from './routes/team.js';
+import dailySignInRoutes from './routes/dailySignIn.js'; // Assuming this is the correct filename
+import botsRoutes from './routes/bots.js';
+import ubtRoutes from './routes/ubt.js';
+import exchangeRatesRoutes from './routes/exchangeRates.js';
+import depositRoutes from './routes/deposit.js';
+import wheelRoutes from './routes/wheel.js'; // For the lucky wheel
 
+// Initialize Express app
 const app = express();
 
-// Apply enhanced CORS middleware
-app.use(corsMiddleware());
-app.options('*', corsMiddleware());
+// --- Middleware ---
 
-// Body parser middleware
+// 1. CORS Middleware - To allow requests from your frontend
+app.use(cors());
+
+// 2. Body Parser Middleware - THIS IS THE CRITICAL FIX
+// This line MUST come BEFORE you define your routes.
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware for debugging
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
-
-// Global error handler middleware to ensure consistent JSON responses
-// This should ideally be placed after all routes, or it might not catch all errors.
-// For now, keeping its original position as per the provided file structure.
-app.use((err, req, res, next) => {
-  console.error('Request error:', err);
-  res.status(500).json({
-    success: false,
-    message: 'Server error',
-    error: process.env.NODE_ENV === 'production' ? null : err.message
-  });
-});
-
-// API Routes
+// --- API Routes ---
+// All your API routes should be defined after the middleware above.
 app.use('/api/auth', authRoutes);
-app.use('/api/auth/verify', directSmsVerification);
-app.use('/api/daily-signin', dailySignInRoutes);
-app.use('/api/transactions', transactionsRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/team', teamRoutes);
+app.use('/api/daily-sign-in', dailySignInRoutes);
 app.use('/api/bots', botsRoutes);
-app.use('/api/users', usersRoutes);
 app.use('/api/ubt', ubtRoutes);
 app.use('/api/exchange-rates', exchangeRatesRoutes);
 app.use('/api/deposit', depositRoutes);
-app.use('/api/team', teamRoutes);
-app.use('/api/crypto', cryptoRoutes); // <-- Added route registration for crypto routes
+app.use('/api/wheel', wheelRoutes);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Backend API is healthy!' });
+// --- Basic Root Route ---
+app.get('/', (req, res) => {
+  res.send('HSIT App API is running...');
 });
 
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Backend API is working!' });
-});
+// --- Database Connection and Server Start ---
+const startServer = async () => {
+    try {
+        await connectDB();
+        const PORT = process.env.PORT || 5001; // Render will provide the PORT env variable
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error('Failed to connect to MongoDB or start server:', error);
+        process.exit(1);
+    }
+};
 
-// Serve static files specifically from the frontend/public directory
-const publicPath = path.join(__dirname, '../frontend/public');
-app.use(express.static(publicPath));
-
-// API 404 handler for unhandled API routes - only for GET requests
-app.get('/api/*', (req, res) => {
-  res.status(404).json({ success: false, message: 'API endpoint not found.' });
-});
-
-// Update fallback to serve index.html from the correct public path
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(publicPath, 'index.html'));
-});
-
-// Error handling middleware (this is a more common placement for a general error handler)
-app.use((err, req, res, next) => {
-  console.error('Server error:', err.stack);
-  res.status(500).json({ 
-    success: false, 
-    message: 'Server error', 
-    error: process.env.NODE_ENV === 'production' ? null : err.message 
-  });
-});
-
-// 404 handler for non-API routes not caught by static or '*' GET
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Resource not found'
-  });
-});
-
-// Connect to MongoDB
-const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb+srv://a7a5096:MM00nngg2@cluster0hsit.xelat83.mongodb.net/hsit_app?retryWrites=true&w=majority&appName=Cluster0HSIT';
-const PORT = process.env.PORT || 5000;
-
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    console.log('MongoDB Connected Successfully');
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server listening on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error("MongoDB connection failed:", err.message);
-    process.exit(1);
-  });
-
-process.on('SIGINT', () => {
-  mongoose.connection.close(() => {
-    console.log('MongoDB connection closed due to app termination');
-    process.exit(0);
-  });
-});
+startServer();
