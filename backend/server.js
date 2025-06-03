@@ -10,12 +10,12 @@ dotenv.config();
 import authRoutes from './routes/auth.js';
 import transactionRoutes from './routes/transactions.js';
 import teamRoutes from './routes/team.js';
-import dailySignInRoutes from './routes/dailySignIn.js'; // Assuming this is the correct filename
+import dailySignInRoutes from './routes/dailySignIn.js';
 import botsRoutes from './routes/bots.js';
 import ubtRoutes from './routes/ubt.js';
 import exchangeRatesRoutes from './routes/exchangeRates.js';
 import depositRoutes from './routes/deposit.js';
-import wheelRoutes from './routes/wheel.js'; // For the lucky wheel
+import wheelRoutes from './routes/wheel.js';
 
 // Initialize Express app
 const app = express();
@@ -26,11 +26,12 @@ const app = express();
 app.use(cors());
 
 // 2. Body Parser Middleware - THIS IS THE CRITICAL FIX
-// This line MUST come BEFORE you define your routes.
+// This line MUST come BEFORE you define your routes. It allows the server
+// to read the JSON data sent from the signup form.
 app.use(express.json());
 
 // --- API Routes ---
-// All your API routes should be defined after the middleware above.
+// All your API routes are defined AFTER the middleware.
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/team', teamRoutes);
