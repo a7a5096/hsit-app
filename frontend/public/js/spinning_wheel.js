@@ -9,67 +9,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const spinError = document.getElementById('spinError');
 
     const token = localStorage.getItem('token');
+    const COST_PER_SPIN = 10;
     let currentUserUbtBalance = 0;
-    const COST_PER_SPIN = 10; 
 
     if (spinCostDisplay) {
         spinCostDisplay.textContent = COST_PER_SPIN;
     }
+
+    // Listen for global balance updates
+    document.addEventListener('balanceUpdated', (e) => {
+        const newBalance = e.detail.newBalance;
+        currentUserUbtBalance = newBalance;
+        
+        if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = newBalance.toFixed(2);
+        if (newUbtBalanceDisplay) newUbtBalanceDisplay.textContent = newBalance.toFixed(2); // Keep this if you have a "new balance after win" display
+        
+        if (spinButton) {
+            spinButton.disabled = !token || newBalance < COST_PER_SPIN;
+        }
+    });
+
+    // Listen for balance errors
+    document.addEventListener('balanceError', (e) => {
+        showSpinError(e.detail.message || "Could not load your UBT balance.");
+        if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = "Error";
+        if (newUbtBalanceDisplay) newUbtBalanceDisplay.textContent = "Error";
+        if (spinButton) spinButton.disabled = true;
+    });
 
     function showSpinError(message) {
         if (spinError) {
             spinError.textContent = message;
             spinError.style.display = 'block';
         }
-        if (resultMessage) resultMessage.textContent = '';
-        if (winningsAmountDisplay) winningsAmountDisplay.textContent = '0';
     }
     
     function clearSpinMessages() {
         if (spinError) spinError.style.display = 'none';
         if (resultMessage) resultMessage.textContent = '';
         if (winningsAmountDisplay) winningsAmountDisplay.textContent = '0';
-        if (newUbtBalanceDisplay) newUbtBalanceDisplay.textContent = 'N/A';
-    }
-
-    async function fetchUserUbtBalance() {
-        if (!token) {
-            if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = "N/A (Not Logged In)";
-            showSpinError("Please log in to play.");
-            if(spinButton) spinButton.disabled = true;
-            return;
-        }
-        try {
-            // Ensure API_URL is defined (from config.js or elsewhere)
-            if (typeof API_URL === 'undefined') throw new Error('API_URL is not defined.');
-            
-            const response = await fetch(`${API_URL}/api/auth`, {
-                headers: { 'x-auth-token': token }
-            });
-            
-            if (!response.ok) {
-                 const errData = await response.json().catch(()=> ({message: "Error fetching balance"}));
-                 throw new Error(errData.message || "Could not fetch balance.");
-            }
-            const data = await response.json();
-
-            // Assuming user data is nested under a 'user' object
-            const user = data.user;
-
-            if (user && user.balances && typeof user.balances.ubt === 'number') {
-                currentUserUbtBalance = user.balances.ubt;
-                if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = currentUserUbtBalance.toFixed(2);
-                if (newUbtBalanceDisplay) newUbtBalanceDisplay.textContent = currentUserUbtBalance.toFixed(2);
-                if(spinButton) spinButton.disabled = currentUserUbtBalance < COST_PER_SPIN;
-            } else {
-                throw new Error("Invalid user or balance data received.");
-            }
-        } catch (error) {
-            console.error('Error fetching user UBT balance:', error);
-            if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = "Error";
-            showSpinError(error.message);
-            if(spinButton) spinButton.disabled = true;
-        }
+        // Keep newUbtBalanceDisplay showing the current balance
     }
 
     let currentRotation = 0;
@@ -105,8 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
         animateWheel();
 
         try {
-            if (typeof API_URL === 'undefined') throw new Error('API_URL is not defined.');
-            const response = await fetch(`${API_URL}/api/wheel/spin`, {
+            // Ensure API_URL is defined
+            const effectiveApiUrl = typeof API_URL !== 'undefined' ? API_URL : 'https://hsit-backend.onrender.com';
+            
+            const response = await fetch(`${effectiveApiUrl}/api/wheel/spin`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -117,42 +98,38 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.message || `Spin failed with status: ${response.status}`);
+                throw new Error(result.message || "Spin failed due to a server error.");
             }
 
-            if (result.success) {
-                // Update UI after a delay to let the wheel "settle" visually
-                setTimeout(() => {
+            // Let the animation play out
+            setTimeout(() => {
+                if (result.success) {
                     if (resultMessage) resultMessage.textContent = result.message;
                     if (winningsAmountDisplay) winningsAmountDisplay.textContent = result.prizeAmount || 0;
-                    
+
+                    // IMPORTANT: Use balanceManager to update the balance
                     if (typeof result.newBalance === 'number') {
-                        currentUserUbtBalance = result.newBalance;
-                        if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = currentUserUbtBalance.toFixed(2);
-                        if (newUbtBalanceDisplay) newUbtBalanceDisplay.textContent = currentUserUbtBalance.toFixed(2);
+                        balanceManager.updateBalance(result.newBalance); // This will trigger the 'balanceUpdated' event
                     }
-
-                    // *** HANDLE SPIN AGAIN LOGIC ***
+                    
                     if (result.isSpinAgain) {
-                        // Re-enable the button immediately for another spin
-                        if(spinButton) spinButton.disabled = false;
+                        if (spinButton) spinButton.disabled = currentUserUbtBalance < COST_PER_SPIN; // Re-enable based on current balance
                     } else {
-                        // For other prizes, keep it disabled until animation is fully over
-                        // Or just re-enable based on balance
-                        if (spinButton) spinButton.disabled = currentUserUbtBalance < COST_PER_SPIN;
+                        // For other prizes, re-enable based on current balance
+                         if (spinButton) spinButton.disabled = currentUserUbtBalance < COST_PER_SPIN;
                     }
+                } else {
+                    showSpinError(result.message || "Spin was not successful.");
+                    if (spinButton) spinButton.disabled = currentUserUbtBalance < COST_PER_SPIN;
+                }
+            }, 3000); // Match CSS transition duration for spinning
 
-                }, 3000); // Match this delay to the animation time
-
-            } else {
-                throw new Error(result.message || "Spin was not successful.");
-            }
         } catch (error) {
             console.error('Error during spin:', error);
             showSpinError(error.message);
-            // Re-enable button on error after animation time
             setTimeout(() => {
-                if (spinButton) spinButton.disabled = false;
+                // Re-enable based on current balance after an error
+                if (spinButton) spinButton.disabled = currentUserUbtBalance < COST_PER_SPIN;
             }, 3000);
         }
     }
@@ -161,6 +138,13 @@ document.addEventListener('DOMContentLoaded', () => {
         spinButton.addEventListener('click', handleSpin);
     }
 
-    // Initial balance load
-    fetchUserUbtBalance(); 
+    // Request initial balance update from balanceManager if token exists
+    if (token) {
+        balanceManager.fetchBalance();
+    } else {
+        showSpinError("Please log in to see your balance and play.");
+        if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = "N/A";
+        if (newUbtBalanceDisplay) newUbtBalanceDisplay.textContent = "N/A";
+        if (spinButton) spinButton.disabled = true;
+    }
 });
