@@ -1,9 +1,11 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import cors from 'cors';
 import connectDB from './config/db.js';
+import corsMiddleware from './middleware/cors.js'; // Import the cors middleware
+
 // Load environment variables
 dotenv.config();
+
 // Import routes
 import authRoutes from './routes/auth.js';
 import transactionRoutes from './routes/transactions.js';
@@ -15,19 +17,19 @@ import exchangeRatesRoutes from './routes/exchangeRates.js';
 import depositRoutes from './routes/deposit.js';
 import wheelRoutes from './routes/wheel.js';
 import cryptoAssetRoutes from './routes/cryptoAsset.js';
+
 // Initialize Express app
 const app = express();
+
 // --- Middleware ---
-// 1. CORS Middleware - To allow requests from your frontend
-app.use(cors({
-  origin: '*', // Allow all origins
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
-}));
+// 1. CORS Middleware - Use the configured middleware
+app.use(corsMiddleware());
+
 // 2. Body Parser Middleware - THIS IS THE CRITICAL FIX
 // This line MUST come BEFORE you define your routes. It allows the server
 // to read the JSON data sent from the signup form.
 app.use(express.json());
+
 // --- API Routes ---
 // All your API routes are defined AFTER the middleware.
 app.use('/api/auth', authRoutes);
@@ -40,10 +42,12 @@ app.use('/api/exchange-rates', exchangeRatesRoutes);
 app.use('/api/deposit', depositRoutes);
 app.use('/api/wheel', wheelRoutes);
 app.use('/api/direct_crypto_asset', cryptoAssetRoutes);
+
 // --- Basic Root Route ---
 app.get('/', (req, res) => {
   res.send('HSIT App API is running...');
 });
+
 // --- Database Connection and Server Start ---
 const startServer = async () => {
     try {
@@ -57,4 +61,5 @@ const startServer = async () => {
         process.exit(1);
     }
 };
+
 startServer();
