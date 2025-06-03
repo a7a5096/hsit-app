@@ -1,20 +1,9 @@
-# HSIT App Bug Fixes
+# Implement static file solution for GIF behind banner
 
-This commit addresses several critical issues in the HSIT app:
+This commit simplifies the previous approach by using a static file solution to play the GIF behind the banner on the dashboard page:
 
-1. Transaction Schema Validation Errors:
-   - Fixed currency enum to properly handle 'UBT' (uppercase) instead of 'ubt'
-   - Added automatic uppercase conversion for currency values
-   - Added USDT to supported currencies list
-   - Ensured all required fields (fromAddress, txHash, ubtAmount) are properly handled
+1. Removed all database-driven banner asset code
+2. Implemented a simple CSS solution to layer the GIF behind the banner using z-index positioning
+3. Kept the static file references in the HTML
 
-2. Daily Sign-in Functionality:
-   - Updated backend route to properly handle currency case
-   - Fixed transaction creation during daily sign-in to include all required fields
-   - Improved error handling and validation
-
-3. Frontend Script Errors:
-   - Added proper Eruda initialization to fix console debugging
-   - Enhanced error handling in frontend code
-
-All fixes have been validated in the production environment and confirmed working.
+This solution ensures the GIF plays behind the banner while using a simpler static file approach as requested.

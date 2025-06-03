@@ -17,7 +17,6 @@ import exchangeRatesRoutes from './routes/exchangeRates.js';
 import depositRoutes from './routes/deposit.js';
 import wheelRoutes from './routes/wheel.js';
 import cryptoAssetRoutes from './routes/cryptoAsset.js';
-import bannerAssetRoutes from './routes/bannerAssets.js';
 
 // Initialize Express app
 const app = express();
@@ -43,7 +42,6 @@ app.use('/api/exchange-rates', exchangeRatesRoutes);
 app.use('/api/deposit', depositRoutes);
 app.use('/api/wheel', wheelRoutes);
 app.use('/api/direct_crypto_asset', cryptoAssetRoutes);
-app.use('/api/banner-assets', bannerAssetRoutes);
 
 // --- Basic Root Route ---
 app.get('/', (req, res) => {
