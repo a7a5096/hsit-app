@@ -7,11 +7,11 @@ const router = express.Router();
 
 const SPIN_COST = 10; // UBT cost per spin, must match frontend
 const PRIZES = [ // Define possible prizes
-    { name: "Jackpot!", amount: 100, weight: 1 },  // 100 UBT
+    { name: "Jackpot!", amount: 100, weight: 10 },  // 100 UBT
     { name: "Big Win!", amount: 50, weight: 5 },    // 50 UBT
     { name: "Small Win", amount: 20, weight: 15 },  // 20 UBT (COST_PER_SPIN * 2)
-    { name: "Free Spin", amount: 10, weight: 20 },  // Wins cost back
-    { name: "Try Again", amount: 0, weight: 59 }   // No win
+    { name: "Spin Again", amount: 10, weight: 20 },  // Refund spin cost
+    { name: "Try Again", amount: 0, weight: 50 }   // No win
 ];
 
 // Helper to select a prize based on weight
@@ -63,10 +63,16 @@ router.post('/spin', authMiddleware, async (req, res) => {
 
         // 2. Determine Prize
         const prize = selectPrize();
-        let prizeMessage = `You won ${prize.name}!`;
-        if (prize.amount > 0) {
-            prizeMessage += ` (+${prize.amount} UBT)`;
+        let prizeMessage;
+
+        if (prize.name === 'Spin Again') {
+            prizeMessage = 'You landed on Spin Again! Your spin was free.';
+        } else if (prize.amount > 0) {
+            prizeMessage = `You won ${prize.name}! (+${prize.amount} UBT)`;
+        } else {
+            prizeMessage = `Sorry, you landed on Try Again.`;
         }
+
 
         // 3. Add Prize Winnings (if any)
         if (prize.amount > 0) {
