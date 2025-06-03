@@ -3,9 +3,7 @@ import auth from '../middleware/auth.js';
 import User from '../models/User.js';
 import Transaction from '../models/Transaction.js';
 import DailySignIn from '../models/DailySignIn.js';
-
 const router = express.Router();
-
 /**
  * @route   POST /api/daily-signin
  * @desc    Process daily sign-in and award UBT
@@ -14,9 +12,9 @@ const router = express.Router();
 router.post('/', auth, async (req, res) => {
   try {
     // Extract and validate reward
-    const { reward, consecutiveDays } = req.body;
+    let { reward, consecutiveDays } = req.body;
     
-    // Validate reward amount - ensure it's a valid number
+    // Validate reward amount - ensure it's a valid number regardless of input type
     let validatedReward;
     try {
       validatedReward = parseFloat(reward);
@@ -141,5 +139,4 @@ router.post('/', auth, async (req, res) => {
     });
   }
 });
-
 export default router;

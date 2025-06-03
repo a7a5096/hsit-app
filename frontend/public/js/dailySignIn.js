@@ -1,163 +1,135 @@
-/**
- * HSIT App - Daily Sign In Functionality
- * This script handles the daily sign-in feature for HSIT App users
- * Credits users with 0.5 to 1.5 UBT per day
- * Includes API call to update backend and refresh local user data.
- */
-
-// API_URL is now expected to be globally available from config.js
-
+// Updated frontend code to ensure reward is always sent as a number
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the daily sign-in functionality
-    initDailySignIn();
+    initializeDailySignIn();
 });
 
 /**
  * Initialize the daily sign-in functionality
  */
-function initDailySignIn() {
-    const dailySignInButton = document.getElementById('dailySignInButton');
-    const signInText = document.getElementById('signInText');
+function initializeDailySignIn() {
+    // Check if we're on a page that should have the daily sign-in button
+    const dailySignInContainer = document.getElementById('dailySignInContainer');
+    if (!dailySignInContainer) return;
     
-    if (dailySignInButton) {
-        // Get token from localStorage
-        const token = localStorage.getItem('token');
-        if (!token) {
-            signInText.textContent = 'Please log in first';
-            dailySignInButton.disabled = true;
-            dailySignInButton.style.opacity = '0.7';
-            return;
+    // Create and append the daily sign-in button
+    const dailySignInButton = document.createElement('button');
+    dailySignInButton.id = 'dailySignInButton';
+    dailySignInButton.className = 'btn btn-primary';
+    dailySignInButton.innerHTML = '<i class="fas fa-calendar-check"></i> Daily Sign In';
+    dailySignInButton.style.marginTop = '20px';
+    dailySignInContainer.appendChild(dailySignInButton);
+    
+    // Add event listener to the button
+    dailySignInButton.addEventListener('click', handleDailySignIn);
+    
+    // Check if user has already signed in today
+    checkDailySignInStatus();
+}
+
+/**
+ * Handle the daily sign-in button click
+ */
+async function handleDailySignIn() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showNotification('Please log in to use the daily sign-in feature.', 'error');
+        return;
+    }
+    
+    try {
+        // Disable button during processing
+        const dailySignInButton = document.getElementById('dailySignInButton');
+        dailySignInButton.disabled = true;
+        dailySignInButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        
+        // Calculate reward (between 0.5 and 1.5 UBT)
+        // IMPORTANT: Ensure reward is always a number
+        const ubtReward = parseFloat((Math.random() + 0.5).toFixed(2));
+        
+        // Get consecutive days (if available)
+        let consecutiveDays = 1;
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        if (userData && userData.dailySignIn && userData.dailySignIn.consecutiveDays) {
+            consecutiveDays = parseInt(userData.dailySignIn.consecutiveDays) + 1;
         }
         
-        // Check sign-in status from server instead of localStorage
-        checkSignInStatus(token)
-            .then(hasSignedIn => {
-                if (hasSignedIn) {
-                    // User has already signed in today
-                    signInText.textContent = 'Already Signed In Today';
-                    dailySignInButton.classList.add('signed-in');
-                    dailySignInButton.style.opacity = '0.7';
-                    dailySignInButton.disabled = true; // Disable button
-                } else {
-                    // User has not signed in today
-                    signInText.textContent = 'Daily Sign In';
-                    dailySignInButton.classList.remove('signed-in');
-                    dailySignInButton.style.opacity = '1';
-                    dailySignInButton.disabled = false; // Ensure button is enabled
-                    
-                    // Add click event listener
-                    dailySignInButton.addEventListener('click', handleDailySignIn);
-                }
-            })
-            .catch(error => {
-                console.error('Error checking sign-in status:', error);
-                // Default to enabled if we can't check
-                signInText.textContent = 'Daily Sign In';
-                dailySignInButton.classList.remove('signed-in');
-                dailySignInButton.style.opacity = '1';
-                dailySignInButton.disabled = false;
-                dailySignInButton.addEventListener('click', handleDailySignIn);
-            });
+        // Send sign-in data to server
+        const updatedUserData = await sendSignInDataToServer(token, ubtReward, consecutiveDays);
+        
+        if (updatedUserData) {
+            // Update local storage with new user data
+            localStorage.setItem('userData', JSON.stringify(updatedUserData));
+            
+            // Update UI to reflect successful sign-in
+            dailySignInButton.classList.add('signed-in');
+            dailySignInButton.innerHTML = '<i class="fas fa-check-circle"></i> Signed In Today';
+            dailySignInButton.disabled = true;
+            
+            // Show success notification
+            showNotification(`Daily sign-in successful! You earned ${ubtReward.toFixed(2)} UBT.`, 'success');
+            
+            // Update balance display if it exists
+            const balanceElement = document.getElementById('ubtBalance');
+            if (balanceElement && updatedUserData.balances && updatedUserData.balances.ubt !== undefined) {
+                balanceElement.textContent = updatedUserData.balances.ubt.toFixed(2);
+            }
+        }
+    } catch (error) {
+        // Re-enable button on error
+        const dailySignInButton = document.getElementById('dailySignInButton');
+        dailySignInButton.disabled = false;
+        dailySignInButton.innerHTML = '<i class="fas fa-calendar-check"></i> Daily Sign In';
+        
+        // Show error notification
+        showNotification(`Sign-in failed: ${error.message}. Please try again later.`, 'error');
     }
 }
 
 /**
- * Check if user has already signed in today (from server)
+ * Check if the user has already signed in today
  */
-async function checkSignInStatus(token) {
+async function checkDailySignInStatus() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
     try {
         const response = await fetch(`${API_URL}/api/daily-signin/status`, {
-            method: 'GET',
             headers: {
                 'x-auth-token': token,
-                'Content-Type': 'application/json'
+                'Origin': window.location.origin
             },
+            credentials: 'include',
             mode: 'cors'
         });
         
         if (!response.ok) {
-            // If endpoint doesn't exist yet, default to not signed in
-            if (response.status === 404) {
-                return false;
-            }
-            throw new Error(`Server responded with status ${response.status}`);
+            throw new Error('Failed to check sign-in status');
         }
         
         const data = await response.json();
-        return data.hasSignedInToday;
-    } catch (error) {
-        console.error('Error checking sign-in status:', error);
-        return false; // Default to not signed in if error
-    }
-}
-
-/**
- * Handle the daily sign-in process
- */
-async function handleDailySignIn(event) {
-    event.preventDefault();
-    
-    const dailySignInButton = document.getElementById('dailySignInButton');
-    const signInText = document.getElementById('signInText');
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        showNotification('Authentication error. Please log in again.', 'error');
-        return;
-    }
-
-    // Disable button immediately to prevent multiple clicks
-    dailySignInButton.disabled = true;
-    signInText.textContent = 'Signing In...';
-    dailySignInButton.style.opacity = '0.7';
-    
-    // Calculate UBT reward - random between 0.5 and 1.5 UBT
-    const ubtReward = parseFloat((Math.random() * (1.5 - 0.5) + 0.5).toFixed(2));
-
-    try {
-        // Send sign-in data to server
-        const updatedUserData = await sendSignInDataToServer(token, ubtReward);
-
-        if (updatedUserData) {
-            // Update UI
-            signInText.textContent = 'Already Signed In Today';
+        
+        // If user has already signed in today, update button state
+        if (data.signedInToday) {
+            const dailySignInButton = document.getElementById('dailySignInButton');
             dailySignInButton.classList.add('signed-in');
-            dailySignInButton.removeEventListener('click', handleDailySignIn); // Remove listener
-
-            // Show success notification with reward
-            showNotification(`Daily sign-in successful! You've earned ${ubtReward} UBT. Consecutive days: ${updatedUserData.consecutiveDays || 1}! Your new balance is ${updatedUserData.balances.ubt.toFixed(2)} UBT.`, 'success');
-            
-            // Optional: If on dashboard, trigger immediate UI update of balance
-            const balanceElement = document.querySelector('.balance-amount'); // Attempt to find balance element
-            if (balanceElement && updatedUserData.balances && updatedUserData.balances.ubt !== undefined) {
-                 balanceElement.textContent = `${updatedUserData.balances.ubt.toFixed(2)} UBT`;
-            }
-
-        } else {
-            // Handle case where server update failed but didn't throw error (e.g., validation error)
-            showNotification('Sign-in failed. Please try again.', 'error');
-            // Re-enable button
-            dailySignInButton.disabled = false;
-            signInText.textContent = 'Daily Sign In';
+            dailySignInButton.disabled = true;
+            dailySignInButton.innerHTML = '<i class="fas fa-check-circle"></i> Signed In Today';
             dailySignInButton.style.opacity = '1';
         }
-
     } catch (error) {
-        console.error('Error during sign-in:', error);
-        showNotification(`Sign-in failed: ${error.message}. Please try again later.`, 'error');
-        // Re-enable button on error
-        dailySignInButton.disabled = false;
-        signInText.textContent = 'Daily Sign In';
+        console.error('Error checking daily sign-in status:', error);
+        // Don't show error notification for this, just leave button in default state
+        const dailySignInButton = document.getElementById('dailySignInButton');
+        dailySignInButton.innerHTML = '<i class="fas fa-calendar-check"></i> Daily Sign In';
         dailySignInButton.style.opacity = '1';
     }
 }
-
 /**
  * Send sign-in data to server
  * Makes an API call to the backend to record the sign-in and update UBT balance.
  * Returns the updated user data object on success, null otherwise.
  */
-async function sendSignInDataToServer(token, ubtReward) {
+async function sendSignInDataToServer(token, ubtReward, consecutiveDays) {
     console.log(`Attempting to sign in. Reward: ${ubtReward} UBT.`);
     console.log("API_URL value:", typeof API_URL !== "undefined" ? API_URL : "API_URL is UNDEFINED");
     
@@ -170,20 +142,17 @@ async function sendSignInDataToServer(token, ubtReward) {
             },
             mode: 'cors',
             body: JSON.stringify({
-                reward: ubtReward
+                reward: parseFloat(ubtReward), // Ensure reward is sent as a number
+                consecutiveDays: parseInt(consecutiveDays) // Ensure consecutiveDays is sent as a number
             })
         };
         console.log("Fetch options:", JSON.stringify(fetchOptions, null, 2)); // Log fetch options
-
         const response = await fetch(`${API_URL}/api/daily-signin`, fetchOptions);
-
         const data = await response.json();
-
         if (!response.ok) {
             // Throw an error with the message from the backend, or a default one
             throw new Error(data.message || `Server responded with status ${response.status}`);
         }
-
         console.log('Sign-in Success:', data);
         // Assuming the backend returns the full updated user object upon successful sign-in
         if (data && data.userData) {
@@ -193,14 +162,12 @@ async function sendSignInDataToServer(token, ubtReward) {
              // Attempt to fetch user data manually as a fallback
              return await fetchUpdatedUserData(token);
         }
-
     } catch (error) {
         console.error('Error sending sign-in data:', error);
         // Re-throw the error to be caught by handleDailySignIn
         throw error; 
     }
 }
-
 // Helper function to fetch user data - similar to dashboard logic
 async function fetchUpdatedUserData(token) {
     try {
@@ -223,8 +190,6 @@ async function fetchUpdatedUserData(token) {
         return null; // Return null if fetching fails
     }
 }
-
-
 /**
  * Show a notification to the user
  */
@@ -278,7 +243,6 @@ function showNotification(message, type = 'info') {
         notification.style.transform = 'translateY(20px)';
     }, 5000);
 }
-
 // Add CSS for the daily sign-in button
 const style = document.createElement('style');
 style.textContent = `
@@ -293,7 +257,6 @@ style.textContent = `
     #dailySignInButton:hover:not(.signed-in):not(:disabled) {
         transform: scale(1.05);
     }
-
     #dailySignInButton:disabled {
         cursor: not-allowed;
     }
