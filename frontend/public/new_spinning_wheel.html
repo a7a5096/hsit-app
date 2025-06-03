@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - HSIT</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard-page">
+    <header class="dashboard-header">
+        <span class="header-title">Home</span>
+        <a href="index.html" class="btn btn-logout">Log Out <i class="fas fa-sign-out-alt"></i></a>
+    </header>
+
+    <main class="dashboard-main">
+        <div id="statusMessage" class="status-message"></div>
+
+        <section class="banner">
+            <img src="banner.png" alt="AI Trading Banner">
+        </section>
+
+        <section class="dashboard-section common-operations">
+            <h2><i class="fas fa-cogs"></i> Common Operations</h2>
+          
+            <div class="operations-grid">
+                <a href="ai_products.html" class="operation-card">
+                    <div class="icon">
+                        <img src="icon_ai.svg" alt="AI Icon">
+                    </div>
+                    <span>AI</span>
+                </a>
+                <a href="#" class="operation-card"> <div class="icon">
+                        <img src="icon_option.svg" alt="Option Icon">
+                    </div>
+                    <span>Option (Coming soon)</span>
+                </a>
+                <a href="deposit.html" class="operation-card">
+                    <div class="icon">
+                        <img src="icon_deposit.svg" alt="Deposit Icon">
+                    </div>
+                    <span>Deposit</span>
+                </a>
+                 <button type="button" id="dailySignInButton" class="operation-card">
+                    <div class="icon">
+                         <img src="icon_signin.svg" alt="Daily Signin Icon">
+                    </div>
+                    <span id="signInText">Daily Sign In</span>
+                </button>
+                 <a href="asset_center.html" class="operation-card"> <div class="icon">
+                         <img src="icon_asset.svg" alt="Asset Center Icon">
+                    </div>
+                    <span>Asset Center</span>
+                </a>
+                 <a href="spinning_wheel_game.html" class="operation-card">
+                    <div class="icon">
+                         <img src="icon_lucky_wheel.svg" alt="Feeling Lucky Icon">
+                    </div>
+                    <span>Feeling Lucky</span>
+                </a>
+                 <a href="my_team.html" class="operation-card"> <div class="icon">
+                        <img src="icon_team.png" alt="My Team Icon">
+                    </div>
+                    <span>My team</span>
+                </a>
+                 <a href="#" class="operation-card"> <div class="icon">
+                        <img src="icon_salary.svg" alt="Receive Salary Icon">
+                    </div>
+                    <span>Receive salary (coming soon)</span>
+                </a>
+            </div>
+        </section>
+
+        <section class="dashboard-section">
+             <h2>Service</h2>
+             <div class="service-grid">
+                 <div class="service-card main-service">
+                     <div class="service-header">
+                         <h3>Suitable for new members</h3>
+                         <span>AI experience product</span>
+                     </div>
+                     <div class="service-price">20.00 %</div>
+                     <a href="ai_products.html?from=dashboard-promotion" class="btn btn-buy">Buy it now</a>
+                 </div>
+                 <div class="service-card side-service">
+                     <a href="mailto:a7a5096@googlemail.com"> <div class="icon">
+                            <img src="icon_contact.svg" alt="Contact Icon">
+                        </div>
+                        Contact
+                     </a>
+                 </div>
+                 <div class="service-card side-service">
+                     <a href="#"> <div class="icon">
+                            <img src="icon_notification.svg" alt="Notification Icon">
+                         </div>
+                        Platform notification
+                     </a>
+                 </div>
+             </div>
+        </section>
+
+    </main>
+    <script src="js/auth.js"></script>
+    <script src="js/module_loader.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+
+</body>
+</html>
