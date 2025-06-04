@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import corsMiddleware from './middleware/cors.js'; // Import the cors middleware
-import Setting from './models/Setting.js'; // Adjust path
+import Setting from './models/Setting.js';      // SINGLE import of Setting model
 
 // Load environment variables
 dotenv.config();
@@ -23,20 +23,14 @@ import cryptoAssetRoutes from './routes/cryptoAsset.js';
 const app = express();
 
 // --- Middleware ---
-// 1. CORS Middleware - Use the configured middleware
 app.use(corsMiddleware());
-
-// 2. Body Parser Middleware - THIS IS THE CRITICAL FIX
-// This line MUST come BEFORE you define your routes. It allows the server
-// to read the JSON data sent from the signup form.
 app.use(express.json());
 
 // --- API Routes ---
-// All your API routes are defined AFTER the middleware.
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/team', teamRoutes);
-app.use('/api/daily-signin', dailySignInRoutes); // Changed from daily-sign-in to daily-signin to match frontend
+app.use('/api/daily-signin', dailySignInRoutes);
 app.use('/api/bots', botsRoutes);
 app.use('/api/ubt', ubtRoutes);
 app.use('/api/exchange-rates', exchangeRatesRoutes);
@@ -49,11 +43,25 @@ app.get('/', (req, res) => {
   res.send('HSIT App API is running...');
 });
 
+// --- Application Settings Initialization ---
+async function initializeAppSettings() {
+    try {
+        // This ensures the setting is created if it doesn't exist, using the static method from your Setting model
+        await Setting.getBonusCountdown(); 
+        console.log("Global bonus countdown setting checked/initialized successfully.");
+    } catch (error) {
+        console.error("Failed to initialize global bonus countdown setting:", error);
+        // Depending on severity, you might want to prevent server start, but for now, we log and continue.
+    }
+}
+
 // --- Database Connection and Server Start ---
 const startServer = async () => {
     try {
-        await connectDB();
-        const PORT = process.env.PORT || 5001; // Render will provide the PORT env variable
+        await connectDB(); // Connect to DB first
+        await initializeAppSettings(); // Then initialize app settings like the bonus countdown
+
+        const PORT = process.env.PORT || 5001;
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });
@@ -63,8 +71,7 @@ const startServer = async () => {
     }
 };
 
-// In server.js or an initialization script, after DB connection
-import Setting from './models/Setting.js'; // Adjust path
-Setting.getBonusCountdown(); // This will ensure it's created if it doesn't exist
+// REMOVE THE DUPLICATE IMPORT FROM HERE (it was previously around this area)
+// Setting.getBonusCountdown(); // This call is now inside initializeAppSettings
 
 startServer();
