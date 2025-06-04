@@ -46,6 +46,7 @@ app.use('/api/deposit', depositRoutes);
 app.use('/api/wheel', wheelRoutes);
 app.use('/api/direct_crypto_asset', cryptoAssetRoutes);
 
+
 // backend/server.js
 // ... (all other imports and setup code from the previous complete file) ...
 
@@ -79,21 +80,18 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: 'You have already signed in today.' });
         }
 
-        // --- THIS IS THE FIX ---
         const newSignIn = new DailySignIn({ 
             userId, 
             date: today,
-            reward: UBT_REWARD_DAILY_SIGN_IN // Ensure 'reward' field is included
+            reward: UBT_REWARD_DAILY_SIGN_IN 
         });
         await newSignIn.save();
-        // --- END FIX ---
 
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        // Ensure balances object and ubt property exist
         if (!user.balances) {
             user.balances = { ubt: 0 };
         } else if (typeof user.balances.ubt !== 'number') {
@@ -101,23 +99,24 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
         }
         user.balances.ubt += UBT_REWARD_DAILY_SIGN_IN;
 
-        // Create a transaction record for the UBT reward
+        // --- FIX: Correctly create the Transaction document ---
         const transaction = new Transaction({
             userId: userId,
-            type: 'daily_signin_reward', // This type also needs to be valid in your Transaction model's enum
+            // Type: Use 'reward' or ensure 'daily_signin_reward' is in your Transaction schema enum for 'type'
+            type: 'reward', // CHANGED: Using 'reward' as a common valid type. Adjust if 'daily_signin_reward' is valid in your schema.
             amount: UBT_REWARD_DAILY_SIGN_IN,
-            currency: 'UBT',
+            currency: 'UBT', // This should be 'UBT'
             description: 'Daily Sign-in Bonus',
             status: 'completed',
-            // Ensure all *required* fields for Transaction model are present
-            // The error message also mentioned missing txHash, fromAddress, ubtAmount for Transaction model.
-            // Let's add placeholders or actual values if appropriate.
-            txHash: `signin_${userId}_${Date.now()}`, // Example: Generate a unique hash
-            fromAddress: 'SYSTEM_DAILY_REWARD',       // Example: System as fromAddress
-            toAddress: user.walletAddresses?.ubt || user.email, // Example: User's UBT address or email
-            ubtAmount: UBT_REWARD_DAILY_SIGN_IN       // Explicitly setting ubtAmount
+            txHash: `DAILY_SIGNIN_${userId}_${Date.now()}`, // Create a unique transaction hash
+            fromAddress: 'SYSTEM_REWARD_POOL', // A system identifier for the source of funds
+            toAddress: user.walletAddresses?.ubt || user.id.toString(), // User's UBT address or user ID as placeholder
+            ubtAmount: UBT_REWARD_DAILY_SIGN_IN // Explicitly ubtAmount
+            // Add any other fields required by your Transaction schema
         });
         await transaction.save();
+        // --- END FIX ---
+        
         await user.save();
 
         res.json({
@@ -137,6 +136,8 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
 });
 
 // ... (rest of your server.js: Basic Root Route, initializeAppSettings, startServer, etc.) ...
+
+
 
 
 // --- Basic Root Route ---
