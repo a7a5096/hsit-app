@@ -46,36 +46,13 @@ app.use('/api/deposit', depositRoutes);
 app.use('/api/wheel', wheelRoutes);
 app.use('/api/direct_crypto_asset', cryptoAssetRoutes);
 
+// backend/server.js
+// ... (all other imports and setup code from the previous complete file) ...
+
 // --- Explicitly Define Daily Sign-In Routes ---
 const UBT_REWARD_DAILY_SIGN_IN = 10; // UBT reward for daily sign-in
 
-// @route   GET /api/daily-signin/status
-// @desc    Check if user has signed in today (Explicitly defined in server.js)
-// @access  Private
-app.get('/api/daily-signin/status', authMiddleware, async (req, res) => {
-    console.log("Explicit GET /api/daily-signin/status route hit in server.js");
-    try {
-        const userId = req.user.id;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Start of today in server's timezone
-
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1); // Start of tomorrow
-
-        const existingSignIn = await DailySignIn.findOne({ 
-            userId, 
-            date: {
-                $gte: today,
-                $lt: tomorrow
-            }
-        });
-
-        res.json({ success: true, hasSignedInToday: !!existingSignIn });
-    } catch (error) {
-        console.error('Error checking daily sign-in status (explicit route):', error);
-        res.status(500).json({ success: false, message: 'Server error checking sign-in status.' });
-    }
-});
+// ... (the app.get('/api/daily-signin/status', ...) route remains the same) ...
 
 // @route   POST /api/daily-signin/signin
 // @desc    Record daily sign-in and award UBT (Explicitly defined in server.js)
@@ -102,12 +79,14 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: 'You have already signed in today.' });
         }
 
+        // --- THIS IS THE FIX ---
         const newSignIn = new DailySignIn({ 
             userId, 
             date: today,
-            reward: UBT_REWARD_DAILY_SIGN_IN // Ensure reward is included
+            reward: UBT_REWARD_DAILY_SIGN_IN // Ensure 'reward' field is included
         });
         await newSignIn.save();
+        // --- END FIX ---
 
         const user = await User.findById(userId);
         if (!user) {
@@ -125,11 +104,18 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
         // Create a transaction record for the UBT reward
         const transaction = new Transaction({
             userId: userId,
-            type: 'daily_signin_reward',
+            type: 'daily_signin_reward', // This type also needs to be valid in your Transaction model's enum
             amount: UBT_REWARD_DAILY_SIGN_IN,
             currency: 'UBT',
             description: 'Daily Sign-in Bonus',
-            status: 'completed'
+            status: 'completed',
+            // Ensure all *required* fields for Transaction model are present
+            // The error message also mentioned missing txHash, fromAddress, ubtAmount for Transaction model.
+            // Let's add placeholders or actual values if appropriate.
+            txHash: `signin_${userId}_${Date.now()}`, // Example: Generate a unique hash
+            fromAddress: 'SYSTEM_DAILY_REWARD',       // Example: System as fromAddress
+            toAddress: user.walletAddresses?.ubt || user.email, // Example: User's UBT address or email
+            ubtAmount: UBT_REWARD_DAILY_SIGN_IN       // Explicitly setting ubtAmount
         });
         await transaction.save();
         await user.save();
@@ -143,13 +129,15 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
 
     } catch (error) {
         console.error('Error during explicit daily sign-in:', error);
-        // Send back the specific Mongoose validation error if it's available
         if (error.name === 'ValidationError') {
             return res.status(400).json({ success: false, message: 'Validation failed.', error: error.message });
         }
         res.status(500).json({ success: false, message: 'Server error during sign-in process.', error: error.message });
     }
 });
+
+// ... (rest of your server.js: Basic Root Route, initializeAppSettings, startServer, etc.) ...
+
 
 // --- Basic Root Route ---
 app.get('/', (req, res) => {
