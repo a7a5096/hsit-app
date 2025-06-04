@@ -4,164 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Products - HSIT</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css"> 
 </head>
 <body class="ai-products-page">
     <header class="ai-header">
         <a href="dashboard.html" class="back-btn">&larr; Back</a>
         <h1>AI Investment Products</h1>
-        <div></div> <!-- Empty div for spacing -->
-    </header>
+        <div></div> </header>
 
     <main class="products-main">
+        <div id="statusMessage" class="status-message" style="display: none;"></div>
         <div class="products-grid">
+            <div class="bonus-display" style="display: none; text-align: center; margin: 10px 0; color: #50fa7b;">
+                    Bonus: <span class="bonus-amount-value">0</span> UBT
+                </div>
 
-            <!-- Bot 1: Starter Bot (100 UBT) -->
-            <div class="product-card">
-                <div class="product-logo logo-bot">Starter<br>Bot</div>
-                <div class="product-info-stats">
-                    <div><span>10 UBT</span><label>Daily</label></div>
-                    <div><span>2 days</span><label>Lock</label></div>
-                    <div><span>100 UBT</span><label>Cost</label></div>
+                <div class="bonus-countdown-container" style="display: none;">
+                    <p class="bonus-countdown-text">Limited Time Bonus!</p>
+                    <div class="countdown-bar-outer">
+                        <div class="countdown-bar-inner" style="width: 100%;"></div>
+                    </div>
+                    <p class="countdown-percent-text">100% remaining</p>
                 </div>
-                <div class="product-purchases">Recommended for new users</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>
-                        Our entry-level AI trading bot is perfect for new users looking to experience the benefits of automated trading with minimal commitment.
-                    </p>
-                    <ul class="bot-features">
-                        <li><strong>Lock-in Period:</strong> 2 days</li>
-                        <li><strong>Daily Profit:</strong> 10 UBT credited to your account each day</li>
-                        <li><strong>Total Return:</strong> 120 UBT (20 UBT profit + 100 UBT principal)</li>
-                        <li><strong>UBT Exchange:</strong> All profits can be immediately exchanged for USDT</li>
-                    </ul>
-                    <p class="bot-note">
-                        This bot is linked to the "20% interest for new users" promotion on the dashboard.
-                    </p>
-                </div>
-                <a href="#" class="btn btn-buy full-width" data-bot-id="1">Buy Now (100 UBT)</a>
+                
+                <button class="btn btn-primary full-width btn-buy-bot" data-bot-id="1">Buy Now</button>
             </div>
-
-            <!-- Bot 2: Standard Bot (500 UBT) -->
-            <div class="product-card">
-                <div class="product-logo logo-bot">Standard<br>Bot</div>
-                <div class="product-info-stats">
-                    <div><span>10 UBT</span><label>Daily</label></div>
-                    <div><span>14 days</span><label>Lock</label></div>
-                    <div><span>500 UBT</span><label>Cost</label></div>
-                </div>
-                <div class="product-purchases">Principal returned after lock period</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>
-                        Our standard AI trading bot offers a balanced approach to automated trading with a moderate lock-in period and guaranteed principal return.
-                    </p>
-                    <ul class="bot-features">
-                        <li><strong>Lock-in Period:</strong> 14 days</li>
-                        <li><strong>Daily Profit:</strong> 10 UBT credited to your account each day</li>
-                        <li><strong>Principal Return:</strong> Your full 500 UBT investment returned after 14 days</li>
-                        <li><strong>Total Return:</strong> 640 UBT (140 UBT profit + 500 UBT principal)</li>
-                        <li><strong>UBT Exchange:</strong> All profits can be immediately exchanged for USDT</li>
-                    </ul>
-                </div>
-                <a href="#" class="btn btn-buy full-width" data-bot-id="2">Buy Now (500 UBT)</a>
-            </div>
-
-            <!-- Bot 3: Premium Bot (3000 UBT) -->
-            <div class="product-card">
-                <div class="product-logo logo-bot">Premium<br>Bot</div>
-                <div class="product-info-stats">
-                    <div><span>10 UBT</span><label>Daily</label></div>
-                    <div><span>30 days</span><label>Lock</label></div>
-                    <div><span>3000 UBT</span><label>Cost</label></div>
-                </div>
-                <div class="product-purchases">Includes 300 UBT bonus on day 3</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>
-                        Our premium AI trading bot is designed for serious investors looking for consistent returns with an early bonus payment.
-                    </p>
-                    <ul class="bot-features">
-                        <li><strong>Lock-in Period:</strong> 30 days</li>
-                        <li><strong>Daily Profit:</strong> 10 UBT credited to your account each day</li>
-                        <li><strong>Early Bonus:</strong> 300 UBT bonus paid on day 3</li>
-                        <li><strong>Principal Return:</strong> Your full 3000 UBT investment returned after 30 days</li>
-                        <li><strong>Total Return:</strong> 3600 UBT (300 UBT bonus + 300 UBT daily profits + 3000 UBT principal)</li>
-                        <li><strong>UBT Exchange:</strong> All profits can be immediately exchanged for USDT</li>
-                    </ul>
-                </div>
-                <a href="#" class="btn btn-buy full-width" data-bot-id="3">Buy Now (3000 UBT)</a>
-            </div>
-
-            <!-- Bot 4: Advanced Bot (10000 UBT) -->
-            <div class="product-card">
-                <div class="product-logo logo-bot">Advanced<br>Bot</div>
-                <div class="product-info-stats">
-                    <div><span>15 UBT</span><label>Daily</label></div>
-                    <div><span>100 days</span><label>Lock</label></div>
-                    <div><span>10000 UBT</span><label>Cost</label></div>
-                </div>
-                <div class="product-purchases">Three 500 UBT bonuses included</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>
-                        Our advanced AI trading bot offers higher daily returns and multiple bonus payments throughout the lock-in period.
-                    </p>
-                    <ul class="bot-features">
-                        <li><strong>Lock-in Period:</strong> 100 days</li>
-                        <li><strong>Daily Profit:</strong> 15 UBT credited to your account each day</li>
-                        <li><strong>Bonus Payments:</strong> 500 UBT paid on days 3, 33, and 63</li>
-                        <li><strong>Principal Return:</strong> Your full 10000 UBT investment returned after 100 days</li>
-                        <li><strong>Total Return:</strong> 13000 UBT (1500 UBT bonuses + 1500 UBT daily profits + 10000 UBT principal)</li>
-                        <li><strong>UBT Exchange:</strong> All profits can be immediately exchanged for USDT</li>
-                    </ul>
-                </div>
-                <a href="#" class="btn btn-buy full-width" data-bot-id="4">Buy Now (10000 UBT)</a>
-            </div>
-
-            <!-- Bot 5: Elite Bot (100000 UBT) -->
-            <div class="product-card premium-card">
-                <div class="product-logo logo-bot">Elite<br>Bot</div>
-                <div class="product-info-stats">
-                    <div><span>100 UBT</span><label>Daily</label></div>
-                    <div><span>300 days</span><label>Lock</label></div>
-                    <div><span>100000 UBT</span><label>Cost</label></div>
-                </div>
-                <div class="product-purchases">VIP status with dedicated advisor</div>
-                <div class="product-details">
-                    <h3>Product Details</h3>
-                    <p>
-                        Our elite AI trading bot is our premium offering for high-net-worth investors seeking substantial returns with VIP benefits.
-                    </p>
-                    <ul class="bot-features">
-                        <li><strong>Lock-in Period:</strong> 300 days</li>
-                        <li><strong>Daily Profit:</strong> 100 UBT credited to your account each day</li>
-                        <li><strong>Monthly Bonus:</strong> 1000 UBT bonus every 30 days (10 payments total)</li>
-                        <li><strong>Principal Return:</strong> Your full 100000 UBT investment returned after 300 days</li>
-                        <li><strong>Total Return:</strong> 140000 UBT (10000 UBT bonuses + 30000 UBT daily profits + 100000 UBT principal)</li>
-                        <li><strong>VIP Benefits:</strong> Dedicated investment advisor and priority exchange service</li>
-                        <li><strong>UBT Exchange:</strong> All profits can be immediately exchanged for USDT at preferential rates</li>
-                    </ul>
-                </div>
-                <a href="#" class="btn btn-buy full-width" data-bot-id="5">Buy Now (100000 UBT)</a>
-            </div>
-
+            -->
         </div>
     </main>
 
-    <!-- Purchase Modal -->
-    <div id="purchaseModal" class="modal">
+    <div id="purchaseModal" class="modal" style="display:none;">
         <div class="modal-content">
             <h2>Confirm Purchase</h2>
             <div id="purchaseDetails"></div>
             <div class="button-group">
-                <button id="confirmPurchase" class="btn btn-primary">Confirm Purchase</button>
-                <button id="cancelPurchase" class="btn btn-secondary">Cancel</button>
+                <button id="confirmPurchaseBtn" class="btn btn-primary">Confirm Purchase</button>
+                <button id="cancelPurchaseBtn" class="btn btn-secondary">Cancel</button>
             </div>
         </div>
     </div>
-
+    
+    <script src="js/config.js"></script> 
+    <script src="js/balanceManager.js"></script> 
     <script src="js/ai_products.js"></script>
 </body>
 </html>
