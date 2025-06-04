@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import corsMiddleware from './middleware/cors.js'; // Import the cors middleware
+import Setting from './models/Setting.js'; // Adjust path
 
 // Load environment variables
 dotenv.config();
@@ -61,5 +62,9 @@ const startServer = async () => {
         process.exit(1);
     }
 };
+
+// In server.js or an initialization script, after DB connection
+import Setting from './models/Setting.js'; // Adjust path
+Setting.getBonusCountdown(); // This will ensure it's created if it doesn't exist
 
 startServer();
