@@ -1132,6 +1132,110 @@ img {
      color: #aaa; /* Lighter grey text */
 }
 
+/* ... your existing styles ... */
+
+.product-card .bonus-info {
+    color: #2ecc71; /* Green for bonus info */
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.bonus-countdown-container {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #444; /* Optional separator for the bonus section */
+}
+
+.bonus-countdown-text {
+    font-size: 0.9em;
+    color: #e67e22; /* Orange warning color */
+    margin-bottom: 5px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.countdown-bar-outer {
+    background-color: #555; /* Darker background for the bar track */
+    border-radius: 5px;
+    height: 12px;
+    overflow: hidden;
+    width: 100%;
+    margin-bottom: 3px;
+    border: 1px solid #666;
+}
+
+.countdown-bar-inner {
+    background-color: #2ecc71; /* Green for remaining bonus */
+    height: 100%;
+    width: 100%; /* Default to full, JS will set actual width */
+    border-radius: 4px; /* Slightly less than outer for inset look */
+    transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75em;
+    font-weight: bold;
+}
+
+.countdown-bar-inner.low {
+    background-color: #f39c12; /* Orange when bonus is low */
+}
+.countdown-bar-inner.very-low {
+    background-color: #e74c3c; /* Red when bonus is very low */
+}
+
+.countdown-percent-text {
+    font-size: 0.8em;
+    color: #bbb;
+    text-align: right;
+}
+
+/* Modal Styles (if you use the provided modal) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; 
+  z-index: 1000; 
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto; 
+  background-color: rgba(0,0,0,0.6); 
+}
+
+.modal-content {
+  background-color: #2c2c44; /* Dark card background */
+  color: #e0e0e0;
+  margin: 15% auto; 
+  padding: 25px;
+  border: 1px solid #555;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 450px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #fff;
+}
+.modal-content #purchaseDetails {
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.modal-content .button-group {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+.modal-content .button-group .btn {
+    min-width: 120px;
+}
 
 /* --- Ensure other styles (.dashboard-page, header, sections, etc.) remain --- */
-Now the style of the whole site is broken
+
