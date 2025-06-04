@@ -21,22 +21,17 @@ document.addEventListener("DOMContentLoaded", function() {
         loginForm.addEventListener("submit", handleLogin);
         console.log("auth.js: Event listener attached to loginForm"); // DEBUG
     } else {
-        // Only log error if we are on a page that should have a login form (e.g., index.html)
         const currentPage = window.location.pathname.split("/").pop();
-        if (currentPage === "index.html" || currentPage === "") { // Empty string for root path
+        if (currentPage === "index.html" || currentPage === "") { 
             console.warn("auth.js: loginForm not found on login page (index.html)!"); // DEBUG
         }
     }
 
-    // Signup form handling
     var signupForm = document.getElementById("signupForm");
     if (signupForm) {
         console.log("auth.js: signupForm found"); // DEBUG
         signupForm.addEventListener("submit", handleSignup);
         console.log("auth.js: Event listener attached to signupForm"); // DEBUG
-    } else {
-        // This is not an error on the login page
-        // console.log("auth.js: signupForm not found (this is okay on login page)");
     }
 });
 
@@ -55,13 +50,11 @@ function handleLogin(event) {
     console.log("auth.js: Email value -", emailValue); // DEBUG
     console.log("auth.js: Password value -", passwordValue ? "[PRESENT]" : "[EMPTY]"); // DEBUG
 
-    // Clear previous status messages
     if (statusMessage) {
         statusMessage.textContent = "";
         statusMessage.style.display = "none";
     }
 
-    // Validate form data
     if (!emailValue || !passwordValue) {
         showStatus("Please enter both email and password", "error");
         console.error("auth.js: Email or password empty"); // DEBUG
@@ -71,7 +64,6 @@ function handleLogin(event) {
     showStatus("Signing in...", "info");
     console.log("auth.js: Attempting to sign in..."); // DEBUG
 
-    // Use fetch API instead of XMLHttpRequest for better error handling
     fetch(`${API_URL}/api/auth`, {
         method: 'POST',
         headers: {
@@ -85,25 +77,24 @@ function handleLogin(event) {
     })
     .then(response => {
         console.log("auth.js: Login API response received, status:", response.status); // DEBUG
-
-        // Check if response is ok (status in the range 200-299)
         if (!response.ok) {
             return response.json().then(errorData => {
                 throw new Error(errorData.message || `Login failed (Status: ${response.status})`);
             }).catch(jsonError => {
-                // If JSON parsing fails, throw a generic error with the status
                 throw new Error(`Login failed (Status: ${response.status})`);
             });
         }
-
         return response.json();
     })
     .then(data => {
         console.log("auth.js: Login API success, data:", data); // DEBUG
-
         if (data.token && data.user) {
             localStorage.setItem("token", data.token);
             localStorage.setItem("userData", JSON.stringify(data.user));
+
+            // *** Dispatch the loginSuccess event for balanceManager ***
+            document.dispatchEvent(new CustomEvent('loginSuccess'));
+            console.log("auth.js: Dispatched 'loginSuccess' event."); // DEBUG
 
             showStatus("Login successful! Redirecting...", "success");
             setTimeout(function() {
@@ -116,8 +107,6 @@ function handleLogin(event) {
     })
     .catch(error => {
         console.error("auth.js: Login error:", error.message); // DEBUG
-
-        // Handle network errors specifically
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
             showStatus("Network error: Could not connect to the server. Please check your internet connection.", "error");
         } else {
@@ -132,13 +121,10 @@ function handleLogin(event) {
  */
 function handleSignup(event) {
     console.log("auth.js: handleSignup function called"); // DEBUG
-
-    console.log("auth.js: Attempting to prevent default form submission..."); // DEBUG
     event.preventDefault();
     console.log("auth.js: Default form submission prevented. event.defaultPrevented:", event.defaultPrevented); // DEBUG
 
     var statusMessage = document.getElementById("statusMessage");
-    // Ensure these IDs match your signup.html form
     var usernameValue = document.getElementById("username") ? document.getElementById("username").value.trim() : null;
     var emailValue = document.getElementById("email") ? document.getElementById("email").value.trim() : null;
     var phoneValue = document.getElementById("phone") ? document.getElementById("phone").value.trim() : null;
@@ -149,13 +135,11 @@ function handleSignup(event) {
 
     console.log("auth.js: Signup form values collected:", { usernameValue, emailValue, phoneValue, passwordPresent: !!passwordValue, confirmPasswordPresent: !!confirmPasswordValue, invitationCodeValue, privacyPolicyChecked }); // DEBUG
 
-    // Clear previous status messages
     if (statusMessage) {
         statusMessage.textContent = "";
         statusMessage.style.display = "none";
     }
 
-    // Basic Validations
     if (!usernameValue || !emailValue || !phoneValue || !passwordValue || !confirmPasswordValue) {
         showStatus("Please fill in all required fields.", "error");
         console.error("auth.js: Signup validation failed - missing required fields."); // DEBUG
@@ -175,7 +159,6 @@ function handleSignup(event) {
     console.log("auth.js: Signup validations passed."); // DEBUG
     showStatus("Creating account...", "info");
 
-    // Use fetch API instead of XMLHttpRequest for better error handling
     fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
@@ -185,52 +168,45 @@ function handleSignup(event) {
         body: JSON.stringify({
             username: usernameValue,
             email: emailValue,
-            // --- CRITICAL FIX HERE: Change 'phone' to 'phoneNumber' ---
-            phoneNumber: phoneValue, // THIS WAS THE MISMATCH!
-            // --- END FIX ---
+            phoneNumber: phoneValue, 
             password: passwordValue,
-            invitationCode: invitationCodeValue || null // This is correctly handled as optional/nullable
+            invitationCode: invitationCodeValue || null
         })
     })
     .then(response => {
         console.log("auth.js: Signup API response received, status:", response.status); // DEBUG
-
-        // Check if response is ok (status in the range 200-299)
         if (!response.ok) {
             return response.json().then(errorData => {
                 throw new Error(errorData.message || `Signup failed (Status: ${response.status})`);
             }).catch(jsonError => {
-                // If JSON parsing fails, throw a generic error with the status
                 throw new Error(`Signup failed (Status: ${response.status})`);
             });
         }
-
         return response.json();
     })
     .then(data => {
         console.log("auth.js: Signup API success, data:", data); // DEBUG
-
-        // Store token and user data immediately if available
-        if (data.token && data.user) {
+        if (data.token && data.user) { // If signup immediately logs the user in
             localStorage.setItem("token", data.token);
             localStorage.setItem("userData", JSON.stringify(data.user));
+
+            // *** Dispatch the loginSuccess event for balanceManager ***
+            document.dispatchEvent(new CustomEvent('loginSuccess'));
+            console.log("auth.js: Dispatched 'loginSuccess' event after signup."); // DEBUG
 
             showStatus("Account created successfully! Redirecting to dashboard...", "success");
             setTimeout(function() {
                 window.location.href = "dashboard.html";
             }, 2000);
         } else {
-            // Fall back to original behavior if token not available
             showStatus(data.message || "Signup successful! Please log in.", "success");
             setTimeout(function() {
-                window.location.href = "index.html";
+                window.location.href = "index.html"; // Redirect to login page if not auto-logged in
             }, 2000);
         }
     })
     .catch(error => {
         console.error("auth.js: Signup error:", error.message); // DEBUG
-
-        // Handle network errors specifically
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
             showStatus("Network error: Could not connect to the server. Please check your internet connection.", "error");
         } else {
@@ -278,14 +254,15 @@ function getAuthToken() {
 function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("userData");
+    // Optionally, inform balanceManager about logout
+    // document.dispatchEvent(new CustomEvent('logoutSuccess')); 
     window.location.href = "index.html";
 }
 
 // For protected pages, redirect if not logged in
 document.addEventListener("DOMContentLoaded", function() {
-    // This second DOMContentLoaded listener is fine, they will both execute.
     console.log("auth.js: Second DOMContentLoaded for protected page check"); // DEBUG
-    const protectedPages = ["dashboard.html", "my_team.html", "lucky_wheel.html", "transactions.html", "ubt_exchange.html", "ai_products.html", "asset_center.html", "deposit.html"];
+    const protectedPages = ["dashboard.html", "my_team.html", "lucky_wheel.html", "transactions.html", "ubt_exchange.html", "ai_products.html", "asset_center.html", "deposit.html", "spinning_wheel_game.html"];
     const currentPage = window.location.pathname.split("/").pop();
 
     if (protectedPages.includes(currentPage) && !isAuthenticated()) {
@@ -294,12 +271,21 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
-    var logoutButton = document.getElementById("logout-button");
+    var logoutButton = document.getElementById("logout-button"); // Check if this ID exists on your protected pages
     if (logoutButton) {
         console.log("auth.js: Logout button found, attaching listener"); // DEBUG
         logoutButton.addEventListener("click", function(e) {
             e.preventDefault();
             logout();
+        });
+    } else {
+        // Attempt to find logout buttons with a common class if ID is not always present
+        document.querySelectorAll('.btn-logout').forEach(button => {
+             console.log("auth.js: Logout button with class .btn-logout found, attaching listener"); // DEBUG
+             button.addEventListener("click", function(e) {
+                 e.preventDefault();
+                 logout();
+             });
         });
     }
 });
