@@ -4,10 +4,10 @@ import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import corsMiddleware from './middleware/cors.js';
-import Setting from './models/Setting.js';
+import Setting from './models/Setting.js';      // SINGLE import of Setting model
 
-// --- Import models and middleware needed for the explicit routes ---
-import User from './models/User.js'; // Ensure path is correct
+// --- Import models and middleware needed for the explicit daily sign-in routes ---
+import User from './models/User.js'; // Ensure path is correct relative to server.js
 import Transaction from './models/Transaction.js'; // Ensure path is correct
 import DailySignIn from './models/DailySignIn.js'; // Ensure path is correct
 import authMiddleware from './middleware/auth.js'; // Ensure path is correct
@@ -15,36 +15,45 @@ import authMiddleware from './middleware/auth.js'; // Ensure path is correct
 // Load environment variables
 dotenv.config();
 
-// Import other routes (dailySignInRoutes remains commented out for this approach)
+// Import other routes (dailySignInRoutes from a separate file remains commented out)
 import authRoutes from './routes/auth.js';
 import transactionRoutes from './routes/transactions.js';
 import teamRoutes from './routes/team.js';
 // import dailySignInRoutes from './routes/dailySignIn.js'; // <<<< REMAINS COMMENTED OUT
 import botsRoutes from './routes/bots.js';
-// ... other route imports
+import ubtRoutes from './routes/ubt.js';
+import exchangeRatesRoutes from './routes/exchangeRates.js';
+import depositRoutes from './routes/deposit.js';
+import wheelRoutes from './routes/wheel.js';
+import cryptoAssetRoutes from './routes/cryptoAsset.js';
 
+// Initialize Express app
 const app = express();
 
 // --- Middleware ---
 app.use(corsMiddleware());
-app.use(express.json());
+app.use(express.json()); // Body parser for JSON requests
 
 // --- API Routes ---
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/team', teamRoutes);
-// app.use('/api/daily-signin', dailySignInRoutes); // <<<< REMAINS COMMENTED OUT
+// app.use('/api/daily-signin', dailySignInRoutes); // <<<< Using explicit routes below instead
 app.use('/api/bots', botsRoutes);
-// ... other app.use for routes
+app.use('/api/ubt', ubtRoutes);
+app.use('/api/exchange-rates', exchangeRatesRoutes);
+app.use('/api/deposit', depositRoutes);
+app.use('/api/wheel', wheelRoutes);
+app.use('/api/direct_crypto_asset', cryptoAssetRoutes);
 
 // --- Explicitly Define Daily Sign-In Routes ---
-const UBT_REWARD_DAILY_SIGN_IN = 10; // Renamed for clarity if UBT_REWARD is used elsewhere
+const UBT_REWARD_DAILY_SIGN_IN = 10; // UBT reward for daily sign-in
 
 // @route   GET /api/daily-signin/status
 // @desc    Check if user has signed in today (Explicitly defined in server.js)
 // @access  Private
 app.get('/api/daily-signin/status', authMiddleware, async (req, res) => {
-    console.log("Explicit GET /api/daily-signin/status route hit in server.js"); // Debug log
+    console.log("Explicit GET /api/daily-signin/status route hit in server.js");
     try {
         const userId = req.user.id;
         const today = new Date();
@@ -67,7 +76,6 @@ app.get('/api/daily-signin/status', authMiddleware, async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error checking sign-in status.' });
     }
 });
-
 
 // @route   POST /api/daily-signin/signin
 // @desc    Record daily sign-in and award UBT (Explicitly defined in server.js)
@@ -102,6 +110,7 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
+        // Ensure balances object and ubt property exist
         if (!user.balances) {
             user.balances = { ubt: 0 };
         } else if (typeof user.balances.ubt !== 'number') {
@@ -134,11 +143,34 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
 });
 
 // --- Basic Root Route ---
-// app.get('/', (req, res) => { ... }); // Already exists
+app.get('/', (req, res) => {
+  res.send('HSIT App API is running...');
+});
 
 // --- Application Settings Initialization ---
-// async function initializeAppSettings() { ... } // Already exists
+async function initializeAppSettings() {
+    try {
+        await Setting.getBonusCountdown(); 
+        console.log("Global bonus countdown setting checked/initialized successfully.");
+    } catch (error) {
+        console.error("Failed to initialize global bonus countdown setting:", error);
+    }
+}
 
 // --- Database Connection and Server Start ---
-// const startServer = async () => { ... }; // Already exists
-// startServer(); // Already exists
+const startServer = async () => {
+    try {
+        await connectDB(); // Connect to DB first
+        await initializeAppSettings(); // Then initialize app settings
+
+        const PORT = process.env.PORT || 5001; // Render will provide the PORT env variable
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error('Failed to connect to MongoDB or start server:', error);
+        process.exit(1);
+    }
+};
+
+startServer();
