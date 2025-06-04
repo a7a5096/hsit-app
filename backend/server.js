@@ -4,13 +4,13 @@ import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import corsMiddleware from './middleware/cors.js';
-import Setting from './models/Setting.js';      // SINGLE import of Setting model
+import Setting from './models/Setting.js';
 
-// --- Import models and middleware needed for the explicit daily sign-in routes ---
-import User from './models/User.js'; // Ensure path is correct relative to server.js
-import Transaction from './models/Transaction.js'; // Ensure path is correct
-import DailySignIn from './models/DailySignIn.js'; // Ensure path is correct
-import authMiddleware from './middleware/auth.js'; // Ensure path is correct
+// --- Import models and middleware needed for the explicitly defined daily sign-in routes ---
+import User from './models/User.js';
+import Transaction from './models/Transaction.js';
+import DailySignIn from './models/DailySignIn.js';
+import authMiddleware from './middleware/auth.js';
 
 // Load environment variables
 dotenv.config();
@@ -19,7 +19,7 @@ dotenv.config();
 import authRoutes from './routes/auth.js';
 import transactionRoutes from './routes/transactions.js';
 import teamRoutes from './routes/team.js';
-// import dailySignInRoutes from './routes/dailySignIn.js'; // <<<< REMAINS COMMENTED OUT
+// import dailySignInRoutes from './routes/dailySignIn.js'; // <<<< Using explicit routes below
 import botsRoutes from './routes/bots.js';
 import ubtRoutes from './routes/ubt.js';
 import exchangeRatesRoutes from './routes/exchangeRates.js';
@@ -31,14 +31,14 @@ import cryptoAssetRoutes from './routes/cryptoAsset.js';
 const app = express();
 
 // --- Middleware ---
-app.use(corsMiddleware());
-app.use(express.json()); // Body parser for JSON requests
+app.use(corsMiddleware()); // Handles CORS
+app.use(express.json());   // Body parser for JSON requests
 
 // --- API Routes ---
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/team', teamRoutes);
-// app.use('/api/daily-signin', dailySignInRoutes); // <<<< Using explicit routes below instead
+// app.use('/api/daily-signin', dailySignInRoutes); // <<<< Using explicit routes below
 app.use('/api/bots', botsRoutes);
 app.use('/api/ubt', ubtRoutes);
 app.use('/api/exchange-rates', exchangeRatesRoutes);
@@ -102,7 +102,11 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: 'You have already signed in today.' });
         }
 
-        const newSignIn = new DailySignIn({ userId, date: today });
+        const newSignIn = new DailySignIn({ 
+            userId, 
+            date: today,
+            reward: UBT_REWARD_DAILY_SIGN_IN // Ensure reward is included
+        });
         await newSignIn.save();
 
         const user = await User.findById(userId);
@@ -118,6 +122,7 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
         }
         user.balances.ubt += UBT_REWARD_DAILY_SIGN_IN;
 
+        // Create a transaction record for the UBT reward
         const transaction = new Transaction({
             userId: userId,
             type: 'daily_signin_reward',
@@ -138,6 +143,10 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
 
     } catch (error) {
         console.error('Error during explicit daily sign-in:', error);
+        // Send back the specific Mongoose validation error if it's available
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ success: false, message: 'Validation failed.', error: error.message });
+        }
         res.status(500).json({ success: false, message: 'Server error during sign-in process.', error: error.message });
     }
 });
@@ -150,10 +159,12 @@ app.get('/', (req, res) => {
 // --- Application Settings Initialization ---
 async function initializeAppSettings() {
     try {
+        // This ensures the setting is created if it doesn't exist, using the static method from your Setting model
         await Setting.getBonusCountdown(); 
         console.log("Global bonus countdown setting checked/initialized successfully.");
     } catch (error) {
         console.error("Failed to initialize global bonus countdown setting:", error);
+        // Depending on severity, you might want to prevent server start if this is critical
     }
 }
 
@@ -161,7 +172,7 @@ async function initializeAppSettings() {
 const startServer = async () => {
     try {
         await connectDB(); // Connect to DB first
-        await initializeAppSettings(); // Then initialize app settings
+        await initializeAppSettings(); // Then initialize app settings (like the bonus countdown)
 
         const PORT = process.env.PORT || 5001; // Render will provide the PORT env variable
         app.listen(PORT, () => {
