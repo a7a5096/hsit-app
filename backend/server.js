@@ -8,7 +8,7 @@ import Setting from './models/Setting.js';
 
 // --- Import models and middleware needed for the explicitly defined daily sign-in routes ---
 import User from './models/User.js';
-import Transaction from './models/Transaction.js';
+import Transaction from './models/Transaction.js'; // Make sure this model is correctly defined
 import DailySignIn from './models/DailySignIn.js';
 import authMiddleware from './middleware/auth.js';
 
@@ -46,14 +46,36 @@ app.use('/api/deposit', depositRoutes);
 app.use('/api/wheel', wheelRoutes);
 app.use('/api/direct_crypto_asset', cryptoAssetRoutes);
 
-
-// backend/server.js
-// ... (all other imports and setup code from the previous complete file) ...
-
 // --- Explicitly Define Daily Sign-In Routes ---
 const UBT_REWARD_DAILY_SIGN_IN = 10; // UBT reward for daily sign-in
 
-// ... (the app.get('/api/daily-signin/status', ...) route remains the same) ...
+// @route   GET /api/daily-signin/status
+// @desc    Check if user has signed in today (Explicitly defined in server.js)
+// @access  Private
+app.get('/api/daily-signin/status', authMiddleware, async (req, res) => {
+    console.log("Explicit GET /api/daily-signin/status route hit in server.js");
+    try {
+        const userId = req.user.id;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Start of today in server's timezone
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1); // Start of tomorrow
+
+        const existingSignIn = await DailySignIn.findOne({ 
+            userId, 
+            date: {
+                $gte: today,
+                $lt: tomorrow
+            }
+        });
+
+        res.json({ success: true, hasSignedInToday: !!existingSignIn });
+    } catch (error) {
+        console.error('Error checking daily sign-in status (explicit route):', error);
+        res.status(500).json({ success: false, message: 'Server error checking sign-in status.' });
+    }
+});
 
 // @route   POST /api/daily-signin/signin
 // @desc    Record daily sign-in and award UBT (Explicitly defined in server.js)
@@ -99,20 +121,22 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
         }
         user.balances.ubt += UBT_REWARD_DAILY_SIGN_IN;
 
-        // --- FIX: Correctly create the Transaction document ---
+        // --- FIX: Create the Transaction document with all required fields ---
         const transaction = new Transaction({
             userId: userId,
-            // Type: Use 'reward' or ensure 'daily_signin_reward' is in your Transaction schema enum for 'type'
-            type: 'reward', // CHANGED: Using 'reward' as a common valid type. Adjust if 'daily_signin_reward' is valid in your schema.
+            // Type: Change 'daily_signin_reward' to a type that IS VALID in your Transaction schema's enum.
+            // For example, if your enum includes 'reward' or 'bonus', use that.
+            // If you want to use 'daily_signin_reward', you MUST add it to the enum in backend/models/Transaction.js
+            type: 'reward', // <<< ACTION: Verify or change this type based on your Transaction model
             amount: UBT_REWARD_DAILY_SIGN_IN,
-            currency: 'UBT', // This should be 'UBT'
+            currency: 'UBT',
             description: 'Daily Sign-in Bonus',
             status: 'completed',
-            txHash: `DAILY_SIGNIN_${userId}_${Date.now()}`, // Create a unique transaction hash
-            fromAddress: 'SYSTEM_REWARD_POOL', // A system identifier for the source of funds
-            toAddress: user.walletAddresses?.ubt || user.id.toString(), // User's UBT address or user ID as placeholder
-            ubtAmount: UBT_REWARD_DAILY_SIGN_IN // Explicitly ubtAmount
-            // Add any other fields required by your Transaction schema
+            txHash: `SIGNIN_${userId}_${Date.now()}`, // Generating a unique txHash
+            fromAddress: 'SYSTEM_DAILY_REWARD',     // Placeholder for system-originated funds
+            toAddress: user.walletAddresses?.ubt || user.id.toString(), // User's UBT address or ID as placeholder
+            ubtAmount: UBT_REWARD_DAILY_SIGN_IN      // Explicitly providing ubtAmount
+            // Add any other fields that are required by your Transaction.js schema
         });
         await transaction.save();
         // --- END FIX ---
@@ -135,11 +159,6 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
     }
 });
 
-// ... (rest of your server.js: Basic Root Route, initializeAppSettings, startServer, etc.) ...
-
-
-
-
 // --- Basic Root Route ---
 app.get('/', (req, res) => {
   res.send('HSIT App API is running...');
@@ -148,22 +167,20 @@ app.get('/', (req, res) => {
 // --- Application Settings Initialization ---
 async function initializeAppSettings() {
     try {
-        // This ensures the setting is created if it doesn't exist, using the static method from your Setting model
         await Setting.getBonusCountdown(); 
         console.log("Global bonus countdown setting checked/initialized successfully.");
     } catch (error) {
         console.error("Failed to initialize global bonus countdown setting:", error);
-        // Depending on severity, you might want to prevent server start if this is critical
     }
 }
 
 // --- Database Connection and Server Start ---
 const startServer = async () => {
     try {
-        await connectDB(); // Connect to DB first
-        await initializeAppSettings(); // Then initialize app settings (like the bonus countdown)
+        await connectDB(); 
+        await initializeAppSettings(); 
 
-        const PORT = process.env.PORT || 5001; // Render will provide the PORT env variable
+        const PORT = process.env.PORT || 5001; 
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });
