@@ -5,8 +5,9 @@
  * This file should be loaded before other JavaScript files.
  */
 
-// Base URL for API requests
-const API_URL = 'https://hsit-backend.onrender.com'; // Centralized API URL
+// frontend/public/js/config.js
+const API_URL = 'https://hsit-backend.onrender.com'; // Or your actual backend URL
+
 
 // Twilio credentials (Consider moving to backend environment variables for security)
 const TWILIO_CREDENTIALS = {
