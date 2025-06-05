@@ -2,12 +2,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     const dailySignInButton = document.getElementById('dailySignInButton');
     if (!dailySignInButton) {
-        return; // Button not present on this page
+        return; 
     }
 
     console.log("DailySignIn JS: DOMContentLoaded.");
 
-    // API_URL should be globally defined by config.js by the time this script runs
     const effectiveApiUrl = typeof API_URL !== 'undefined' ? API_URL : 'https://hsit-backend.onrender.com';
     const signInTextSpan = dailySignInButton.querySelector('span');
 
@@ -22,10 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`${effectiveApiUrl}/api/daily-signin/status`, {
                 headers: { 'x-auth-token': token }
             });
-            if (!response.ok) {
-                throw new Error(`Status check failed: ${response.status}`);
+            const data = await response.json(); // Await response.json() here
+            if (!response.ok) { // Check response.ok after .json() in case of JSON error from server
+                throw new Error(data.message || `Status check failed: ${response.status}`);
             }
-            const data = await response.json();
             if (data.hasSignedInToday) {
                 dailySignInButton.disabled = true;
                 if (signInTextSpan) signInTextSpan.textContent = 'Signed In Today';
@@ -54,22 +53,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'x-auth-token': currentToken }
             });
             
-            const result = await response.json(); // Await response first
+            const result = await response.json(); 
 
-            if (!response.ok) { // Check response status after getting JSON
+            if (!response.ok) { 
                 throw new Error(result.message || 'Failed to sign in.');
             }
             
-            // --- THIS IS THE CRUCIAL PART ---
-            if (result.success && typeof result.newBalance === 'number' && typeof balanceManager !== 'undefined') {
-                console.log("DailySignIn JS: Sign-in successful, telling balanceManager to update.");
-                // Use balanceManager to update the balance globally.
-                // This will dispatch the 'balanceUpdated' event that other pages listen for.
-                balanceManager.updateBalance(result.newBalance); 
-            } else if (typeof balanceManager === 'undefined') {
-                console.error("DailySignIn JS: balanceManager is not defined, cannot update global balance.");
+            if (result.success && typeof result.newBalance === 'number') {
+                if (typeof balanceManager !== 'undefined') {
+                    console.log("DailySignIn JS: Sign-in successful, telling balanceManager to update with new balance:", result.newBalance);
+                    balanceManager.updateBalance(result.newBalance); 
+                } else {
+                    console.error("DailySignIn JS: balanceManager is not defined, cannot update global balance.");
+                }
+            } else {
+                 console.warn("DailySignIn JS: Sign-in response did not have success true or newBalance number.", result);
             }
-            // --- END CRUCIAL PART ---
 
             alert(result.message || "Sign-in successful!");
             if (signInTextSpan) signInTextSpan.textContent = 'Signed In Today';
@@ -81,6 +80,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initial check when the page loads
     checkSignInStatus();
 });
