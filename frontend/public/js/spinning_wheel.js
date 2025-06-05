@@ -4,35 +4,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const spinCostDisplay = document.getElementById('spinCostDisplay');
     const spinButton = document.getElementById('spinButton');
     const wheelElement = document.getElementById('wheel');
-    const spinResultPopup = document.getElementById('spinResultPopup');
-    const spinResultMessage = document.getElementById('spinResultMessage');
-    const closePopupButton = document.getElementById('closePopupButton');
+    const spinResultPopup = document.getElementById('spinResultPopup'); // Assuming you have this element
+    const spinResultMessage = document.getElementById('spinResultMessage'); // And this
+    const closePopupButton = document.getElementById('closePopupButton'); // And this
 
-    const COST_PER_SPIN = 10;
+    const COST_PER_SPIN = 10; 
     let currentUserUbtBalance = 0;
 
     console.log("Spinning Wheel JS: DOMContentLoaded.");
 
     if (spinCostDisplay) spinCostDisplay.textContent = COST_PER_SPIN;
 
-    // --- THIS IS THE CRUCIAL PART ---
-    // Listen for global balance updates from balanceManager
+    function updateDisplay(balance) {
+        currentUserUbtBalance = balance;
+        if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = balance.toFixed(2);
+        if (spinButton) spinButton.disabled = !localStorage.getItem('token') || balance < COST_PER_SPIN;
+    }
+
     document.addEventListener('balanceUpdated', (e) => {
         const newBalance = e.detail.newBalance;
         console.log(`Spinning Wheel JS: Heard 'balanceUpdated' event! New balance: ${newBalance}`);
-        currentUserUbtBalance = newBalance;
-        
-        if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = newBalance.toFixed(2);
-        if (spinButton) spinButton.disabled = newBalance < COST_PER_SPIN;
+        updateDisplay(newBalance);
     });
 
-    // Listen for balance errors
     document.addEventListener('balanceError', (e) => {
         console.error(`Spinning Wheel JS: Heard 'balanceError' event! Message: ${e.detail.message}`);
         if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = "Error";
         if (spinButton) spinButton.disabled = true;
     });
-    // --- END CRUCIAL PART ---
 
     let currentRotation = 0;
 
@@ -49,12 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         spinButton.disabled = true;
 
-        // Animate the wheel
         const randomSpins = 3 + Math.floor(Math.random() * 3);
         const randomExtraRotation = Math.random() * 360;
         const targetRotation = currentRotation + (randomSpins * 360) + randomExtraRotation;
-        wheelElement.style.transition = 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)';
-        wheelElement.style.transform = `rotate(${targetRotation}deg)`;
+        if(wheelElement) {
+            wheelElement.style.transition = 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)';
+            wheelElement.style.transform = `rotate(${targetRotation}deg)`;
+        }
         currentRotation = targetRotation;
 
         try {
@@ -67,25 +67,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) throw new Error(result.message || "Spin failed.");
 
-            // Wait for animation to finish before showing result
             setTimeout(() => {
                 if (spinResultMessage) spinResultMessage.textContent = result.message;
                 if (spinResultPopup) spinResultPopup.style.display = 'flex';
 
                 if (result.success && typeof result.newBalance === 'number') {
-                    // Tell balanceManager to update the balance. It will dispatch the event
-                    // that the listener at the top of this script will hear.
-                    balanceManager.updateBalance(result.newBalance);
+                    if (typeof balanceManager !== 'undefined') {
+                        console.log("Spinning Wheel JS: Spin successful, telling balanceManager to update with new balance:", result.newBalance);
+                        balanceManager.updateBalance(result.newBalance);
+                    } else {
+                        console.error("Spinning Wheel JS: balanceManager not defined after spin!");
+                    }
                 } else {
-                    // Re-enable button if spin failed but user still has funds
-                    spinButton.disabled = currentUserUbtBalance < COST_PER_SPIN;
+                    console.warn("Spinning Wheel JS: Spin response did not have success true or newBalance number.", result);
+                    spinButton.disabled = currentUserUbtBalance < COST_PER_SPIN; // Re-evaluate button
                 }
-            }, 4000); // Match animation duration
+            }, 4000); 
 
         } catch (error) {
             console.error('Error during spin:', error);
             alert(error.message);
-            // Re-enable button after animation if an error occurred
             setTimeout(() => {
                 spinButton.disabled = currentUserUbtBalance < COST_PER_SPIN;
             }, 4000);
@@ -93,15 +94,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     if (spinButton) spinButton.addEventListener('click', handleSpin);
-    if (closePopupButton) closePopupButton.addEventListener('click', () => {
-        if (spinResultPopup) spinResultPopup.style.display = 'none';
-    });
+    if (closePopupButton && spinResultPopup) {
+        closePopupButton.addEventListener('click', () => {
+            spinResultPopup.style.display = 'none';
+        });
+    }
     
-    // Initial call to get balance when page loads
     if (typeof balanceManager !== 'undefined') {
         console.log("Spinning Wheel JS: Page loaded, telling balanceManager to initialize.");
         balanceManager.init();
     } else {
         console.error("Spinning Wheel JS: balanceManager is not defined!");
+        updateDisplay(0); // Show 0 or error
     }
 });
