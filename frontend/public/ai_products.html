@@ -1,51 +1,201 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Products - HSIT</title>
-    <link rel="stylesheet" href="css/style.css"> 
-</head>
-<body class="ai-products-page">
-    <header class="ai-header">
-        <a href="dashboard.html" class="back-btn">&larr; Back</a>
-        <h1>AI Investment Products</h1>
-        <div></div> </header>
-
-    <main class="products-main">
-        <div id="statusMessage" class="status-message" style="display: none;"></div>
-        <div class="products-grid">
-            <div class="bonus-display" style="display: none; text-align: center; margin: 10px 0; color: #50fa7b;">
-                    Bonus: <span class="bonus-amount-value">0</span> UBT
-                </div>
-
-                <div class="bonus-countdown-container" style="display: none;">
-                    <p class="bonus-countdown-text">Limited Time Bonus!</p>
-                    <div class="countdown-bar-outer">
-                        <div class="countdown-bar-inner" style="width: 100%;"></div>
-                    </div>
-                    <p class="countdown-percent-text">100% remaining</p>
-                </div>
-                
-                <button class="btn btn-primary full-width btn-buy-bot" data-bot-id="1">Buy Now</button>
-            </div>
-            -->
-        </div>
-    </main>
-
-    <div id="purchaseModal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <h2>Confirm Purchase</h2>
-            <div id="purchaseDetails"></div>
-            <div class="button-group">
-                <button id="confirmPurchaseBtn" class="btn btn-primary">Confirm Purchase</button>
-                <button id="cancelPurchaseBtn" class="btn btn-secondary">Cancel</button>
-            </div>
-        </div>
+<div class="container">
+  <h2>Standard Bots</h2>
+  <div class="bot-grid">
+    <div class="bot-card">
+      <h3>UBT Bot 1</h3>
+      <p><strong>Price:</strong> $100 UBT</p>
+      <p><strong>Lock-in Period:</strong> 2 Days</p>
+      <p><strong>Daily Credit:</strong> $10 UBT</p>
+      <p><strong>Total Return:</strong> $120 UBT</p>
     </div>
-    
-    <script src="js/config.js"></script> 
-    <script src="js/balanceManager.js"></script> 
-    <script src="js/ai_products.js"></script>
-</body>
-</html>
+    <div class="bot-card">
+      <h3>UBT Bot 2</h3>
+      <p><strong>Price:</strong> $500 UBT</p>
+      <p><strong>Lock-in Period:</strong> 7 Days</p>
+      <p><strong>Daily Credit:</strong> $12 UBT</p>
+      <p><strong>Total Return:</strong> $584 UBT</p>
+    </div>
+    <div class="bot-card">
+      <h3>UBT Bot 3</h3>
+      <p><strong>Price:</strong> $1,000 UBT</p>
+      <p><strong>Lock-in Period:</strong> 14 Days</p>
+      <p><strong>Daily Credit:</strong> $15 UBT</p>
+      <p><strong>Bonus Credit:</strong> $50 UBT</p>
+      <p><strong>Total Return:</strong> $1,260 UBT</p>
+      <div class="timer-bar">
+        <div class="timer-bar-fill"></div>
+      </div>
+    </div>
+    <div class="bot-card">
+      <h3>UBT Bot 4</h3>
+      <p><strong>Price:</strong> $2,500 UBT</p>
+      <p><strong>Lock-in Period:</strong> 30 Days</p>
+      <p><strong>Daily Credit:</strong> $18 UBT</p>
+      <p><strong>Total Return:</strong> $3,040 UBT</p>
+    </div>
+    <div class="bot-card">
+      <h3>UBT Bot 5</h3>
+      <p><strong>Price:</strong> $5,000 UBT</p>
+      <p><strong>Lock-in Period:</strong> 60 Days</p>
+      <p><strong>Daily Credit:</strong> $20 UBT</p>
+      <p><strong>Bonus Credit:</strong> $200 UBT</p>
+      <p><strong>Total Return:</strong> $6,400 UBT</p>
+      <div class="timer-bar">
+        <div class="timer-bar-fill"></div>
+      </div>
+    </div>
+    <div class="bot-card">
+      <h3>UBT Bot 6</h3>
+      <p><strong>Price:</strong> $10,000 UBT</p>
+      <p><strong>Lock-in Period:</strong> 90 Days</p>
+      <p><strong>Daily Credit:</strong> $22 UBT</p>
+      <p><strong>Total Return:</strong> $11,980 UBT</p>
+    </div>
+    <div class="bot-card">
+      <h3>UBT Bot 7</h3>
+      <p><strong>Price:</strong> $25,000 UBT</p>
+      <p><strong>Lock-in Period:</strong> 180 Days</p>
+      <p><strong>Daily Credit:</strong> $28 UBT</p>
+      <p><strong>Bonus Credit:</strong> $1,000 UBT</p>
+      <p><strong>Total Return:</strong> $31,040 UBT</p>
+      <div class="timer-bar">
+        <div class="timer-bar-fill"></div>
+      </div>
+    </div>
+    <div class="bot-card">
+      <h3>UBT Bot 8</h3>
+      <p><strong>Price:</strong> $50,000 UBT</p>
+      <p><strong>Lock-in Period:</strong> 270 Days</p>
+      <p><strong>Daily Credit:</strong> $35 UBT</p>
+      <p><strong>Total Return:</strong> $59,450 UBT</p>
+    </div>
+    <div class="bot-card">
+      <h3>UBT Bot 9</h3>
+      <p><strong>Price:</strong> $75,000 UBT</p>
+      <p><strong>Lock-in Period:</strong> 300 Days</p>
+      <p><strong>Daily Credit:</strong> $42 UBT</p>
+      <p><strong>Bonus Credit:</strong> $3,000 UBT</p>
+      <p><strong>Total Return:</strong> $90,600 UBT</p>
+      <div class="timer-bar">
+        <div class="timer-bar-fill"></div>
+      </div>
+    </div>
+    <div class="bot-card vip">
+      <h3>UBT Bot 10 (VIP)</h3>
+      <p><strong>Price:</strong> $100,000 UBT</p>
+      <p><strong>Lock-in Period:</strong> 365 Days</p>
+      <p><strong>Daily Credit:</strong> $50 UBT</p>
+      <p><strong>Bonus Credit:</strong> $500 UBT on the 15th of each month ($6,000 total)</p>
+      <p><strong>Total Return:</strong> $124,250 UBT</p>
+      <p><strong>Includes:</strong> Dedicated VIP investment consultant.</p>
+      <div class="timer-bar">
+        <div class="timer-bar-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="grand-opening-header">Grand Opening Offer (15 Days Remaining)</h2>
+  <div class="bot-grid">
+    <div class="bot-card grand-opening">
+      <div class="days-left">15 Days Left</div>
+      <h3>Grand Opening UBT Bot 1</h3>
+      <p><strong>Price:</strong> $125 UBT</p>
+      <p><strong>Lock-in Period:</strong> 2 Days</p>
+      <p><strong>Daily Credit:</strong> $15 UBT</p>
+      <p><strong>Total Return:</strong> $155 UBT</p>
+    </div>
+    <div class="bot-card grand-opening">
+      <div class="days-left">15 Days Left</div>
+      <h3>Grand Opening UBT Bot 2</h3>
+      <p><strong>Price:</strong> $625 UBT</p>
+      <p><strong>Lock-in Period:</strong> 7 Days</p>
+      <p><strong>Daily Credit:</strong> $18 UBT</p>
+      <p><strong>Total Return:</strong> $751 UBT</p>
+    </div>
+    <div class="bot-card grand-opening">
+      <div class="days-left">15 Days Left</div>
+      <h3>Grand Opening UBT Bot 3</h3>
+      <p><strong>Price:</strong> $1,250 UBT</p>
+      <p><strong>Lock-in Period:</strong> 14 Days</p>
+      <p><strong>Daily Credit:</strong> $22.50 UBT</p>
+      <p><strong>Bonus Credit:</strong> $100 UBT</p>
+      <p><strong>Total Return:</strong> $1,665 UBT</p>
+      <div class="timer-bar">
+        <div class="timer-bar-fill"></div>
+      </div>
+    </div>
+    <div class="bot-card grand-opening">
+      <div class="days-left">15 Days Left</div>
+      <h3>Grand Opening UBT Bot 4</h3>
+      <p><strong>Price:</strong> $3,125 UBT</p>
+      <p><strong>Lock-in Period:</strong> 30 Days</p>
+      <p><strong>Daily Credit:</strong> $27 UBT</p>
+      <p><strong>Total Return:</strong> $3,935 UBT</p>
+    </div>
+    <div class="bot-card grand-opening">
+      <div class="days-left">15 Days Left</div>
+      <h3>Grand Opening UBT Bot 5</h3>
+      <p><strong>Price:</strong> $6,250 UBT</p>
+      <p><strong>Lock-in Period:</strong> 60 Days</p>
+      <p><strong>Daily Credit:</strong> $30 UBT</p>
+      <p><strong>Bonus Credit:</strong> $400 UBT</p>
+      <p><strong>Total Return:</strong> $8,450 UBT</p>
+      <div class="timer-bar">
+        <div class="timer-bar-fill"></div>
+      </div>
+    </div>
+    <div class="bot-card grand-opening">
+      <div class="days-left">15 Days Left</div>
+      <h3>Grand Opening UBT Bot 6</h3>
+      <p><strong>Price:</strong> $12,500 UBT</p>
+      <p><strong>Lock-in Period:</strong> 90 Days</p>
+      <p><strong>Daily Credit:</strong> $33 UBT</p>
+      <p><strong>Total Return:</strong> $15,470 UBT</p>
+    </div>
+    <div class="bot-card grand-opening">
+      <div class="days-left">15 Days Left</div>
+      <h3>Grand Opening UBT Bot 7</h3>
+      <p><strong>Price:</strong> $31,250 UBT</p>
+      <p><strong>Lock-in Period:</strong> 180 Days</p>
+      <p><strong>Daily Credit:</strong> $42 UBT</p>
+      <p><strong>Bonus Credit:</strong> $2,000 UBT</p>
+      <p><strong>Total Return:</strong> $40,810 UBT</p>
+      <div class="timer-bar">
+        <div class="timer-bar-fill"></div>
+      </div>
+    </div>
+    <div class="bot-card grand-opening">
+      <div class="days-left">15 Days Left</div>
+      <h3>Grand Opening UBT Bot 8</h3>
+      <p><strong>Price:</strong> $62,500 UBT</p>
+      <p><strong>Lock-in Period:</strong> 270 Days</p>
+      <p><strong>Daily Credit:</strong> $52.50 UBT</p>
+      <p><strong>Total Return:</strong> $76,675 UBT</p>
+    </div>
+    <div class="bot-card grand-opening">
+      <div class="days-left">15 Days Left</div>
+      <h3>Grand Opening UBT Bot 9</h3>
+      <p><strong>Price:</strong> $93,750 UBT</p>
+      <p><strong>Lock-in Period:</strong> 300 Days</p>
+      <p><strong>Daily Credit:</strong> $63 UBT</p>
+      <p><strong>Bonus Credit:</strong> $6,000 UBT</p>
+      <p><strong>Total Return:</strong> $118,650 UBT</p>
+      <div class="timer-bar">
+        <div class="timer-bar-fill"></div>
+      </div>
+    </div>
+    <div class="bot-card grand-opening vip">
+      <div class="days-left">15 Days Left</div>
+      <h3>Grand Opening UBT Bot 10 (VIP)</h3>
+      <p><strong>Price:</strong> $125,000 UBT</p>
+      <p><strong>Lock-in Period:</strong> 365 Days</p>
+      <p><strong>Daily Credit:</strong> $75 UBT</p>
+      <p><strong>Bonus Credit:</strong> $1,000 UBT on the 15th of each month ($12,000 total)</p>
+      <p><strong>Total Return:</strong> $164,375 UBT</p>
+      <p><strong>Includes:</strong> Dedicated VIP investment consultant.</p>
+      <div class="timer-bar">
+        <div class="timer-bar-fill"></div>
+      </div>
+    </div>
+  </div>
+</div>
