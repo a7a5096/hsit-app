@@ -41,43 +41,40 @@ router.post('/spin', authMiddleware, async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        // --- START MODIFICATION for Decimal128 handling ---
         let currentUbtBalance = 0;
-        // Check if user.balances exists and if ubt is present
         if (user.balances && user.balances.ubt !== undefined && user.balances.ubt !== null) {
-            // If it's a Mongoose Decimal128 object, convert it to a number
             if (typeof user.balances.ubt.toString === 'function') {
                 currentUbtBalance = parseFloat(user.balances.ubt.toString());
             } else if (typeof user.balances.ubt === 'number') {
-                // If it's already a number (e.g., from old data before Decimal128 schema)
                 currentUbtBalance = user.balances.ubt;
-            }
-            // Handle any other unexpected types by treating as 0
-             else {
+            } else {
                 currentUbtBalance = 0;
             }
         }
-        // --- END MODIFICATION ---
 
         // 1. Check and Deduct Spin Cost
         if (currentUbtBalance < SPIN_COST) {
             return res.status(400).json({ success: false, message: 'Not enough UBT to spin.', currentBalance: currentUbtBalance });
         }
 
-        // Perform deduction on the numeric balance
         let newUbtBalance = currentUbtBalance - SPIN_COST;
 
         // Update the user's balance in the database, converting back to Decimal128
-        user.balances.ubt = new mongoose.Types.Decimal128(newUbtBalance.toFixed(2)); // Round to 2 decimal places for consistency
+        user.balances.ubt = new mongoose.Types.Decimal128(newUbtBalance.toFixed(2)); // Round to 2 decimal places
 
         const costTransaction = new Transaction({
             userId,
-            type: 'game_cost',
-            amount: -SPIN_COST, // Store as negative for cost
+            // --- START FIX for Transaction Validation ---
+            type: 'wager', // Changed from 'game_cost' to 'wager' (assuming 'wager' is a valid enum)
+            amount: SPIN_COST, // Amount should be positive for wager/cost, deduction handled by newUbtBalance
             currency: 'UBT',
             description: 'Feeling Lucky - Spin Cost',
             status: 'completed',
-            txHash: `SPIN_${userId}_${Date.now()}` // Unique transaction hash
+            txHash: `SPIN_${userId}_${Date.now()}`,
+            fromAddress: user.id.toString(), // Use user's ID as fromAddress
+            toAddress: 'system_lucky_wheel', // To address for the game system
+            ubtAmount: SPIN_COST // Required field
+            // --- END FIX for Transaction Validation ---
         });
         await costTransaction.save();
 
@@ -99,12 +96,17 @@ router.post('/spin', authMiddleware, async (req, res) => {
 
             const prizeTransaction = new Transaction({
                 userId,
-                type: 'game_win',
+                // --- START FIX for Transaction Validation ---
+                type: 'game_win', // Assuming 'game_win' is a valid enum
                 amount: prize.amount,
                 currency: 'UBT',
                 description: `Feeling Lucky - ${prize.name}`,
                 status: 'completed',
-                txHash: `PRIZE_${userId}_${Date.now()}_${prize.name.replace(/\s/g, '')}` // Unique transaction hash
+                txHash: `PRIZE_${userId}_${Date.now()}_${prize.name.replace(/\s/g, '')}`,
+                fromAddress: 'system_lucky_wheel', // From address for the game system
+                toAddress: user.id.toString(), // To user's ID
+                ubtAmount: prize.amount // Required field
+                // --- END FIX for Transaction Validation ---
             });
             await prizeTransaction.save();
         }
