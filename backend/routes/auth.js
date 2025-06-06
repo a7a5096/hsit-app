@@ -118,13 +118,20 @@ router.get('/', async (req, res) => {
       }
       console.log(`GET /api/auth - User found: ${user.email}`);
 
-      // *** FIX: Return the authoritative balance from the user object, not a recalculation ***
-      const balances = user.balances || { bitcoin: 0, ethereum: 0, ubt: 0 };
-      console.log(`GET /api/auth - Returning stored balances for user: ${user.email}`, balances);
+      // Ensure balances object exists and convert Decimal128 values to numbers
+      const rawBalances = user.balances || {};
+      const balancesToSend = {
+          bitcoin: rawBalances.bitcoin ? parseFloat(rawBalances.bitcoin.toString()) : 0,
+          ethereum: rawBalances.ethereum ? parseFloat(rawBalances.ethereum.toString()) : 0,
+          usdt: rawBalances.usdt ? parseFloat(rawBalances.usdt.toString()) : 0,
+          ubt: rawBalances.ubt ? parseFloat(rawBalances.ubt.toString()) : 0
+      };
+
+      console.log(`GET /api/auth - Returning stored balances for user: ${user.email}`, balancesToSend);
 
       const recentTransactions = await Transaction.find({ userId: user._id }).sort({ date: -1 }).limit(10);
 
-      // Return user data with the correct balances and recent transactions
+      // Return user data with the corrected balances and recent transactions
       res.json({
         success: true,
         user: {
@@ -137,7 +144,7 @@ router.get('/', async (req, res) => {
           lastLogin: user.lastLogin,
           createdAt: user.createdAt
         },
-        balances,
+        balances: balancesToSend, // Use the converted balances
         recentTransactions: recentTransactions
       });
 
