@@ -55,6 +55,13 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
+            align-items: center;
+        }
+
+        .bot-logo {
+            width: 100px;
+            height: auto;
+            margin-bottom: 1rem;
         }
 
         .bot-card h3 {
@@ -264,6 +271,7 @@
 
                 card.innerHTML = `
                     ${daysLeftHtml}
+                    <img src="logobots.png" alt="Bot Logo" class="bot-logo">
                     <h3>${bot.name}</h3>
                     <p><strong>Price:</strong> ${bot.price} UBT</p>
                     <p><strong>Lock-in Period:</strong> ${bot.lockIn} Days</p>
