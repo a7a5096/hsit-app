@@ -2,6 +2,7 @@ import express from 'express';
 import authMiddleware from '../middleware/auth.js';
 import User from '../models/User.js'; // Assuming path to your User model
 import Transaction from '../models/Transaction.js'; // Assuming path to Transaction model
+import mongoose from 'mongoose'; // Import mongoose for Decimal128 operations
 
 const router = express.Router();
 
@@ -40,25 +41,43 @@ router.post('/spin', authMiddleware, async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        if (!user.balances) {
-            user.balances = { ubt: 0 };
-        } else if (typeof user.balances.ubt !== 'number') {
-            user.balances.ubt = 0;
+        // --- START MODIFICATION for Decimal128 handling ---
+        let currentUbtBalance = 0;
+        // Check if user.balances exists and if ubt is present
+        if (user.balances && user.balances.ubt !== undefined && user.balances.ubt !== null) {
+            // If it's a Mongoose Decimal128 object, convert it to a number
+            if (typeof user.balances.ubt.toString === 'function') {
+                currentUbtBalance = parseFloat(user.balances.ubt.toString());
+            } else if (typeof user.balances.ubt === 'number') {
+                // If it's already a number (e.g., from old data before Decimal128 schema)
+                currentUbtBalance = user.balances.ubt;
+            }
+            // Handle any other unexpected types by treating as 0
+             else {
+                currentUbtBalance = 0;
+            }
         }
+        // --- END MODIFICATION ---
 
         // 1. Check and Deduct Spin Cost
-        if (user.balances.ubt < SPIN_COST) {
-            return res.status(400).json({ success: false, message: 'Not enough UBT to spin.', currentBalance: user.balances.ubt });
+        if (currentUbtBalance < SPIN_COST) {
+            return res.status(400).json({ success: false, message: 'Not enough UBT to spin.', currentBalance: currentUbtBalance });
         }
-        user.balances.ubt -= SPIN_COST;
+
+        // Perform deduction on the numeric balance
+        let newUbtBalance = currentUbtBalance - SPIN_COST;
+
+        // Update the user's balance in the database, converting back to Decimal128
+        user.balances.ubt = new mongoose.Types.Decimal128(newUbtBalance.toFixed(2)); // Round to 2 decimal places for consistency
 
         const costTransaction = new Transaction({
             userId,
             type: 'game_cost',
-            amount: -SPIN_COST,
+            amount: -SPIN_COST, // Store as negative for cost
             currency: 'UBT',
             description: 'Feeling Lucky - Spin Cost',
             status: 'completed',
+            txHash: `SPIN_${userId}_${Date.now()}` // Unique transaction hash
         });
         await costTransaction.save();
 
@@ -75,7 +94,9 @@ router.post('/spin', authMiddleware, async (req, res) => {
 
         // 3. Add Prize Winnings
         if (prize.amount > 0) {
-            user.balances.ubt += prize.amount;
+            newUbtBalance += prize.amount; // Add to the numeric balance
+            user.balances.ubt = new mongoose.Types.Decimal128(newUbtBalance.toFixed(2)); // Convert and set back to Decimal128
+
             const prizeTransaction = new Transaction({
                 userId,
                 type: 'game_win',
@@ -83,11 +104,12 @@ router.post('/spin', authMiddleware, async (req, res) => {
                 currency: 'UBT',
                 description: `Feeling Lucky - ${prize.name}`,
                 status: 'completed',
+                txHash: `PRIZE_${userId}_${Date.now()}_${prize.name.replace(/\s/g, '')}` // Unique transaction hash
             });
             await prizeTransaction.save();
         }
         
-        await user.save();
+        await user.save(); // Save the user with the final updated balance
 
         // 4. Send Response
         res.json({
@@ -95,7 +117,7 @@ router.post('/spin', authMiddleware, async (req, res) => {
             message: prizeMessage,
             prizeName: prize.name,
             prizeAmount: prize.amount,
-            newBalance: user.balances.ubt,
+            newBalance: newUbtBalance, // Send the numeric balance to the frontend
             isSpinAgain: prize.isSpinAgain || false // Send the flag to the frontend
         });
 
