@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema({
   },
   phoneNumber: {
     type: String,
-    required: false, // Changed from true to false, as per previous discussions
+    required: false,
     trim: true
   },
   isPhoneVerified: {
@@ -59,6 +59,14 @@ const UserSchema = new mongoose.Schema({
     ethereum: { type: String, default: '' },
     ubt: { type: String, default: '' } // Assuming UBT address or could be USDT
   },
+  // --- START Added balances object to schema ---
+  balances: {
+    btc: { type: mongoose.Schema.Types.Decimal128, default: () => new mongoose.Types.Decimal128("0.00") },
+    eth: { type: mongoose.Schema.Types.Decimal128, default: () => new mongoose.Types.Decimal128("0.00") },
+    usdt: { type: mongoose.Schema.Types.Decimal128, default: () => new mongoose.Types.Decimal128("0.00") },
+    ubt: { type: mongoose.Schema.Types.Decimal128, default: () => new mongoose.Types.Decimal128("0.00") }
+  },
+  // --- END Added balances object to schema ---
   createdAt: {
     type: Date,
     default: Date.now
