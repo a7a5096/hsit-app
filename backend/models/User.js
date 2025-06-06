@@ -33,10 +33,10 @@ const UserSchema = new mongoose.Schema({
     ref: 'User',
     default: null
   },
-  referralCode: { // Username can serve as a referral code
+  referralCode: {
     type: String,
     unique: true,
-    sparse: true // Allows null values not to conflict with unique index if not set
+    sparse: true
   },
   directInvitesCount: {
     type: Number,
@@ -50,14 +50,14 @@ const UserSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  botsPurchased: { // To track if an invite is "qualified"
+  botsPurchased: {
     type: Number,
     default: 0
   },
   walletAddresses: {
     bitcoin: { type: String, default: '' },
     ethereum: { type: String, default: '' },
-    ubt: { type: String, default: '' } // Assuming UBT address or could be USDT
+    ubt: { type: String, default: '' }
   },
   // --- START Added balances object to schema ---
   balances: {
@@ -74,7 +74,6 @@ const UserSchema = new mongoose.Schema({
   lastLogin: {
     type: Date
   },
-  // --- New fields for Password Reset ---
   passwordResetToken: {
     type: String,
     default: undefined
@@ -83,12 +82,10 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: undefined
   }
-  // --- End new fields ---
 }, {
-  timestamps: true // Adds createdAt and updatedAt automatically
+  timestamps: true
 });
 
-// Pre-save hook to hash password
 UserSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     return next();
@@ -102,12 +99,10 @@ UserSchema.pre('save', async function(next) {
   }
 });
 
-// Method to compare password
 UserSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Pre-save hook to set referralCode to username if empty
 UserSchema.pre('save', function(next) {
   if (this.isNew || this.isModified('username')) {
     if (this.username && (!this.referralCode || this.referralCode !== this.username)) {
