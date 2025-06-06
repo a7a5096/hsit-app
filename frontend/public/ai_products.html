@@ -4,6 +4,257 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Products - HSIT</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .bot-card.grand-opening {
+            border-color: #ffc107; /* Highlight for grand opening bots */
+        }
+        .days-left {
+            background-color: #ffc107;
+            color: #fff;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .timer-bar {
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .timer-bar-fill {
+            height: 100%;
+            width: 100%;
+            background-color: #50fa7b;
+            border-radius: 5px;
+            animation: countdown 24s linear infinite; /* Adjusted for visual demo */
+        }
+        @keyframes countdown {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 antialiased">
+    <header class="bg-white p-4 flex justify-between items-center shadow-md">
+        <a href="dashboard.html" class="text-gray-600 text-lg font-semibold">&larr; Back</a>
+        <h1 class="text-2xl font-bold text-blue-600">AI Investment Products</h1>
+        <div></div> <!-- Placeholder for right alignment -->
+    </header>
+
+    <main class="p-4">
+        <div id="statusMessage" class="hidden p-4 mb-4 rounded-md text-white bg-green-500"></div>
+
+        <h2 class="text-3xl font-bold mb-6 text-center text-gray-700">Our Bot Collection</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="all-bots-grid">
+            <!-- Bot cards will be loaded here by JavaScript -->
+        </div>
+    </main>
+
+    <div id="purchaseModal" class="modal flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-11/12 max-w-md">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Confirm Purchase</h2>
+            <div id="purchaseDetails" class="mb-6 text-gray-700"></div>
+            <div class="flex justify-end space-x-4">
+                <button id="cancelPurchaseBtn" class="px-6 py-3 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors duration-200">Cancel</button>
+                <button id="confirmPurchaseBtn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200">Confirm Purchase</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array containing all bot data
+        const bots = [
+            // Standard Bots
+            { id: 1, name: 'UBT Bot 1', price: 100, lockIn: 2, dailyCredit: 10, bonus: 0, isGrandOpening: false },
+            { id: 2, name: 'UBT Bot 2', price: 500, lockIn: 7, dailyCredit: 12, bonus: 0, isGrandOpening: false },
+            { id: 3, name: 'UBT Bot 3', price: 1000, lockIn: 14, dailyCredit: 15, bonus: 50, isGrandOpening: false },
+            { id: 4, name: 'UBT Bot 4', price: 2500, lockIn: 30, dailyCredit: 18, bonus: 0, isGrandOpening: false },
+            { id: 5, name: 'UBT Bot 5', price: 5000, lockIn: 60, dailyCredit: 20, bonus: 200, isGrandOpening: false },
+            { id: 6, name: 'UBT Bot 6', price: 10000, lockIn: 90, dailyCredit: 22, bonus: 0, isGrandOpening: false },
+            { id: 7, name: 'UBT Bot 7', price: 25000, lockIn: 180, dailyCredit: 28, bonus: 1000, isGrandOpening: false },
+            { id: 8, name: 'UBT Bot 8', price: 50000, lockIn: 270, dailyCredit: 35, bonus: 0, isGrandOpening: false },
+            { id: 9, name: 'UBT Bot 9', price: 75000, lockIn: 300, dailyCredit: 42, bonus: 3000, isGrandOpening: false },
+            { id: 10, name: 'UBT Bot 10 (VIP)', price: 100000, lockIn: 365, dailyCredit: 50, bonus: 6000, isGrandOpening: false, vip: true, monthlyBonus: 500 },
+
+            // Grand Opening Bots
+            { id: 11, name: 'Grand Opening UBT Bot 1', price: 125, lockIn: 2, dailyCredit: 15, bonus: 0, isGrandOpening: true, daysLeft: 15 },
+            { id: 12, name: 'Grand Opening UBT Bot 2', price: 625, lockIn: 7, dailyCredit: 18, bonus: 0, isGrandOpening: true, daysLeft: 15 },
+            { id: 13, name: 'Grand Opening UBT Bot 3', price: 1250, lockIn: 14, dailyCredit: 22.5, bonus: 100, isGrandOpening: true, daysLeft: 15 },
+            { id: 14, name: 'Grand Opening UBT Bot 4', price: 3125, lockIn: 30, dailyCredit: 27, bonus: 0, isGrandOpening: true, daysLeft: 15 },
+            { id: 15, name: 'Grand Opening UBT Bot 5', price: 6250, lockIn: 60, dailyCredit: 30, bonus: 400, isGrandOpening: true, daysLeft: 15 },
+            { id: 16, name: 'Grand Opening UBT Bot 6', price: 12500, lockIn: 90, dailyCredit: 33, bonus: 0, isGrandOpening: true, daysLeft: 15 },
+            { id: 17, name: 'Grand Opening UBT Bot 7', price: 31250, lockIn: 180, dailyCredit: 42, bonus: 2000, isGrandOpening: true, daysLeft: 15 },
+            { id: 18, name: 'Grand Opening UBT Bot 8', price: 62500, lockIn: 270, dailyCredit: 52.5, bonus: 0, isGrandOpening: true, daysLeft: 15 },
+            { id: 19, name: 'Grand Opening UBT Bot 9', price: 93750, lockIn: 300, dailyCredit: 63, bonus: 6000, isGrandOpening: true, daysLeft: 15 },
+            { id: 20, name: 'Grand Opening UBT Bot 10 (VIP)', price: 125000, lockIn: 365, dailyCredit: 75, bonus: 12000, isGrandOpening: true, daysLeft: 15, vip: true, monthlyBonus: 1000 }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const allBotsGrid = document.getElementById('all-bots-grid'); // Target the single grid
+            const purchaseModal = document.getElementById('purchaseModal');
+            const purchaseDetails = document.getElementById('purchaseDetails');
+            const confirmPurchaseBtn = document.getElementById('confirmPurchaseBtn');
+            const cancelPurchaseBtn = document.getElementById('cancelPurchaseBtn');
+            const statusMessage = document.getElementById('statusMessage');
+            let selectedBot = null;
+
+            // Sort bots by price from lowest to highest
+            bots.sort((a, b) => a.price - b.price);
+
+            // Dummy Balance Manager
+            const balanceManager = {
+                balance: 150000, // Starting balance for demonstration
+                updateBalance(amount) {
+                    this.balance += amount;
+                    console.log(`Balance updated by ${amount}. New balance: ${this.balance}`);
+                    // In a real app, you would update the displayed balance here
+                }
+            };
+
+            /**
+             * Creates an HTML card element for a given bot.
+             * @param {object} bot - The bot object containing its properties.
+             * @returns {HTMLElement} The created bot card div element.
+             */
+            const createBotCard = (bot) => {
+                const card = document.createElement('div');
+                card.className = `bot-card bg-white border border-gray-200 rounded-lg p-6 shadow-md flex flex-col items-center
+                                 ${bot.isGrandOpening ? 'grand-opening border-yellow-500' : ''}
+                                 ${bot.vip ? 'vip border-blue-500' : ''}`; // Add VIP border for visual distinction
+                const totalReturn = bot.price + (bot.dailyCredit * bot.lockIn) + bot.bonus;
+
+                let bonusHtml = '';
+                // Display bonus credit if available
+                if (bot.bonus > 0) {
+                    bonusHtml = `<p class="text-green-600 font-semibold mt-2"><strong>Bonus Credit:</strong> ${bot.bonus} UBT</p>
+                                 <div class="timer-bar w-full"><div class="timer-bar-fill"></div></div>`;
+                }
+                
+                // Display monthly bonus if available
+                if (bot.monthlyBonus) {
+                    bonusHtml += `<p class="text-purple-600 font-semibold mt-2"><strong>Monthly Bonus:</strong> ${bot.monthlyBonus} UBT</p>`;
+                }
+                
+                let vipHtml = '';
+                // Display VIP perks if the bot is VIP
+                if (bot.vip) {
+                    vipHtml = `<p class="text-blue-500 mt-2 text-sm"><strong>Includes:</strong> Dedicated VIP investment consultant.</p>`;
+                }
+                
+                let daysLeftHtml = '';
+                // Display days left for grand opening bots
+                if (bot.isGrandOpening) {
+                    daysLeftHtml = `<div class="days-left w-full text-center text-sm py-1 bg-yellow-500 text-white rounded-md mb-2">
+                                        ${bot.daysLeft} Days Left (Grand Opening)
+                                    </div>`;
+                }
+
+                card.innerHTML = `
+                    ${daysLeftHtml}
+                    <img src="https://placehold.co/100x100/A0B9FF/FFFFFF?text=BOT" alt="Bot Logo" class="w-24 h-24 mb-4 rounded-full border-2 border-blue-300">
+                    <h3 class="text-xl font-bold text-blue-600 mb-2">${bot.name}</h3>
+                    <p class="text-gray-700"><strong>Price:</strong> <span class="text-lg font-bold text-green-700">${bot.price} UBT</span></p>
+                    <p class="text-gray-600"><strong>Lock-in Period:</strong> ${bot.lockIn} Days</p>
+                    <p class="text-gray-600"><strong>Daily Credit:</strong> ${bot.dailyCredit} UBT</p>
+                    ${bonusHtml}
+                    ${vipHtml}
+                    <p class="text-lg font-bold text-indigo-700 mt-4"><strong>Total Estimated Return:</strong> ${totalReturn.toFixed(2)} UBT</p>
+                    <button class="btn btn-primary mt-6 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 w-full" data-bot-id="${bot.id}">Buy Now</button>
+                `;
+                return card;
+            };
+
+            // Render all bots into the single grid
+            bots.forEach(bot => {
+                allBotsGrid.appendChild(createBotCard(bot));
+            });
+
+            // Event listener for buy buttons using event delegation
+            document.getElementById('all-bots-grid').addEventListener('click', (e) => {
+                if (e.target.classList.contains('btn-buy-bot')) {
+                    const botId = parseInt(e.target.dataset.botId);
+                    selectedBot = bots.find(b => b.id === botId);
+                    if (selectedBot) {
+                        purchaseDetails.innerHTML = `
+                            <p>You are about to purchase the <strong>${selectedBot.name}</strong>.</p>
+                            <p class="font-semibold text-lg mt-2"><strong>Price:</strong> ${selectedBot.price} UBT</p>
+                            <p class="text-sm text-gray-500 mt-1">This amount will be deducted from your current balance.</p>
+                        `;
+                        purchaseModal.style.display = 'flex'; // Use flex to center the modal content
+                    }
+                }
+            });
+
+            // Confirm purchase handler
+            confirmPurchaseBtn.addEventListener('click', () => {
+                if (selectedBot) {
+                    // Check if user has enough balance
+                    if (balanceManager.balance >= selectedBot.price) {
+                        balanceManager.updateBalance(-selectedBot.price);
+                        purchaseModal.style.display = 'none';
+                        statusMessage.textContent = `Successfully purchased ${selectedBot.name}! Your new balance is ${balanceManager.balance} UBT.`;
+                        statusMessage.classList.remove('hidden', 'bg-red-500');
+                        statusMessage.classList.add('bg-green-500');
+                        statusMessage.style.display = 'block'; // Make sure it's visible
+                        setTimeout(() => {
+                            statusMessage.style.display = 'none';
+                        }, 5000); // Hide message after 5 seconds
+                    } else {
+                        purchaseModal.style.display = 'none';
+                        statusMessage.textContent = `Error: Insufficient balance to purchase ${selectedBot.name}. You need ${selectedBot.price} UBT but have ${balanceManager.balance} UBT.`;
+                        statusMessage.classList.remove('hidden', 'bg-green-500');
+                        statusMessage.classList.add('bg-red-500');
+                        statusMessage.style.display = 'block'; // Make sure it's visible
+                        setTimeout(() => {
+                            statusMessage.style.display = 'none';
+                        }, 5000); // Hide message after 5 seconds
+                    }
+                }
+            });
+
+            // Cancel purchase handler
+            cancelPurchaseBtn.addEventListener('click', () => {
+                purchaseModal.style.display = 'none';
+            });
+
+            // Close modal when clicking outside of it
+            window.addEventListener('click', (e) => {
+                if (e.target === purchaseModal) {
+                    purchaseModal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Products - HSIT</title>
     <style>
         /* General Body Styles */
         body {
