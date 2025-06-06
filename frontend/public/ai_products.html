@@ -318,13 +318,13 @@
             height: 100%;
             background: linear-gradient(90deg, #10b981, #059669);
             border-radius: 3px;
-            animation: countdown 24s linear infinite;
+            /* animation: countdown 24s linear infinite; */ /* Managed by JS for dynamic remaining time */
         }
 
-        @keyframes countdown {
+        /* @keyframes countdown {
             from { width: 100%; }
             to { width: 0%; }
-        }
+        } */
 
         /* Modal */
         .modal {
@@ -337,6 +337,7 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(10px);
+            overflow-y: auto; /* Allow scrolling if modal content is tall */
         }
 
         .modal-content {
@@ -413,6 +414,7 @@
             z-index: 2000;
             transform: translateX(400px);
             transition: transform 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
         .status-message.success {
@@ -476,13 +478,600 @@
             <p class="section-subtitle">Intelligent investment solutions for every trader</p>
         </div>
 
+        <!-- Grand opening banner (fixed position) -->
         <div class="grand-opening-banner">
             <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎉 Grand Opening Special!</h3>
-            <p>Limited time offer - Enhanced returns for early adopters • 15 days remaining</p>
+            <p id="grand-opening-timer">Limited time offer - Enhanced returns for early adopters • <span id="daysLeftCountdown">15</span> days remaining</p>
         </div>
 
         <div class="bots-grid" id="bots-grid">
-            <!-- Bot cards will be inserted here by JavaScript -->
+            <!-- Bot cards will be hardcoded here -->
+            <div class="bot-card">
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">Starter UBT Bot</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">100 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">2 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">10 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 120 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="1" data-bot-price="100">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card grand-opening">
+                <div class="days-left">⏰ 15 Days Left - Grand Opening!</div>
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">GRAND OPENING: Starter UBT Bot</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">125 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">2 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">15 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 155 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="GO-1" data-bot-price="125">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card">
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">UBT Bot #2</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">200 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">48 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">11.88 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 770.24 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="2" data-bot-price="200">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card grand-opening">
+                <div class="days-left">⏰ 15 Days Left - Grand Opening!</div>
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">GRAND OPENING: UBT Bot #2</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">250 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">48 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">17.82 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 1105.36 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="GO-2" data-bot-price="250">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card">
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">UBT Bot #3</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">600 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">93 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">13.75 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Bonus Credit</span>
+                        <span class="detail-value">418.25 UBT (monthly)</span>
+                    </div>
+                </div>
+                <div class="bonus-section">
+                    🎁 Bonus Credit: 418.25 UBT
+                    <div class="timer-bar"><div class="timer-bar-fill"></div></div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 2901 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="3" data-bot-price="600">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card grand-opening">
+                <div class="days-left">⏰ 15 Days Left - Grand Opening!</div>
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">GRAND OPENING: UBT Bot #3</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">750 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">93 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">20.62 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Bonus Credit</span>
+                        <span class="detail-value">836.5 UBT (monthly)</span>
+                    </div>
+                </div>
+                <div class="bonus-section">
+                    🎁 Bonus Credit: 836.5 UBT
+                    <div class="timer-bar"><div class="timer-bar-fill"></div></div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 4627.16 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="GO-3" data-bot-price="750">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card">
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">UBT Bot #4</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">1,300 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">139 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">15.62 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 3471.18 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="4" data-bot-price="1300">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card grand-opening">
+                <div class="days-left">⏰ 15 Days Left - Grand Opening!</div>
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">GRAND OPENING: UBT Bot #4</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">1,625 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">139 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">23.43 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 4881.77 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="GO-4" data-bot-price="1625">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card">
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">UBT Bot #5</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">3,200 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">184 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">17.50 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 6420 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="5" data-bot-price="3200">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card grand-opening">
+                <div class="days-left">⏰ 15 Days Left - Grand Opening!</div>
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">GRAND OPENING: UBT Bot #5</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">4,000 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">184 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">26.25 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 8830 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="GO-5" data-bot-price="4000">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card">
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">UBT Bot #6</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">7,500 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">229 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">19.38 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Bonus Credit</span>
+                        <span class="detail-value">589.65 UBT (monthly)</span>
+                    </div>
+                </div>
+                <div class="bonus-section">
+                    🎁 Bonus Credit: 589.65 UBT
+                    <div class="timer-bar"><div class="timer-bar-fill"></div></div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 16480.82 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="6" data-bot-price="7500">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card grand-opening">
+                <div class="days-left">⏰ 15 Days Left - Grand Opening!</div>
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">GRAND OPENING: UBT Bot #6</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">9,375 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">229 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">29.07 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Bonus Credit</span>
+                        <span class="detail-value">1179.30 UBT (monthly)</span>
+                    </div>
+                </div>
+                <div class="bonus-section">
+                    🎁 Bonus Credit: 1179.30 UBT
+                    <div class="timer-bar"><div class="timer-bar-fill"></div></div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 24201.29 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="GO-6" data-bot-price="9375">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card">
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">UBT Bot #7</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">17,800 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">275 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">21.25 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 23643.75 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="7" data-bot-price="17800">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card grand-opening">
+                <div class="days-left">⏰ 15 Days Left - Grand Opening!</div>
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">GRAND OPENING: UBT Bot #7</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">22,250 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">275 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">31.88 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 31017 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="GO-7" data-bot-price="22250">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card">
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">UBT Bot #8</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">42,200 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">320 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">23.12 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 49598.40 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="8" data-bot-price="42200">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card grand-opening">
+                <div class="days-left">⏰ 15 Days Left - Grand Opening!</div>
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">GRAND OPENING: UBT Bot #8</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">52,750 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">320 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">34.68 UBT</span>
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 63847.60 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="GO-8" data-bot-price="52750">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card">
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">UBT Bot #9</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">100,000 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">365 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">25.00 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Bonus Credit</span>
+                        <span class="detail-value">760.42 UBT (monthly)</span>
+                    </div>
+                </div>
+                <div class="bonus-section">
+                    🎁 Bonus Credit: 760.42 UBT
+                    <div class="timer-bar"><div class="timer-bar-fill"></div></div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 118250 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="9" data-bot-price="100000">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card vip">
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">VIP Elite UBT Bot</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">100,000 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">365 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">25.00 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Bonus Credit</span>
+                        <span class="detail-value">760.42 UBT (monthly)</span>
+                    </div>
+                </div>
+                <div class="bonus-section">
+                    🎁 Bonus Credit: 760.42 UBT
+                    <div class="timer-bar"><div class="timer-bar-fill"></div></div>
+                </div>
+                <div class="vip-perks">
+                    <div>👑 VIP Benefits</div>
+                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        Dedicated consultant • 500 UBT monthly bonus
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 118250 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="10" data-bot-price="100000">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card grand-opening">
+                <div class="days-left">⏰ 15 Days Left - Grand Opening!</div>
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">GRAND OPENING: UBT Bot #9</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">125,000 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">365 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">37.50 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Bonus Credit</span>
+                        <span class="detail-value">1520.84 UBT (monthly)</span>
+                    </div>
+                </div>
+                <div class="bonus-section">
+                    🎁 Bonus Credit: 1520.84 UBT
+                    <div class="timer-bar"><div class="timer-bar-fill"></div></div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 150687.50 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="GO-9" data-bot-price="125000">
+                    Purchase Bot
+                </button>
+            </div>
+
+            <div class="bot-card grand-opening vip">
+                <div class="days-left">⏰ 15 Days Left - Grand Opening!</div>
+                <img src="images/logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.src='https://placehold.co/80x80/cccccc/333333?text=Bot'">
+                <h3 class="bot-name">GRAND OPENING: VIP Elite UBT Bot</h3>
+                <div class="bot-details">
+                    <div class="bot-detail">
+                        <span class="detail-label">Investment Price</span>
+                        <span class="detail-value price-value">125,000 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Lock-in Period</span>
+                        <span class="detail-value">365 Days</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Daily Returns</span>
+                        <span class="detail-value">37.50 UBT</span>
+                    </div>
+                    <div class="bot-detail">
+                        <span class="detail-label">Bonus Credit</span>
+                        <span class="detail-value">1520.84 UBT (monthly)</span>
+                    </div>
+                </div>
+                <div class="bonus-section">
+                    🎁 Bonus Credit: 1520.84 UBT
+                    <div class="timer-bar"><div class="timer-bar-fill"></div></div>
+                </div>
+                <div class="vip-perks">
+                    <div>👑 VIP Benefits</div>
+                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        Dedicated consultant • 1000 UBT monthly bonus
+                    </div>
+                </div>
+                <div class="total-return">
+                    💰 Total Estimated Return: 150687.50 UBT
+                </div>
+                <button class="buy-btn" data-bot-id="GO-10" data-bot-price="125000">
+                    Purchase Bot
+                </button>
+            </div>
+
         </div>
     </main>
 
@@ -500,47 +1089,53 @@
     <div id="statusMessage" class="status-message"></div>
 
     <script>
-        // Bot data
-        const bots = [
-            // Standard Bots
-            { id: 1, name: 'UBT Bot 1', price: 100, lockIn: 2, dailyCredit: 10, bonus: 0, isGrandOpening: false },
-            { id: 2, name: 'UBT Bot 2', price: 500, lockIn: 7, dailyCredit: 12, bonus: 0, isGrandOpening: false },
-            { id: 3, name: 'UBT Bot 3', price: 1000, lockIn: 14, dailyCredit: 15, bonus: 50, isGrandOpening: false },
-            { id: 4, name: 'UBT Bot 4', price: 2500, lockIn: 30, dailyCredit: 18, bonus: 0, isGrandOpening: false },
-            { id: 5, name: 'UBT Bot 5', price: 5000, lockIn: 60, dailyCredit: 20, bonus: 200, isGrandOpening: false },
-            { id: 6, name: 'UBT Bot 6', price: 10000, lockIn: 90, dailyCredit: 22, bonus: 0, isGrandOpening: false },
-            { id: 7, name: 'UBT Bot 7', price: 25000, lockIn: 180, dailyCredit: 28, bonus: 1000, isGrandOpening: false },
-            { id: 8, name: 'UBT Bot 8', price: 50000, lockIn: 270, dailyCredit: 35, bonus: 0, isGrandOpening: false },
-            { id: 9, name: 'UBT Bot 9', price: 75000, lockIn: 300, dailyCredit: 42, bonus: 3000, isGrandOpening: false },
-            { id: 10, name: 'UBT Bot 10 (VIP)', price: 100000, lockIn: 365, dailyCredit: 50, bonus: 6000, isGrandOpening: false, vip: true, monthlyBonus: 500 },
-
-            // Grand Opening Bots
-            { id: 11, name: 'Grand Opening UBT Bot 1', price: 125, lockIn: 2, dailyCredit: 15, bonus: 0, isGrandOpening: true, daysLeft: 15 },
-            { id: 12, name: 'Grand Opening UBT Bot 2', price: 625, lockIn: 7, dailyCredit: 18, bonus: 0, isGrandOpening: true, daysLeft: 15 },
-            { id: 13, name: 'Grand Opening UBT Bot 3', price: 1250, lockIn: 14, dailyCredit: 22.5, bonus: 100, isGrandOpening: true, daysLeft: 15 },
-            { id: 14, name: 'Grand Opening UBT Bot 4', price: 3125, lockIn: 30, dailyCredit: 27, bonus: 0, isGrandOpening: true, daysLeft: 15 },
-            { id: 15, name: 'Grand Opening UBT Bot 5', price: 6250, lockIn: 60, dailyCredit: 30, bonus: 400, isGrandOpening: true, daysLeft: 15 },
-            { id: 16, name: 'Grand Opening UBT Bot 6', price: 12500, lockIn: 90, dailyCredit: 33, bonus: 0, isGrandOpening: true, daysLeft: 15 },
-            { id: 17, name: 'Grand Opening UBT Bot 7', price: 31250, lockIn: 180, dailyCredit: 42, bonus: 2000, isGrandOpening: true, daysLeft: 15 },
-            { id: 18, name: 'Grand Opening UBT Bot 8', price: 62500, lockIn: 270, dailyCredit: 52.5, bonus: 0, isGrandOpening: true, daysLeft: 15 },
-            { id: 19, name: 'Grand Opening UBT Bot 9', price: 93750, lockIn: 300, dailyCredit: 63, bonus: 6000, isGrandOpening: true, daysLeft: 15 },
-            { id: 20, name: 'Grand Opening UBT Bot 10 (VIP)', price: 125000, lockIn: 365, dailyCredit: 75, bonus: 12000, isGrandOpening: true, daysLeft: 15, vip: true, monthlyBonus: 1000 }
-        ];
-
-        // Balance manager
+        // Use a global object for the balance manager that balanceManager.js will interact with
+        // This simulates the balanceManager being available globally from its own script.
         const balanceManager = {
-            balance: 150000,
-            updateBalance(amount) {
-                this.balance += amount;
-                console.log(`Balance updated by ${amount}. New balance: ${this.balance}`);
+            currentBalance: 0, // This will be updated by the actual balanceManager.js
+            // This function is called by the purchase logic.
+            // The actual balanceManager.js will have a more robust updateBalance function
+            // which dispatches events. For hardcoded HTML, we simulate it.
+            updateBalance: function(newBalance) {
+                this.currentBalance = newBalance;
+                console.log(`BalanceManager (mock): Balance updated to ${this.currentBalance}`);
+                // In a real app, this would dispatch 'balanceUpdated' event
+                // document.dispatchEvent(new CustomEvent('balanceUpdated', { detail: { newBalance: this.currentBalance } }));
+            },
+            // A simple fetch balance function for the modal.
+            // In a real app, this would come from balanceManager.js
+            fetchBalance: async function() {
+                const token = localStorage.getItem('token');
+                if (!token) return 0; // Return 0 if no token
+                try {
+                    const response = await fetch(`${API_URL || 'https://hsit-backend.onrender.com'}/api/auth`, {
+                        headers: { 'x-auth-token': token }
+                    });
+                    const data = await response.json();
+                    if (data.success && data.balances && typeof data.balances.ubt === 'number') {
+                        this.currentBalance = data.balances.ubt;
+                        return data.balances.ubt;
+                    }
+                    return 0;
+                } catch (error) {
+                    console.error('Error fetching balance:', error);
+                    return 0;
+                }
             }
         };
 
         // Initialize page
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             createParticles();
-            renderBots();
             setupEventListeners();
+            // Fetch initial balance on page load for modal
+            const initialBalance = await balanceManager.fetchBalance();
+            balanceManager.currentBalance = initialBalance; // Set current balance
+
+            // Start the days left countdown for grand opening offers
+            updateDaysLeftCountdown();
+            // Update every minute (or more frequently if needed)
+            setInterval(updateDaysLeftCountdown, 60 * 1000); 
         });
 
         // Create animated background particles
@@ -557,79 +1152,29 @@
                 particlesContainer.appendChild(particle);
             }
         }
-
-        // Render bot cards
-        function renderBots() {
-            const grid = document.getElementById('bots-grid');
-            
-            // Sort bots: Grand Opening first, then by price
-            const sortedBots = bots.sort((a, b) => {
-                if (a.isGrandOpening && !b.isGrandOpening) return -1;
-                if (!a.isGrandOpening && b.isGrandOpening) return 1;
-                return a.price - b.price;
-            });
-
-            sortedBots.forEach(bot => {
-                grid.appendChild(createBotCard(bot));
+        
+        // Update days left countdown
+        function updateDaysLeftCountdown() {
+            const daysLeft = calculateDaysLeft();
+            const daysLeftSpan = document.getElementById('daysLeftCountdown');
+            if (daysLeftSpan) {
+                daysLeftSpan.textContent = daysLeft;
+                if (daysLeft <= 0) {
+                    daysLeftSpan.closest('.grand-opening-banner').style.display = 'none';
+                    // Optionally disable all grand opening buy buttons
+                    document.querySelectorAll('.bot-card.grand-opening .buy-btn').forEach(btn => btn.disabled = true);
+                }
+            }
+            // Update individual card banners as well
+            document.querySelectorAll('.bot-card.grand-opening .days-left').forEach(banner => {
+                if (daysLeft > 0) {
+                    banner.innerHTML = `⏰ ${daysLeft} Days Left - Grand Opening!`;
+                } else {
+                    banner.style.display = 'none'; // Hide if offer expired
+                }
             });
         }
 
-        // Create bot card
-        function createBotCard(bot) {
-            const card = document.createElement('div');
-            card.className = `bot-card ${bot.isGrandOpening ? 'grand-opening' : ''} ${bot.vip ? 'vip' : ''}`;
-            
-            const totalReturn = bot.price + (bot.dailyCredit * bot.lockIn) + bot.bonus;
-
-            card.innerHTML = `
-                ${bot.isGrandOpening ? `<div class="days-left">⏰ ${bot.daysLeft} Days Left - Grand Opening!</div>` : ''}
-                
-                <img src="logobots.png" alt="Bot Logo" class="bot-logo" onerror="this.style.display='none'">
-                
-                <h3 class="bot-name">${bot.name}</h3>
-                
-                <div class="bot-details">
-                    <div class="bot-detail">
-                        <span class="detail-label">Investment Price</span>
-                        <span class="detail-value price-value">${bot.price.toLocaleString()} UBT</span>
-                    </div>
-                    <div class="bot-detail">
-                        <span class="detail-label">Lock-in Period</span>
-                        <span class="detail-value">${bot.lockIn} Days</span>
-                    </div>
-                    <div class="bot-detail">
-                        <span class="detail-label">Daily Returns</span>
-                        <span class="detail-value">${bot.dailyCredit} UBT</span>
-                    </div>
-                </div>
-
-                ${bot.bonus > 0 ? `
-                    <div class="bonus-section">
-                        <div>🎁 Bonus Credit: ${bot.bonus} UBT</div>
-                        <div class="timer-bar"><div class="timer-bar-fill"></div></div>
-                    </div>
-                ` : ''}
-
-                ${bot.vip ? `
-                    <div class="vip-perks">
-                        <div>👑 VIP Benefits</div>
-                        <div style="font-size: 0.9rem; margin-top: 0.5rem;">
-                            Dedicated consultant ${bot.monthlyBonus ? `• ${bot.monthlyBonus} UBT monthly bonus` : ''}
-                        </div>
-                    </div>
-                ` : ''}
-
-                <div class="total-return">
-                    💰 Total Estimated Return: ${totalReturn.toLocaleString()} UBT
-                </div>
-
-                <button class="buy-btn" data-bot-id="${bot.id}">
-                    Purchase Bot
-                </button>
-            `;
-
-            return card;
-        }
 
         // Setup event listeners
         function setupEventListeners() {
@@ -641,22 +1186,48 @@
             // Buy button clicks
             document.getElementById('bots-grid').addEventListener('click', (e) => {
                 if (e.target.classList.contains('buy-btn')) {
-                    const botId = parseInt(e.target.dataset.botId);
-                    selectedBot = bots.find(b => b.id === botId);
+                    const botId = e.target.dataset.botId; // Get original string ID (e.g., "GO-1")
+                    // Find the bot in ALL_BOTS_DATA array based on its ID
+                    selectedBot = ALL_BOTS_DATA.find(b => String(b.id) === String(botId));
                     showPurchaseModal(selectedBot);
                 }
             });
 
             // Confirm purchase
-            confirmBtn.addEventListener('click', () => {
+            confirmBtn.addEventListener('click', async () => {
                 if (selectedBot) {
-                    if (balanceManager.balance >= selectedBot.price) {
-                        balanceManager.updateBalance(-selectedBot.price);
-                        modal.style.display = 'none';
-                        showStatusMessage(`Successfully purchased ${selectedBot.name}! New balance: ${balanceManager.balance.toLocaleString()} UBT`, 'success');
+                    // Re-fetch current balance just before transaction to ensure accuracy
+                    const currentBalance = await balanceManager.fetchBalance();
+                    if (currentBalance >= selectedBot.price) {
+                        try {
+                            const token = localStorage.getItem('token');
+                            const API_BASE_URL = typeof API_URL !== 'undefined' ? API_URL : 'https://hsit-backend.onrender.com';
+
+                            const response = await fetch(`${API_BASE_URL}/api/bots/purchase`, { 
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'x-auth-token': token
+                                },
+                                body: JSON.stringify({ botId: selectedBot.id, price: selectedBot.price })
+                            });
+                            const result = await response.json();
+
+                            if (result.success) {
+                                showStatusMessage(result.msg || `Successfully purchased ${selectedBot.name}!`, 'success');
+                                balanceManager.updateBalance(result.newBalance); // Update balance via manager
+                                modal.style.display = 'none';
+                            } else {
+                                throw new Error(result.msg || 'Purchase failed.');
+                            }
+                        } catch (error) {
+                            console.error('Purchase error:', error);
+                            modal.style.display = 'none';
+                            showStatusMessage(`Purchase failed: ${error.message}`, 'error');
+                        }
                     } else {
                         modal.style.display = 'none';
-                        showStatusMessage(`Insufficient balance. You need ${selectedBot.price.toLocaleString()} UBT but have ${balanceManager.balance.toLocaleString()} UBT.`, 'error');
+                        showStatusMessage(`Insufficient balance. You need ${selectedBot.price.toLocaleString()} UBT but have ${currentBalance.toLocaleString()} UBT.`, 'error');
                     }
                 }
             });
@@ -675,21 +1246,28 @@
         }
 
         // Show purchase modal
-        function showPurchaseModal(bot) {
+        async function showPurchaseModal(bot) {
             const modal = document.getElementById('purchaseModal');
             const details = document.getElementById('purchaseDetails');
             
+            // Fetch current balance for the modal display
+            const currentBalance = await balanceManager.fetchBalance();
+
             details.innerHTML = `
                 <div style="text-align: center; margin-bottom: 1.5rem;">
                     <h3 style="color: #667eea; margin-bottom: 0.5rem;">${bot.name}</h3>
                     <div style="font-size: 2rem; font-weight: 700; color: #10b981;">${bot.price.toLocaleString()} UBT</div>
-                    <div style="color: #666; margin-top: 0.5rem;">Current Balance: ${balanceManager.balance.toLocaleString()} UBT</div>
+                    <div style="color: #666; margin-top: 0.5rem;">Your Current Balance: ${currentBalance.toLocaleString()} UBT</div>
+                    ${currentBalance < bot.price ? `<div style="color: #ef4444; font-weight: bold; margin-top: 0.5rem;">Insufficient balance!</div>` : ''}
                 </div>
                 <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; font-size: 0.9rem; color: #666;">
                     This purchase will be deducted from your account balance.
                 </div>
             `;
-            
+            // Disable confirm button if insufficient balance
+            const confirmBtn = document.getElementById('confirmPurchaseBtn');
+            confirmBtn.disabled = currentBalance < bot.price;
+
             modal.style.display = 'block';
         }
 
