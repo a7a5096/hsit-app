@@ -95,7 +95,7 @@
             { id: 9, name: 'UBT Bot 9', price: 75000, lockIn: 300, dailyCredit: 42, bonus: 3000, isGrandOpening: false },
             { id: 10, name: 'UBT Bot 10 (VIP)', price: 100000, lockIn: 365, dailyCredit: 50, bonus: 6000, isGrandOpening: false, vip: true, monthlyBonus: 500 },
 
-            // Grand Opening Bots
+            // Grand Opening Bots (original prices, to be adjusted)
             { id: 11, name: 'Grand Opening UBT Bot 1', price: 125, lockIn: 2, dailyCredit: 15, bonus: 0, isGrandOpening: true, daysLeft: 15 },
             { id: 12, name: 'Grand Opening UBT Bot 2', price: 625, lockIn: 7, dailyCredit: 18, bonus: 0, isGrandOpening: true, daysLeft: 15 },
             { id: 13, name: 'Grand Opening UBT Bot 3', price: 1250, lockIn: 14, dailyCredit: 22.5, bonus: 100, isGrandOpening: true, daysLeft: 15 },
@@ -109,7 +109,7 @@
         ];
 
         document.addEventListener('DOMContentLoaded', () => {
-            const allBotsGrid = document.getElementById('all-bots-grid'); // Target the single grid
+            const allBotsGrid = document.getElementById('all-bots-grid');
             const purchaseModal = document.getElementById('purchaseModal');
             const purchaseDetails = document.getElementById('purchaseDetails');
             const confirmPurchaseBtn = document.getElementById('confirmPurchaseBtn');
@@ -117,8 +117,30 @@
             const statusMessage = document.getElementById('statusMessage');
             let selectedBot = null;
 
-            // Sort bots by price from lowest to highest
-            bots.sort((a, b) => a.price - b.price);
+            // Separate regular and grand opening bots
+            const regularBots = bots.filter(bot => !bot.isGrandOpening);
+            const grandOpeningBots = bots.filter(bot => bot.isGrandOpening);
+
+            // Sort regular bots by price to easily find closest options
+            regularBots.sort((a, b) => a.price - b.price);
+
+            // Adjust prices of grand opening bots to match the closest regular bot
+            grandOpeningBots.forEach(goBot => {
+                let closestPrice = Infinity;
+                let closestRegularBotPrice = 0;
+
+                regularBots.forEach(regBot => {
+                    const priceDifference = Math.abs(goBot.price - regBot.price);
+                    if (priceDifference < closestPrice) {
+                        closestPrice = priceDifference;
+                        closestRegularBotPrice = regBot.price;
+                    }
+                });
+                goBot.price = closestRegularBotPrice;
+            });
+
+            // Recombine all bots and sort by the newly adjusted prices
+            const combinedAndSortedBots = [...regularBots, ...grandOpeningBots].sort((a, b) => a.price - b.price);
 
             // Dummy Balance Manager
             const balanceManager = {
@@ -170,7 +192,7 @@
 
                 card.innerHTML = `
                     ${daysLeftHtml}
-                    <img src="logobots.png" alt="Bot Logo" class="w-24 h-24 mb-4 rounded-full border-2 border-blue-300">
+                    <img src="https://placehold.co/100x100/A0B9FF/FFFFFF?text=BOT" alt="Bot Logo" class="w-24 h-24 mb-4 rounded-full border-2 border-blue-300">
                     <h3 class="text-xl font-bold text-blue-600 mb-2">${bot.name}</h3>
                     <p class="text-gray-700"><strong>Price:</strong> <span class="text-lg font-bold text-green-700">${bot.price} UBT</span></p>
                     <p class="text-gray-600"><strong>Lock-in Period:</strong> ${bot.lockIn} Days</p>
@@ -183,8 +205,8 @@
                 return card;
             };
 
-            // Render all bots into the single grid
-            bots.forEach(bot => {
+            // Render all bots into the single grid after price adjustments and sorting
+            combinedAndSortedBots.forEach(bot => {
                 allBotsGrid.appendChild(createBotCard(bot));
             });
 
@@ -192,7 +214,8 @@
             document.getElementById('all-bots-grid').addEventListener('click', (e) => {
                 if (e.target.classList.contains('btn-buy-bot')) {
                     const botId = parseInt(e.target.dataset.botId);
-                    selectedBot = bots.find(b => b.id === botId);
+                    // Find the bot in the original (unmodified) bots array to get its properties
+                    selectedBot = bots.find(b => b.id === botId); 
                     if (selectedBot) {
                         purchaseDetails.innerHTML = `
                             <p>You are about to purchase the <strong>${selectedBot.name}</strong>.</p>
@@ -237,338 +260,6 @@
             });
 
             // Close modal when clicking outside of it
-            window.addEventListener('click', (e) => {
-                if (e.target === purchaseModal) {
-                    purchaseModal.style.display = 'none';
-                }
-            });
-        });
-    </script>
-</body>
-</html>
-
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Products - HSIT</title>
-    <style>
-        /* General Body Styles */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* Header Styles */
-        .ai-header {
-            background-color: #fff;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .ai-header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
-        .back-btn {
-            color: #333;
-            text-decoration: none;
-            font-size: 1.2rem;
-        }
-
-        /* Main Content Styles */
-        .products-main {
-            padding: 1rem;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
-        }
-
-        /* Bot Card Styles */
-        .bot-card {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .bot-logo {
-            width: 100px;
-            height: auto;
-            margin-bottom: 1rem;
-        }
-
-        .bot-card h3 {
-            margin-top: 0;
-            color: #007bff;
-        }
-
-        .bot-card.vip h3 {
-            color: #ffc107;
-        }
-
-        .bot-card.grand-opening {
-            border-color: #ffc107;
-        }
-
-        .days-left {
-            background-color: #ffc107;
-            color: #fff;
-            padding: 0.5rem;
-            border-radius: 4px;
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-
-        /* Button Styles */
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: auto;
-        }
-
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-        }
-
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 500px;
-            border-radius: 8px;
-        }
-
-        .button-group {
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .status-message {
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 4px;
-            color: #fff;
-            background-color: #28a745;
-        }
-
-        .timer-bar {
-            height: 10px;
-            background-color: #e9ecef;
-            border-radius: 5px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-
-        .timer-bar-fill {
-            height: 100%;
-            width: 100%;
-            background-color: #50fa7b;
-            border-radius: 5px;
-            animation: countdown 24h linear infinite;
-        }
-
-        @keyframes countdown {
-            from { width: 100%; }
-            to { width: 0%; }
-        }
-    </style>
-</head>
-<body class="ai-products-page">
-    <header class="ai-header">
-        <a href="dashboard.html" class="back-btn">&larr; Back</a>
-        <h1>AI Investment Products</h1>
-        <div></div>
-    </header>
-
-    <main class="products-main">
-        <div id="statusMessage" class="status-message" style="display: none;"></div>
-        <h2>Standard Bots</h2>
-        <div class="products-grid" id="standard-bots-grid">
-            </div>
-        <h2 class="grand-opening-header">Grand Opening Offer (15 Days Remaining)</h2>
-        <div class="products-grid" id="grand-opening-bots-grid">
-            </div>
-    </main>
-
-    <div id="purchaseModal" class="modal">
-        <div class="modal-content">
-            <h2>Confirm Purchase</h2>
-            <div id="purchaseDetails"></div>
-            <div class="button-group">
-                <button id="confirmPurchaseBtn" class="btn btn-primary">Confirm Purchase</button>
-                <button id="cancelPurchaseBtn" class="btn btn-secondary">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const bots = [
-            // Standard Bots
-            { id: 1, name: 'UBT Bot 1', price: 100, lockIn: 2, dailyCredit: 10, bonus: 0, isGrandOpening: false },
-            { id: 2, name: 'UBT Bot 2', price: 500, lockIn: 7, dailyCredit: 12, bonus: 0, isGrandOpening: false },
-            { id: 3, name: 'UBT Bot 3', price: 1000, lockIn: 14, dailyCredit: 15, bonus: 50, isGrandOpening: false },
-            { id: 4, name: 'UBT Bot 4', price: 2500, lockIn: 30, dailyCredit: 18, bonus: 0, isGrandOpening: false },
-            { id: 5, name: 'UBT Bot 5', price: 5000, lockIn: 60, dailyCredit: 20, bonus: 200, isGrandOpening: false },
-            { id: 6, name: 'UBT Bot 6', price: 10000, lockIn: 90, dailyCredit: 22, bonus: 0, isGrandOpening: false },
-            { id: 7, name: 'UBT Bot 7', price: 25000, lockIn: 180, dailyCredit: 28, bonus: 1000, isGrandOpening: false },
-            { id: 8, name: 'UBT Bot 8', price: 50000, lockIn: 270, dailyCredit: 35, bonus: 0, isGrandOpening: false },
-            { id: 9, name: 'UBT Bot 9', price: 75000, lockIn: 300, dailyCredit: 42, bonus: 3000, isGrandOpening: false },
-            { id: 10, name: 'UBT Bot 10 (VIP)', price: 100000, lockIn: 365, dailyCredit: 50, bonus: 6000, isGrandOpening: false, vip: true, monthlyBonus: 500 },
-
-            // Grand Opening Bots
-            { id: 11, name: 'Grand Opening UBT Bot 1', price: 125, lockIn: 2, dailyCredit: 15, bonus: 0, isGrandOpening: true, daysLeft: 15 },
-            { id: 12, name: 'Grand Opening UBT Bot 2', price: 625, lockIn: 7, dailyCredit: 18, bonus: 0, isGrandOpening: true, daysLeft: 15 },
-            { id: 13, name: 'Grand Opening UBT Bot 3', price: 1250, lockIn: 14, dailyCredit: 22.5, bonus: 100, isGrandOpening: true, daysLeft: 15 },
-            { id: 14, name: 'Grand Opening UBT Bot 4', price: 3125, lockIn: 30, dailyCredit: 27, bonus: 0, isGrandOpening: true, daysLeft: 15 },
-            { id: 15, name: 'Grand Opening UBT Bot 5', price: 6250, lockIn: 60, dailyCredit: 30, bonus: 400, isGrandOpening: true, daysLeft: 15 },
-            { id: 16, name: 'Grand Opening UBT Bot 6', price: 12500, lockIn: 90, dailyCredit: 33, bonus: 0, isGrandOpening: true, daysLeft: 15 },
-            { id: 17, name: 'Grand Opening UBT Bot 7', price: 31250, lockIn: 180, dailyCredit: 42, bonus: 2000, isGrandOpening: true, daysLeft: 15 },
-            { id: 18, name: 'Grand Opening UBT Bot 8', price: 62500, lockIn: 270, dailyCredit: 52.5, bonus: 0, isGrandOpening: true, daysLeft: 15 },
-            { id: 19, name: 'Grand Opening UBT Bot 9', price: 93750, lockIn: 300, dailyCredit: 63, bonus: 6000, isGrandOpening: true, daysLeft: 15 },
-            { id: 20, name: 'Grand Opening UBT Bot 10 (VIP)', price: 125000, lockIn: 365, dailyCredit: 75, bonus: 12000, isGrandOpening: true, daysLeft: 15, vip: true, monthlyBonus: 1000 }
-        ];
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const standardBotsGrid = document.getElementById('standard-bots-grid');
-            const grandOpeningBotsGrid = document.getElementById('grand-opening-bots-grid');
-            const purchaseModal = document.getElementById('purchaseModal');
-            const purchaseDetails = document.getElementById('purchaseDetails');
-            const confirmPurchaseBtn = document.getElementById('confirmPurchaseBtn');
-            const cancelPurchaseBtn = document.getElementById('cancelPurchaseBtn');
-            const statusMessage = document.getElementById('statusMessage');
-            let selectedBot = null;
-
-            // Dummy Balance Manager
-            const balanceManager = {
-                balance: 150000, // Starting balance for demonstration
-                updateBalance(amount) {
-                    this.balance += amount;
-                    console.log(`Balance updated by ${amount}. New balance: ${this.balance}`);
-                }
-            };
-
-            const createBotCard = (bot) => {
-                const card = document.createElement('div');
-                card.className = `bot-card ${bot.isGrandOpening ? 'grand-opening' : ''} ${bot.vip ? 'vip' : ''}`;
-                const totalReturn = bot.price + (bot.dailyCredit * bot.lockIn) + bot.bonus;
-
-                let bonusHtml = '';
-                if (bot.bonus > 0) {
-                    bonusHtml = `<p><strong>Bonus Credit:</strong> ${bot.bonus} UBT</p>
-                                 <div class="timer-bar"><div class="timer-bar-fill"></div></div>`;
-                }
-                
-                if (bot.monthlyBonus) {
-                    bonusHtml += `<p><strong>Monthly Bonus:</strong> ${bot.monthlyBonus} UBT</p>`;
-                }
-                
-                let vipHtml = '';
-                if (bot.vip) {
-                    vipHtml = `<p><strong>Includes:</strong> Dedicated VIP investment consultant.</p>`;
-                }
-                
-                let daysLeftHtml = '';
-                if (bot.isGrandOpening) {
-                    daysLeftHtml = `<div class="days-left">${bot.daysLeft} Days Left</div>`;
-                }
-
-                card.innerHTML = `
-                    ${daysLeftHtml}
-                    <img src="logobots.png" alt="Bot Logo" class="bot-logo">
-                    <h3>${bot.name}</h3>
-                    <p><strong>Price:</strong> ${bot.price} UBT</p>
-                    <p><strong>Lock-in Period:</strong> ${bot.lockIn} Days</p>
-                    <p><strong>Daily Credit:</strong> ${bot.dailyCredit} UBT</p>
-                    ${bonusHtml}
-                    ${vipHtml}
-                    <p><strong>Total Return:</strong> ${totalReturn.toFixed(2)} UBT</p>
-                    <button class="btn btn-primary btn-buy-bot" data-bot-id="${bot.id}">Buy Now</button>
-                `;
-                return card;
-            };
-
-            bots.forEach(bot => {
-                const grid = bot.isGrandOpening ? grandOpeningBotsGrid : standardBotsGrid;
-                grid.appendChild(createBotCard(bot));
-            });
-
-            document.querySelector('.products-main').addEventListener('click', (e) => {
-                if (e.target.classList.contains('btn-buy-bot')) {
-                    const botId = parseInt(e.target.dataset.botId);
-                    selectedBot = bots.find(b => b.id === botId);
-                    purchaseDetails.innerHTML = `
-                        <p>You are about to purchase the <strong>${selectedBot.name}</strong>.</p>
-                        <p><strong>Price:</strong> ${selectedBot.price} UBT</p>
-                        <p>This amount will be deducted from your balance.</p>
-                    `;
-                    purchaseModal.style.display = 'block';
-                }
-            });
-
-            confirmPurchaseBtn.addEventListener('click', () => {
-                if (selectedBot) {
-                    balanceManager.updateBalance(-selectedBot.price);
-                    purchaseModal.style.display = 'none';
-                    statusMessage.textContent = `Successfully purchased ${selectedBot.name}!`;
-                    statusMessage.style.display = 'block';
-                    setTimeout(() => {
-                        statusMessage.style.display = 'none';
-                    }, 3000);
-                }
-            });
-
-            cancelPurchaseBtn.addEventListener('click', () => {
-                purchaseModal.style.display = 'none';
-            });
-
             window.addEventListener('click', (e) => {
                 if (e.target === purchaseModal) {
                     purchaseModal.style.display = 'none';
