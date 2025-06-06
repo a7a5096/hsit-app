@@ -12,6 +12,9 @@ import Transaction from './models/Transaction.js'; // Ensure this path is correc
 import DailySignIn from './models/DailySignIn.js'; // Ensure this path is correct
 import authMiddleware from './middleware/auth.js'; // Ensure this path is correct
 
+// Import mongoose here, as it's needed for Decimal128 operations
+import mongoose from 'mongoose'; // ADD THIS LINE
+
 // Load environment variables
 dotenv.config();
 
@@ -122,12 +125,23 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        if (!user.balances) {
-            user.balances = { ubt: 0 };
-        } else if (typeof user.balances.ubt !== 'number') {
-            user.balances.ubt = 0;
+        // --- START MODIFICATION for Decimal128 handling in balance update ---
+        let currentUbtBalance = 0;
+        if (user.balances && user.balances.ubt) {
+            // Check if it's a Decimal128 object and convert to number
+            if (typeof user.balances.ubt.toString === 'function') { // A simple check for Mongoose Decimal128 object
+                currentUbtBalance = parseFloat(user.balances.ubt.toString());
+            } else if (typeof user.balances.ubt === 'number') { // If it was already a number (e.g., from old data)
+                currentUbtBalance = user.balances.ubt;
+            }
         }
-        user.balances.ubt += calculatedReward; // Add the calculated random reward
+        
+        // Calculate the new total balance
+        const newTotalUbtBalance = currentUbtBalance + calculatedReward;
+
+        // Update the user's UBT balance, converting back to Decimal128 for storage
+        user.balances.ubt = new mongoose.Types.Decimal128(newTotalUbtBalance.toFixed(2));
+        // --- END MODIFICATION ---
 
         const transaction = new Transaction({
             userId: userId,
@@ -148,7 +162,7 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
         res.json({
             success: true,
             message: `Successfully signed in! You received ${calculatedReward.toFixed(2)} UBT.`,
-            newBalance: user.balances.ubt,
+            newBalance: newTotalUbtBalance, // Send the calculated number, not the Decimal128 object directly
             reward: calculatedReward // Send the actual reward given
         });
 
