@@ -1,21 +1,28 @@
 import express from 'express';
 import authMiddleware from '../middleware/auth.js';
-import User from '../models/User.js'; // Assuming path to your User model
-import Transaction from '../models/Transaction.js'; // Assuming path to Transaction model
-import mongoose from 'mongoose'; // Import mongoose for Decimal128 operations
+import User from '../models/User.js';
+import Transaction from '../models/Transaction.js';
+import Bot from '../models/Bot.js'; // You need a Bot model to look up the prize bot
 
 const router = express.Router();
 
-const SPIN_COST = 10; // UBT cost per spin, must match frontend
+const SPIN_COST = 10; // UBT cost per spin
 
-// Updated prize list with "Spin Again"
+// Define the prize structure for the wheel
 const PRIZES = [
-    { name: "Jackpot!", amount: 100, weight: 1 },         // 100 UBT
-    { name: "Big Win!", amount: 50, weight: 4 },           // 50 UBT
-    { name: "Small Win", amount: 20, weight: 15 },         // 20 UBT (COST_PER_SPIN * 2)
-    { name: "Free Spin", amount: 10, weight: 20 },         // Wins cost back
-    { name: "Spin Again", amount: 10, weight: 10, isSpinAgain: true }, // New prize, refunds spin cost
-    { name: "Try Again", amount: 0, weight: 50 }          // No win (weight adjusted)
+    // Note: The 'color' is for mapping the prize to the frontend visual
+    { name: "10x Win!", type: 'ubt', multiplier: 10, weight: 2, color: 'red' },    // Doubled chance for red
+    { name: "2x Win!", type: 'ubt', multiplier: 2, weight: 20, color: 'yellow' },
+    { name: "1x Win (Stake Back)", type: 'ubt', multiplier: 1, weight: 30, color: 'blue' },
+    { name: "Lose", type: 'ubt', multiplier: 0, weight: 46, color: 'black' },   // Reduced chance for black
+    { 
+        name: "Free AI Bot + 200 UBT!", 
+        type: 'bot',
+        botName: "AI Portfolio Balancer", // Name of the bot to award
+        botProductId: "aiBalancer05", // The ID of the bot product
+        bonusUbt: 200, 
+        weight: 1 // ~1 in 99 chance (1 / (2+20+30+46+1))
+    } 
 ];
 
 // Helper to select a prize based on weight
@@ -26,11 +33,11 @@ function selectPrize() {
         if (random < prize.weight) return prize;
         random -= prize.weight;
     }
-    return PRIZES.find(p => p.amount === 0); // Fallback to "Try Again"
+    return PRIZES.find(p => p.multiplier === 0); // Fallback to "Lose"
 }
 
 // @route   POST api/wheel/spin
-// @desc    Spin the lucky wheel
+// @desc    Spin the lucky wheel, deduct cost, and credit winnings
 // @access  Private
 router.post('/spin', authMiddleware, async (req, res) => {
     try {
@@ -40,92 +47,87 @@ router.post('/spin', authMiddleware, async (req, res) => {
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
-
-        let currentUbtBalance = 0;
-        if (user.balances && user.balances.ubt !== undefined && user.balances.ubt !== null) {
-            if (typeof user.balances.ubt.toString === 'function') {
-                currentUbtBalance = parseFloat(user.balances.ubt.toString());
-            } else if (typeof user.balances.ubt === 'number') {
-                currentUbtBalance = user.balances.ubt;
-            } else {
-                currentUbtBalance = 0;
-            }
-        }
+        
+        // Ensure balances object and ubt field exist
+        if (!user.balances) user.balances = {};
+        if (typeof user.balances.ubt !== 'number') user.balances.ubt = 0;
 
         // 1. Check and Deduct Spin Cost
-        if (currentUbtBalance < SPIN_COST) {
-            return res.status(400).json({ success: false, message: 'Not enough UBT to spin.', currentBalance: currentUbtBalance });
+        if (user.balances.ubt < SPIN_COST) {
+            return res.status(400).json({ success: false, message: 'Not enough UBT to spin.' });
         }
-
-        let newUbtBalance = currentUbtBalance - SPIN_COST;
-
-        // Update the user's balance in the database, converting back to Decimal128
-        user.balances.ubt = new mongoose.Types.Decimal128(newUbtBalance.toFixed(2)); // Round to 2 decimal places
-
+        user.balances.ubt -= SPIN_COST;
         const costTransaction = new Transaction({
-            userId,
-            // --- START FIX for Transaction Validation ---
-            type: 'wager', // Changed from 'game_cost' to 'wager' (assuming 'wager' is a valid enum)
-            amount: SPIN_COST, // Amount should be positive for wager/cost, deduction handled by newUbtBalance
-            currency: 'UBT',
-            description: 'Feeling Lucky - Spin Cost',
-            status: 'completed',
-            txHash: `SPIN_${userId}_${Date.now()}`,
-            fromAddress: user.id.toString(), // Use user's ID as fromAddress
-            toAddress: 'system_lucky_wheel', // To address for the game system
-            ubtAmount: SPIN_COST // Required field
-            // --- END FIX for Transaction Validation ---
+            userId, type: 'game_cost', amount: -SPIN_COST, currency: 'UBT',
+            description: 'Feeling Lucky - Spin Cost', status: 'completed'
         });
         await costTransaction.save();
 
-        // 2. Determine Prize
+        // 2. Determine the prize
         const prize = selectPrize();
-        let prizeMessage = `You won ${prize.name}!`;
-        if(prize.isSpinAgain) {
-            prizeMessage = "You landed on Spin Again!";
-        } else if (prize.amount > 0) {
-            prizeMessage = `You won ${prize.amount} UBT!`;
-        } else {
-            prizeMessage = "Sorry, try again!";
+
+        let ubtWinnings = 0;
+        let prizeMessage = "Better luck next time!";
+        let botWon = null;
+
+        // 3. Process the prize
+        if (prize.type === 'ubt') {
+            ubtWinnings = SPIN_COST * prize.multiplier;
+            if (ubtWinnings > 0) {
+                user.balances.ubt += ubtWinnings;
+                prizeMessage = `You won ${ubtWinnings} UBT!`;
+            }
+        } else if (prize.type === 'bot') {
+            ubtWinnings = prize.bonusUbt || 0; // The bonus 200 UBT
+            user.balances.ubt += ubtWinnings;
+
+            // Find the bot product to award from the 'bots' collection
+            const botProduct = await Bot.findOne({ botId: prize.botProductId }); // Assuming Bot model and botId field
+            if (botProduct) {
+                // Add the bot to the user's owned bots array
+                const newBot = {
+                    botId: botProduct.botId,
+                    name: botProduct.name,
+                    investmentAmount: 0, // It was free
+                    purchasedAt: new Date(),
+                    status: 'active'
+                };
+                user.bots.push(newBot);
+                botWon = newBot;
+                prizeMessage = `JACKPOT! You won a free ${botProduct.name} and ${ubtWinnings} UBT!`;
+            } else {
+                // Fallback if bot isn't found: award its UBT value instead
+                console.error(`Could not find bot with ID ${prize.botProductId} to award. Awarding UBT value instead.`);
+                const fallbackUbt = 3000; // Value of the bot
+                user.balances.ubt += fallbackUbt;
+                ubtWinnings += fallbackUbt; // Total UBT won is bonus + fallback value
+                prizeMessage = `Congratulations! You won ${ubtWinnings} UBT!`;
+            }
         }
 
-        // 3. Add Prize Winnings
-        if (prize.amount > 0) {
-            newUbtBalance += prize.amount; // Add to the numeric balance
-            user.balances.ubt = new mongoose.Types.Decimal128(newUbtBalance.toFixed(2)); // Convert and set back to Decimal128
-
-            const prizeTransaction = new Transaction({
-                userId,
-                // --- START FIX for Transaction Validation ---
-                type: 'game_win', // Assuming 'game_win' is a valid enum
-                amount: prize.amount,
-                currency: 'UBT',
-                description: `Feeling Lucky - ${prize.name}`,
-                status: 'completed',
-                txHash: `PRIZE_${userId}_${Date.now()}_${prize.name.replace(/\s/g, '')}`,
-                fromAddress: 'system_lucky_wheel', // From address for the game system
-                toAddress: user.id.toString(), // To user's ID
-                ubtAmount: prize.amount // Required field
-                // --- END FIX for Transaction Validation ---
+        // Create transaction record for any winnings
+        if (ubtWinnings > 0) {
+            const winTransaction = new Transaction({
+                userId, type: 'game_win', amount: ubtWinnings, currency: 'UBT',
+                description: `Feeling Lucky - ${prize.name}`, status: 'completed'
             });
-            await prizeTransaction.save();
+            await winTransaction.save();
         }
-        
-        await user.save(); // Save the user with the final updated balance
 
-        // 4. Send Response
+        // Save all changes to the user document
+        await user.save();
+
         res.json({
             success: true,
             message: prizeMessage,
-            prizeName: prize.name,
-            prizeAmount: prize.amount,
-            newBalance: newUbtBalance, // Send the numeric balance to the frontend
-            isSpinAgain: prize.isSpinAgain || false // Send the flag to the frontend
+            prize: prize, // Send prize details for frontend to animate wheel
+            newBalance: user.balances.ubt,
+            botWon: botWon // Send details of the won bot if any
         });
 
     } catch (error) {
         console.error('Error during wheel spin:', error);
-        res.status(500).json({ success: false, message: 'Server error during spin.', error: error.message });
+        res.status(500).json({ success: false, message: 'Server error during spin.' });
     }
 });
 
