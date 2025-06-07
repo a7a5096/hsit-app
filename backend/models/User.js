@@ -1,6 +1,15 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+// Define a schema for owned bots to be stored in the user's bot array
+const OwnedBotSchema = new mongoose.Schema({
+  botId: { type: String, required: true }, // Corresponds to the ID of the bot product
+  name: { type: String, required: true },
+  investmentAmount: { type: Number, required: true },
+  purchasedAt: { type: Date, default: Date.now },
+  status: { type: String, default: 'active' } // e.g., 'active', 'expired'
+}, { _id: false }); // No separate _id for subdocuments
+
 const UserSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -28,52 +37,19 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  invitedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    default: null
-  },
-  referralCode: {
-    type: String,
-    unique: true,
-    sparse: true
-  },
-  directInvitesCount: {
-    type: Number,
-    default: 0
-  },
-  secondLevelInvitesCount: {
-    type: Number,
-    default: 0
-  },
-  ubtBonusEarned: {
-    type: Number,
-    default: 0
-  },
-  botsPurchased: {
-    type: Number,
-    default: 0
-  },
+  bots: [OwnedBotSchema], // <-- ADDED: Array to track owned bots
   walletAddresses: {
     bitcoin: { type: String, default: '' },
     ethereum: { type: String, default: '' },
     ubt: { type: String, default: '' }
   },
-  // --- START Added balances object to schema ---
   balances: {
-    btc: { type: mongoose.Schema.Types.Decimal128, default: () => new mongoose.Types.Decimal128("0.00") },
-    eth: { type: mongoose.Schema.Types.Decimal128, default: () => new mongoose.Types.Decimal128("0.00") },
-    usdt: { type: mongoose.Schema.Types.Decimal128, default: () => new mongoose.Types.Decimal128("0.00") },
-    ubt: { type: mongoose.Schema.Types.Decimal128, default: () => new mongoose.Types.Decimal128("0.00") }
+      bitcoin: { type: Number, default: 0 },
+      ethereum: { type: Number, default: 0 },
+      ubt: { type: Number, default: 0 },
+      usdt: { type: Number, default: 0 }
   },
-  // --- END Added balances object to schema ---
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  lastLogin: {
-    type: Date
-  },
+  // ... other fields from your existing schema (invitedBy, referralCode, etc.)
   passwordResetToken: {
     type: String,
     default: undefined
@@ -83,9 +59,10 @@ const UserSchema = new mongoose.Schema({
     default: undefined
   }
 }, {
-  timestamps: true
+  timestamps: true 
 });
 
+// Pre-save hook to hash password (should already be there)
 UserSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     return next();
@@ -99,18 +76,10 @@ UserSchema.pre('save', async function(next) {
   }
 });
 
+// Method to compare password (should already be there)
 UserSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
-
-UserSchema.pre('save', function(next) {
-  if (this.isNew || this.isModified('username')) {
-    if (this.username && (!this.referralCode || this.referralCode !== this.username)) {
-      this.referralCode = this.username;
-    }
-  }
-  next();
-});
 
 const User = mongoose.model('User', UserSchema);
 
