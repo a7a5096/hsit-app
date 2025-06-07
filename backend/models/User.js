@@ -1,14 +1,15 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-// Define a schema for owned bots to be stored in the user's bot array
+// A sub-schema to define the structure of bots owned by a user.
 const OwnedBotSchema = new mongoose.Schema({
-  botId: { type: String, required: true }, // Corresponds to the ID of the bot product
+  botId: { type: String, required: true }, // The unique ID of the bot product, e.g., "aiBalancer05"
   name: { type: String, required: true },
   investmentAmount: { type: Number, required: true },
   purchasedAt: { type: Date, default: Date.now },
-  status: { type: String, default: 'active' } // e.g., 'active', 'expired'
-}, { _id: false }); // No separate _id for subdocuments
+  status: { type: String, default: 'active' }
+}, { _id: false });
+
 
 const UserSchema = new mongoose.Schema({
   username: {
@@ -37,7 +38,11 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  bots: [OwnedBotSchema], // <-- ADDED: Array to track owned bots
+  // ADD THIS bots FIELD TO YOUR SCHEMA
+  bots: {
+    type: [OwnedBotSchema],
+    default: []
+  },
   walletAddresses: {
     bitcoin: { type: String, default: '' },
     ethereum: { type: String, default: '' },
@@ -49,31 +54,20 @@ const UserSchema = new mongoose.Schema({
       ubt: { type: Number, default: 0 },
       usdt: { type: Number, default: 0 }
   },
-  // ... other fields from your existing schema (invitedBy, referralCode, etc.)
-  passwordResetToken: {
-    type: String,
-    default: undefined
-  },
-  passwordResetExpires: {
-    type: Date,
-    default: undefined
-  }
+  // ... other fields like invitedBy, referralCode, etc.
+  passwordResetToken: String,
+  passwordResetExpires: Date
 }, {
   timestamps: true 
 });
 
 // Pre-save hook to hash password (should already be there)
 UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
-  try {
+  if (this.isModified('password')) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (err) {
-    next(err);
   }
+  next();
 });
 
 // Method to compare password (should already be there)
