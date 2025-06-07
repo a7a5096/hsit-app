@@ -10,8 +10,7 @@
     <header class="page-header">
         <a href="dashboard.html" class="back-button">&larr; Back</a>
         <h1>Lucky Draw Wheel</h1>
-        <span>&nbsp;</span> <!-- Placeholder for alignment -->
-    </header>
+        <span>&nbsp;</span> </header>
 
     <main class="page-main">
         <section class="content-card wheel-container">
@@ -20,21 +19,17 @@
                 <p>Your UBT Balance: <span id="ubtBalance">0.00</span> UBT</p>
             </div>
             <div class="wheel-placeholder">
-                <canvas id="wheelCanvas" width="300" height="300"></canvas> <!-- Changed from div to canvas -->
-                <div class="wheel-pointer"></div>
+                <canvas id="luckyWheel" width="300" height="300"></canvas> <div class="wheel-pointer"></div>
                 <p id="wheel-status">Ready to spin!</p>
             </div>
-            <button id="spinButton" class="btn btn-primary btn-spin">Spin Now (10 UBT)</button> <!-- Changed cost to 10 UBT -->
-        </section>
+            <button id="spinButton" class="btn btn-primary btn-spin">Spin Now (10 UBT)</button> </section>
 
         <section class="content-card wheel-results">
              <h2>Your Prize</h2>
              <p id="wheelResult">Spin the wheel to see your prize!</p>
-             <!-- No need for statusMessage here, as the modal will handle messages -->
-        </section>
+             </section>
     </main>
 
-    <!-- Modal for spin results -->
     <div id="spinResultPopup" class="modal" style="display:none;">
         <div class="modal-content">
             <h2>Spin Result</h2>
@@ -45,7 +40,6 @@
 
     <script src="js/config.js"></script>
     <script src="js/balanceManager.js"></script>
-    <!-- FIX: Load the correct spinning_wheel.js -->
-    <script src="js/spinning_wheel.js"></script> 
+    <script src="js/spinning_wheel.js"></script>
 </body>
 </html>
