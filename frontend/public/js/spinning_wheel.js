@@ -1,15 +1,15 @@
 // frontend/public/js/spinning_wheel.js
 document.addEventListener('DOMContentLoaded', () => {
-    const ubtBalanceDisplay = document.getElementById('ubtBalanceDisplay');
+    // FIX: Correctly get the UBT balance display element by its ID 'ubtBalance'
+    const ubtBalanceDisplay = document.getElementById('ubtBalance');
     const spinCostDisplay = document.getElementById('spinCostDisplay');
     const spinButton = document.getElementById('spinButton');
-    // FIX: Correctly get the wheel element by its ID 'luckyWheel'
-    const wheelElement = document.getElementById('luckyWheel'); 
-    const spinResultPopup = document.getElementById('spinResultPopup'); // Assuming you have this element
-    const spinResultMessage = document.getElementById('spinResultMessage'); // And this
-    const closePopupButton = document.getElementById('closePopupButton'); // And this
+    const wheelElement = document.getElementById('luckyWheel');
+    const spinResultPopup = document.getElementById('spinResultPopup');
+    const spinResultMessage = document.getElementById('spinResultMessage');
+    const closePopupButton = document.getElementById('closePopupButton');
 
-    const COST_PER_SPIN = 10; 
+    const COST_PER_SPIN = 10;
     let currentUserUbtBalance = 0; // Initialize with 0, will be updated by balanceManager
 
     console.log("Spinning Wheel JS: DOMContentLoaded.");
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ubtBalanceDisplay) {
             ubtBalanceDisplay.textContent = balance.toFixed(2);
         }
-        
+
         // Ensure the button state is ALWAYS updated here based on the latest balance
         if (spinButton) {
             const hasToken = !!localStorage.getItem('token');
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Please log in to spin.");
             return;
         }
-        
+
         // Re-check balance just before initiating spin for robustness
         if (currentUserUbtBalance < COST_PER_SPIN) {
             alert(`Not enough UBT. Current balance: ${currentUserUbtBalance.toFixed(2)} UBT. Cost: ${COST_PER_SPIN} UBT.`);
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const randomSpins = 3 + Math.floor(Math.random() * 3);
         const randomExtraRotation = Math.random() * 360;
         const targetRotation = currentRotation + (randomSpins * 360) + randomExtraRotation;
-        
+
         // Add console logs to debug rotation values
         console.log('Spinning Wheel JS: Calculating targetRotation:');
         console.log(`  currentRotation: ${currentRotation}`);
@@ -92,9 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
             wheelElement.style.transition = 'none';
             wheelElement.style.transform = `rotate(${currentRotation % 360}deg)`; // Normalize current rotation visually
             console.log(`Spinning Wheel JS: Resetting transform to: rotate(${currentRotation % 360}deg)`);
-            
+
             // Force reflow
-            wheelElement.offsetHeight; 
+            wheelElement.offsetHeight;
 
             wheelElement.style.transition = 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)';
             wheelElement.style.transform = `rotate(${targetRotation}deg)`;
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.warn("Spinning Wheel JS: Spin response did not have success true or newBalance number.", result);
                     updateDisplay(currentUserUbtBalance); // Re-evaluate button state
                 }
-            }, 4000); 
+            }, 4000);
 
         } catch (error) {
             console.error('Error during spin:', error);
@@ -145,20 +145,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Fallback if modal elements aren't ready
                 alert(`Error: ${error.message}`);
             }
-            
+
             setTimeout(() => {
                 updateDisplay(currentUserUbtBalance); // Re-evaluate button state
             }, 4000);
         }
     };
-    
+
     if (spinButton) spinButton.addEventListener('click', handleSpin);
     if (closePopupButton && spinResultPopup) {
         closePopupButton.addEventListener('click', () => {
             spinResultPopup.style.display = 'none';
         });
     }
-    
+
     // Initial setup: Tell balanceManager to fetch the current balance
     // This will trigger the 'balanceUpdated' event upon success.
     if (typeof balanceManager !== 'undefined') {
@@ -171,5 +171,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial call to updateDisplay to set button state correctly on page load
     // This will initially disable the button until balanceManager fetches the actual balance
-    updateDisplay(currentUserUbtBalance); 
+    updateDisplay(currentUserUbtBalance);
 });
