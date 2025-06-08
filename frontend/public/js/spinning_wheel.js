@@ -19,22 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // This prize structure MUST match the backend's `wheel.js` and your wheel_image.png segments
     const PRIZES = [
        
-        
-wwww
-bbbb
-wwww
-rrrr
-bbbb
-blbl
-wwww
-rrrr
-wwww
-rrrr
-wwww
-blbl
-    
-        
-        
+  
         { name: "Free AI Bot!", color: '#FFD700' }, 
         { name: "1x Win", color: 'rgb(255, 255, 255)' },
         { name: "Lose", color: 'rgb(0, 0, 0)' },
@@ -44,12 +29,31 @@ blbl
         { name: "2x Win!", color: 'rgb(255, 255, 0)' },
         { name: "1x Win", color: 'rgb(255, 255, 255)' },
         { name: "10x Win!", color: 'rgb(255, 0, 0)' },
-        
-        { name: "Lose", color: 'rgb(0, 0, 0)' },
-        { name: "1x Win", color: 'rgb(0, 0, 255)' },
-        { name: "Lose", color: 'rgb(0, 0, 0)' },
+        { name: "1x Win", color: 'rgb(255, 255, 255)' },
+        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
+        { name: "1x Win", color: 'rgb(255, 255, 255)' },
         { name: "2x Win!", color: 'rgb(255, 255, 0)' },
         { name: "Lose", color: 'rgb(0, 0, 0)' },
+        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
+        { name: "1x Win", color: 'rgb(255, 255, 255)' },
+        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
+        { name: "1x Win", color: 'rgb(255, 255, 255)' },
+        { name: "2x Win!", color: 'rgb(255, 255, 0)' },
+        { name: "Lose", color: 'rgb(0, 0, 0)' },
+        { name: "1x Win", color: 'rgb(255, 255, 255)' },
+        { name: "Lose", color: 'rgb(0, 0, 0)' },
+        { name: "2x Win!", color: 'rgb(255, 255, 0)' },
+        { name: "1x Win", color: 'rgb(255, 255, 255)' },
+        { name: "Lose", color: 'rgb(0, 0, 0)' },
+        { name: "1x Win", color: 'rgb(255, 255, 255)' },
+        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
+        { name: "1x Win", color: 'rgb(255, 255, 255)' },
+        { name: "2x Win!", color: 'rgb(255, 255, 0)' },
+        { name: "Lose", color: 'rgb(0, 0, 0)' },
+        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
+        { name: "1x Win", color: 'rgb(255, 255, 255)' },
+        
+    
     ];
     const SEGMENT_COUNT = PRIZES.length;
     const SEGMENT_ANGLE = 360 / SEGMENT_COUNT;
