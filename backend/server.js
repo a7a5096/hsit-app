@@ -22,7 +22,9 @@ import botsRoutes from './routes/bots.js';
 import ubtRoutes from './routes/ubt.js';
 import exchangeRatesRoutes from './routes/exchangeRates.js';
 import depositRoutes from './routes/deposit.js';
-import wheelRoutes from './routes/wheel.js';
+import wheelRoutes from './routes/wheel.js'; // Add this import
+
+
 // import cryptoAssetRoutes from './routes/cryptoAsset.js'; // FIXME: This file does not exist, commenting out for now.
 
 // Initialize Express app
@@ -41,6 +43,7 @@ app.use('/api/ubt', ubtRoutes);
 app.use('/api/exchange-rates', exchangeRatesRoutes);
 app.use('/api/deposit', depositRoutes);
 app.use('/api/wheel', wheelRoutes);
+app.use('/api/wheel', wheelRoutes); // Add this line to mount the wheel routes
 // app.use('/api/direct_crypto_asset', cryptoAssetRoutes); // FIXME: Commenting out as the route file is missing.
 
 // --- Explicitly Define Daily Sign-In Routes ---
