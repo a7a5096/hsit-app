@@ -9,10 +9,10 @@ const router = express.Router();
 
 // Define prizes and their weights (probabilities)
 const PRIZES = [
-    { name: 'Black', multiplier: 0, weight: 40, message: 'You landed on Black. No prize this time!' },
-    { name: 'Blue', multiplier: 1, weight: 20, message: 'You landed on Blue! You won back your bet!' },
-    { name: 'White', multiplier: 5, weight: 20, message: 'Amazing! You landed on White and won 5x your bet!' },
-    { name: 'Red', multiplier: 10, weight: 19, message: 'Jackpot! You landed on Red and won 10x your bet!' },
+    { name: 'Black', multiplier: 0, weight: 21.9, message: 'You landed on Black. No prize this time!' },
+    { name: 'Blue', multiplier: 2, weight: 21.9, message: 'You landed on Blue! You won back your bet!' },
+    { name: 'White', multiplier: 1, weight: 37.5, message: 'Amazing! You landed on White and won 5x your bet!' },
+    { name: 'Red', multiplier: 10, weight: 17.7, message: 'Jackpot! You landed on Red and won 10x your bet!' },
     { name: 'GOLD', multiplier: 0, weight: 1, message: 'Unbelievable! You won a FREE UBT Bot #5!', isBot: true }
 ];
 
