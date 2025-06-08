@@ -1,195 +1,195 @@
-// frontend/public/js/spinning_wheel.js
 document.addEventListener('DOMContentLoaded', () => {
-    const ubtBalanceDisplay = document.getElementById('ubtBalance');
+    // DOM Elements
+    const ubtBalanceDisplay = document.getElementById('ubtBalanceDisplay');
+    const spinCostDisplay = document.getElementById('spinCostDisplay');
     const spinButton = document.getElementById('spinButton');
-    const betAmountInput = document.getElementById('betAmountInput');
-    const wheelElement = document.getElementById('luckyWheel');
-    const spinResultPopup = document.getElementById('spinResultPopup');
-    const spinResultMessage = document.getElementById('spinResultMessage');
-    const closePopupButton = document.getElementById('closePopupButton');
-    const ctx = wheelElement.getContext('2d');
+    const wheelElement = document.getElementById('wheel');
+    const prizeLegend = document.getElementById('prize-legend');
+    const resultMessage = document.getElementById('result-message');
+    const winningsAmountDisplay = document.getElementById('winningsAmount');
+    const newUbtBalanceDisplay = document.getElementById('newUbtBalance');
+    const spinError = document.getElementById('spinError');
 
-    let currentRotation = 0;
+    // Game state and configuration
+    const token = localStorage.getItem('token');
     let currentUserUbtBalance = 0;
+    const COST_PER_SPIN = 10;
     let isSpinning = false;
 
-    // Wheel segment data (matching backend probabilities)
-    const segments = [
-        { name: 'Black', color: 'black', probability: 0.4, display: '0x Bet' },
-        { name: 'Blue', color: 'blue', probability: 0.2, display: '1x Bet' },
-        { name: 'White', color: 'white', probability: 0.2, display: '5x Bet' },
-        { name: 'Red', color: 'red', probability: 0.19, display: '10x Bet' },
-        { name: 'GOLD', color: 'gold', probability: 0.01, display: 'UBT Bot #5' }
+    // This structure MUST match the backend's `wheel.js` PRIZES array
+    const PRIZES = [
+        { name: "10x Win!", color: 'rgb(255, 0, 0)', type: 'ubt' },  
+        { name: "Lose", color: 'rgb(0, 0, 0)', type: 'ubt' },
+        { name: "1x Win", color: 'rgb(0, 0, 255)', type: 'ubt' },
+        { name: "2x Win!", color: 'rgb(255, 255, 0)', type: 'ubt' },
+        { name: "Lose", color: 'rgb(0, 0, 0)', type: 'ubt' },
+        { name: "1x Win", color: 'rgb(0, 0, 255)', type: 'ubt' },
+        { name: "Lose", color: 'rgb(0, 0, 0)', type: 'ubt' },
+        { name: "10x Win!", color: 'rgb(255, 0, 0)', type: 'ubt' },
+        { name: "Free AI Bot!", color: '#FFD700', type: 'bot' },
+        { name: "1x Win", color: 'rgb(0, 0, 255)', type: 'ubt' },
+        { name: "Lose", color: 'rgb(0, 0, 0)', type: 'ubt' },
+        { name: "2x Win!", color: 'rgb(255, 255, 0)', type: 'ubt' },
+        { name: "Lose", color: 'rgb(0, 0, 0)', type: 'ubt' },
     ];
+    const SEGMENT_COUNT = PRIZES.length;
+    const SEGMENT_ANGLE = 360 / SEGMENT_COUNT;
 
-    // Function to draw the wheel
-    function drawWheel() {
-        if (!wheelElement) return;
-
-        const canvasWidth = wheelElement.width;
-        const canvasHeight = wheelElement.height;
-        const centerX = canvasWidth / 2;
-        const centerY = canvasHeight / 2;
-        const radius = Math.min(centerX, centerY) * 0.9;
-
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-        let startAngle = 0;
-        segments.forEach(segment => {
-            const angle = 2 * Math.PI * segment.probability;
-
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, startAngle, startAngle + angle);
-            ctx.lineTo(centerX, centerY);
-            ctx.fillStyle = segment.color;
-            ctx.fill();
-            ctx.closePath();
-
-            // Draw segment text (name and multiplier/display)
-            ctx.fillStyle = segment.color === 'white' || segment.color === 'gold' ? 'black' : 'white';
-            ctx.font = 'bold 16px Arial';
-            ctx.textAlign = 'center';
-
-            // Position for the segment name
-            const nameTextX = centerX + Math.cos(startAngle + angle / 2) * (radius * 0.5);
-            const nameTextY = centerY + Math.sin(startAngle + angle / 2) * (radius * 0.5) - 10;
-
-            // Position for the multiplier/display text
-            const displayX = centerX + Math.cos(startAngle + angle / 2) * (radius * 0.7);
-            const displayY = centerY + Math.sin(startAngle + angle / 2) * (radius * 0.7) + 10;
-
-            ctx.fillText(segment.name, nameTextX, nameTextY);
-            ctx.fillText(segment.display, displayX, displayY);
-
-            startAngle += angle;
-        });
-
-        // Draw pointer (you can customize this)
-        ctx.beginPath();
-        ctx.moveTo(centerX + radius * 1.1, centerY);
-        ctx.lineTo(centerX + radius * 1.2, centerY - 10);
-        ctx.lineTo(centerX + radius * 1.2, centerY + 10);
-        ctx.fillStyle = 'black';
-        ctx.fill();
-        ctx.closePath();
+    // --- UI and Message Functions ---
+    function showSpinError(message) {
+        if (spinError) {
+            spinError.textContent = message;
+            spinError.style.display = 'block';
+        }
+    }
+    
+    function clearMessages() {
+        if (spinError) spinError.style.display = 'none';
+        if (resultMessage) resultMessage.textContent = '';
+        if (winningsAmountDisplay) winningsAmountDisplay.textContent = '0';
+    }
+    
+    // --- Setup Functions ---
+    function buildWheelAndLegend() {
+        if (wheelElement) {
+            wheelElement.innerHTML = '';
+            const offset = -SEGMENT_ANGLE / 2; // Offset to center pointer on the middle of a segment
+            PRIZES.forEach((prize, index) => {
+                const segment = document.createElement('div');
+                segment.className = 'wheel-segment';
+                segment.style.backgroundColor = prize.color;
+                // This CSS creates the wedge shapes. It requires specific CSS for .wheel-segment in your stylesheet.
+                segment.style.transform = `rotate(${index * SEGMENT_ANGLE + offset}deg) skewY(${90 - SEGMENT_ANGLE}deg)`;
+                
+                const label = document.createElement('span');
+                label.className = 'segment-label';
+                label.textContent = prize.name;
+                // This counter-transforms the text to make it readable
+                label.style.transform = `skewY(${-(90 - SEGMENT_ANGLE)}deg) rotate(${SEGMENT_ANGLE / 2}deg)`;
+                
+                segment.appendChild(label);
+                wheelElement.appendChild(segment);
+            });
+        }
+        if (prizeLegend) {
+            prizeLegend.innerHTML = '<h3>Prize Legend</h3>';
+            const uniquePrizes = [...new Map(PRIZES.map(item => [item.name, item])).values()];
+            uniquePrizes.forEach(prize => {
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `<span class="color-box" style="background-color: ${prize.color};"></span><span class="prize-description">${prize.name}</span>`;
+                prizeLegend.appendChild(legendItem);
+            });
+        }
     }
 
-    // Function to handle the spin animation
-    const handleSpin = async () => {
-        if (isSpinning) return;
-        isSpinning = true;
-
-        const token = localStorage.getItem('token');
+    // --- Core Logic ---
+    async function fetchUserUbtBalance() {
         if (!token) {
-            alert("Please log in to spin.");
-            isSpinning = false;
+            if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = "N/A";
+            showSpinError("Please log in to play.");
+            if(spinButton) spinButton.disabled = true;
             return;
         }
+        console.log("Fetching user balance...");
+        try {
+            if (typeof API_URL === 'undefined') throw new Error('API_URL is not defined.');
+            const response = await fetch(`${API_URL}/api/auth`, { headers: { 'x-auth-token': token } });
+            if (!response.ok) throw new Error("Failed to fetch balance from server.");
+            
+            const data = await response.json();
+            if (data.success && data.balances && typeof data.balances.ubt === 'number') {
+                currentUserUbtBalance = data.balances.ubt;
+                if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = currentUserUbtBalance.toFixed(2);
+                if (newUbtBalanceDisplay) newUbtBalanceDisplay.textContent = currentUserUbtBalance.toFixed(2);
+                if (spinButton) spinButton.disabled = false;
+            } else {
+                throw new Error("Invalid balance data received from server.");
+            }
+        } catch (error) {
+            console.error('Error fetching UBT balance:', error);
+            if (ubtBalanceDisplay) ubtBalanceDisplay.textContent = "Error";
+            showSpinError(error.message || "Could not load your UBT balance.");
+            if(spinButton) spinButton.disabled = true;
+        }
+    }
 
-        let betAmount = parseFloat(betAmountInput.value);
-        if (isNaN(betAmount) || betAmount < 0.5 || betAmount > 10) {
-            alert("Please enter a valid bet amount between 0.5 and 10 UBT.");
-            isSpinning = false;
+    async function handleSpin() {
+        if (isSpinning) return;
+        
+        clearMessages();
+        if (currentUserUbtBalance < COST_PER_SPIN) {
+            showSpinError(`Not enough UBT. Cost is ${COST_PER_SPIN} UBT.`);
             return;
         }
-
-        if (currentUserUbtBalance < betAmount) {
-            alert(`Not enough UBT. Current balance: ${currentUserUbtBalance.toFixed(2)} UBT. Cost: ${betAmount.toFixed(2)} UBT.`);
-            isSpinning = false;
-            return;
-        }
-
+        
+        isSpinning = true;
         spinButton.disabled = true;
-        spinButton.textContent = "Spinning...";
-
-        const randomSpins = 3 + Math.floor(Math.random() * 3);
-        const randomExtraRotation = Math.random() * 360;
-        const targetRotation = currentRotation + (randomSpins * 360) + randomExtraRotation;
-
-        wheelElement.style.transition = 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)';
-        wheelElement.style.transform = `rotate(${targetRotation}deg)`;
-        currentRotation = targetRotation;
+        spinButton.textContent = 'Spinning...';
 
         try {
-            const effectiveApiUrl = typeof API_URL !== 'undefined' ? API_URL : 'https://hsit-backend.onrender.com';
-            const response = await fetch(`${effectiveApiUrl}/api/wheel/spin`, {
+            if (typeof API_URL === 'undefined') throw new Error('API_URL is not defined.');
+            const response = await fetch(`${API_URL}/api/wheel/spin`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
-                body: JSON.stringify({ betAmount })
             });
+            
             const result = await response.json();
+            if (!response.ok) throw new Error(result.message || "Spin request failed.");
 
-            if (!response.ok) {
-                const errorMsg = result.message || "Spin failed.";
-                console.error("Spin API error:", errorMsg, result);
-                throw new Error(errorMsg);
-            }
+            // Find the index of the winning prize to determine where the wheel should stop
+            const prizeIndex = PRIZES.findIndex(p => p.name === result.prize.name);
+            const targetAngle = prizeIndex >= 0 ? prizeIndex * SEGMENT_ANGLE : Math.random() * 360; // fallback to random angle
+            
+            // Animate wheel to the winning segment
+            const randomSpins = 5 + Math.floor(Math.random() * 3); // 5 to 7 full spins for effect
+            // We use the negative targetAngle because a positive rotate() goes clockwise. The pointer is at the top (0 degrees).
+            // To make the wheel stop with segment N under the pointer, we rotate the wheel by -N*angle.
+            const finalRotation = (randomSpins * 360) - targetAngle;
+            
+            wheelElement.style.transition = 'transform 5s cubic-bezier(0.25, 0.1, 0.25, 1)';
+            wheelElement.style.transform = `rotate(${finalRotation}deg)`;
 
+            // Handle results after animation finishes
             setTimeout(() => {
-                if (spinResultMessage) spinResultMessage.textContent = result.message;
-                if (spinResultPopup) spinResultPopup.style.display = 'flex';
-
-                if (result.success && typeof result.newBalance === 'number') {
-                    if (typeof balanceManager !== 'undefined') {
-                        balanceManager.updateBalance(result.newBalance);
-                    } else {
-                        console.error("balanceManager not defined after spin!");
-                        updateDisplay(currentUserUbtBalance);
-                    }
-                } else {
-                    console.warn("Spin response did not have success true or newBalance number.", result);
-                    updateDisplay(currentUserUbtBalance);
-                }
                 isSpinning = false;
                 spinButton.disabled = false;
-                spinButton.textContent = "Spin Now";
-            }, 4000);
+                spinButton.textContent = 'Spin Now!';
+                if (result.success) {
+                    if (resultMessage) resultMessage.textContent = result.message;
+                    if (winningsAmountDisplay) {
+                        const winnings = result.prize.type === 'bot' ? (result.prize.bonusUbt || 0) : (SPIN_COST * result.prize.multiplier);
+                        winningsAmountDisplay.textContent = winnings;
+                    }
+                    if (newUbtBalanceDisplay && typeof result.newBalance === 'number') {
+                        newUbtBalanceDisplay.textContent = result.newBalance.toFixed(2);
+                    }
+                    // Update main balance display
+                    if (ubtBalanceDisplay && typeof result.newBalance === 'number') {
+                        ubtBalanceDisplay.textContent = result.newBalance.toFixed(2);
+                        currentUserUbtBalance = result.newBalance; // Update local state
+                    }
+                } else {
+                    showSpinError(result.message);
+                }
+            }, 5100); // Delay should be slightly longer than CSS transition duration
 
         } catch (error) {
-            console.error('Error during spin:', error);
-            if (spinResultPopup && spinResultMessage) {
-                spinResultMessage.textContent = `Error: ${error.message}`;
-                spinResultPopup.style.display = 'flex';
-            } else {
-                alert(`Error: ${error.message}`);
-            }
+            console.error('Spin error:', error);
+            showSpinError(error.message || 'An error occurred.');
             isSpinning = false;
             spinButton.disabled = false;
-            spinButton.textContent = "Spin Now";
-        }
-    };
-
-    function updateDisplay(balance) {
-        currentUserUbtBalance = balance;
-        if (ubtBalanceDisplay) {
-            ubtBalanceDisplay.textContent = balance.toFixed(2);
-        }
-
-        if (spinButton) {
-            const hasToken = !!localStorage.getItem('token');
-            const currentBet = betAmountInput ? parseFloat(betAmountInput.value) : 10;
-            const canAfford = currentUserUbtBalance >= currentBet;
-
-            spinButton.disabled = !hasToken || !canAfford || isSpinning;
-            spinButton.textContent = isSpinning ? "Spinning..." : hasToken ? (canAfford ? `Spin (${currentBet.toFixed(2)} UBT)` : `Insufficient UBT (Bet: ${currentBet.toFixed(2)})`) : "Log In to Spin";
+            spinButton.textContent = 'Spin Now!';
         }
     }
 
-    // Event listeners
-    if (spinButton) {
-        spinButton.addEventListener('click', handleSpin);
+    // --- Initial Setup ---
+    function initialize() {
+        if (spinCostDisplay) spinCostDisplay.textContent = COST_PER_SPIN;
+        buildWheelAndLegend();
+        fetchUserUbtBalance();
+        if (spinButton) spinButton.addEventListener('click', handleSpin);
     }
 
-    // Initial draw of the wheel
-    drawWheel();
-
-    // Initial setup: Tell balanceManager to fetch the current balance
-    // This will trigger the 'balanceUpdated' event upon success.
-    if (typeof balanceManager !== 'undefined') {
-        balanceManager.init();
-    } else {
-        console.error("balanceManager is not defined!");
-        updateDisplay(0);
-    }
-    updateDisplay(currentUserUbtBalance);
+    initialize();
 });
