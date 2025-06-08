@@ -18,8 +18,8 @@
             <div class="wheel-balance">
                 <p>Your UBT Balance: <span id="ubtBalance">0.00</span> UBT</p>
             </div>
-            <div class="wheel-placeholder">
-                <canvas id="luckyWheel" width="300" height="300"></canvas>
+            <div class="wheel-display-area">
+                <canvas id="luckyWheel" width="600" height="600"></canvas>
                 <div class="wheel-pointer"></div>
                 <p id="wheel-status">Ready to spin!</p>
             </div>
@@ -28,11 +28,12 @@
                 <input type="number" id="betAmountInput" value="10" min="0.5" max="10" step="0.5">
             </div>
             <button id="spinButton" class="btn btn-primary btn-spin">Spin Now</button>
+        </section>
 
         <section class="content-card wheel-results">
              <h2>Your Prize</h2>
              <p id="wheelResult">Spin the wheel to see your prize!</p>
-             </section>
+        </section>
     </main>
 
     <div id="spinResultPopup" class="modal" style="display:none;">
