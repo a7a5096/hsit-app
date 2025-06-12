@@ -43,7 +43,6 @@ app.use('/api/ubt', ubtRoutes);
 app.use('/api/exchange-rates', exchangeRatesRoutes);
 app.use('/api/deposit', depositRoutes);
 app.use('/api/wheel', wheelRoutes);
-app.use('/api/wheel', wheelRoutes); // Add this line to mount the wheel routes
 // app.use('/api/direct_crypto_asset', cryptoAssetRoutes); // FIXME: Commenting out as the route file is missing.
 
 // --- Explicitly Define Daily Sign-In Routes ---
@@ -101,8 +100,12 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
         user.balances.ubt = new mongoose.Types.Decimal128(newTotalUbtBalance.toFixed(2));
         
         await new Transaction({
-            userId, type: 'reward', amount: calculatedReward, currency: 'UBT',
-            description: 'Daily Sign-in Bonus', status: 'completed'
+            user: userId, // Corrected from userId to user: userId
+            type: 'reward',
+            amount: calculatedReward,
+            currency: 'UBT', // Note: Transaction model has 'asset' field too, consider using that.
+            description: 'Daily Sign-in Bonus',
+            status: 'completed'
         }).save();
         
         await user.save();
@@ -123,7 +126,7 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
 
 // --- Basic Root Route ---
 app.get('/', (req, res) => {
-  res.send('HSIT App API is running...');
+    res.send('HSIT App API is running...');
 });
 
 // --- Application Settings Initialization ---
