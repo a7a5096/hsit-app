@@ -328,30 +328,41 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => { statusMessage.style.display = 'none'; }, 5000);
     }
 
+    // --- LIVE COUNTDOWN TIMER ---
+    let countdownInterval = null;
+
+    function startLiveCountdown() {
+        if (countdownInterval) clearInterval(countdownInterval);
+        countdownInterval = setInterval(() => {
+            document.querySelectorAll('.days-left-countdown').forEach(el => {
+                const offerEndDate = new Date('2025-06-21T00:00:00Z');
+                const now = new Date();
+                const diffTime = offerEndDate.getTime() - now.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                el.textContent = `${Math.max(0, diffDays)} Days Left`;
+            });
+        }, 60000); // update every minute
+    }
+
     function renderProducts(botsToRender) {
         if (!productsGrid) {
             console.error("Products grid not found.");
             return;
         }
-        productsGrid.innerHTML = ''; // Clear loading message or old cards
-
+        productsGrid.innerHTML = '';
         if (!botsToRender || botsToRender.length === 0) {
             productsGrid.innerHTML = '<p>No AI products available at the moment.</p>';
             return;
         }
-
         botsToRender.forEach(bot => {
             const card = document.createElement('div');
-            // Determine if it's a Grand Opening offer
             const isGrandOpeningOffer = bot.isGrandOpeningOffer || false;
             let daysLeft = 0;
             if (isGrandOpeningOffer) {
                 daysLeft = calculateDaysLeft();
-                card.classList.add('grand-opening-card'); // Add a class for specific styling
+                card.classList.add('grand-opening-card');
             }
-            
-            card.className = 'product-card'; // Base class
-
+            card.className = 'product-card';
             const botName = bot.name || 'N/A Bot';
             const dailyCredit = bot.dailyCredit || 0;
             const lockInDays = bot.lockInDays || 0;
@@ -360,7 +371,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const hasBonus = bot.hasBonus || false;
             const bonusCreditAmount = bot.bonusCreditAmount || 0;
             const bonusCreditInterval = bot.bonusCreditInterval || '';
-
             card.innerHTML = `
                 <img src="images/logobots.png" alt="HSIT Bot Logo" class="bot-logo-img">
                 <div class="product-info-stats">
@@ -377,64 +387,55 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>` : ''
                     }
                 </div>
-                
                 ${isGrandOpeningOffer && daysLeft > 0 ? `
                 <div class="grand-opening-banner">
                     <span class="grand-opening-text">GRAND OPENING OFFER!</span>
                     <span class="days-left-countdown">${daysLeft} Days Left</span>
                 </div>
                 ` : ''}
-
                 <button class="btn btn-primary full-width btn-buy-bot" data-bot-id="${bot.id}" data-bot-price="${price}">
                     Buy Bot (${price} UBT)
                 </button>
             `;
             productsGrid.appendChild(card);
         });
-
         document.querySelectorAll('.btn-buy-bot').forEach(button => {
             button.addEventListener('click', handleBuyBot);
         });
+        startLiveCountdown();
     }
 
     async function handleBuyBot(event) {
         const botId = event.target.dataset.botId;
-        const botPrice = event.target.dataset.botPrice;
         const token = localStorage.getItem('token');
-
         if (!token) {
             showStatusMessage('Please log in to purchase a bot.', 'error');
             return;
         }
-
         const botCard = event.target.closest('.product-card');
         const botName = botCard.querySelector('h3').textContent;
-
+        const botPrice = botCard.querySelector('.product-info-stats div:nth-child(3) span').textContent.replace(' UBT', '');
         if (!confirm(`Are you sure you want to purchase the ${botName} for ${botPrice} UBT?`)) {
             return;
         }
-
         event.target.disabled = true;
         event.target.textContent = 'Processing...';
-
         try {
-            const response = await fetch(`${API_BASE_URL}/api/bots/purchase`, { 
+            const response = await fetch(`${API_BASE_URL}/api/bots/purchase`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-auth-token': token
                 },
-                body: JSON.stringify({ botId: botId, price: parseFloat(botPrice) }) // Ensure price is sent as a number
+                body: JSON.stringify({ botId: botId }) // Only send botId
             });
             const result = await response.json();
-
             if (result.success) {
                 showStatusMessage(result.msg || 'Bot purchased successfully!', 'success');
                 if (typeof balanceManager !== 'undefined' && typeof result.newBalance === 'number') {
                      balanceManager.updateBalance(result.newBalance);
                 }
-                // Re-render all bots to update countdowns or states if any
-                renderProducts(ALL_BOTS_DATA); 
+                renderProducts(ALL_BOTS_DATA);
             } else {
                 throw new Error(result.msg || 'Purchase failed.');
             }
@@ -451,5 +452,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initial load of products using the hardcoded data
-    renderProducts(ALL_BOTS_DATA); 
+    renderProducts(ALL_BOTS_DATA);
 });
