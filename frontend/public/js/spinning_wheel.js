@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ubtBalanceDisplay = document.getElementById('ubtBalanceDisplay');
     const spinCostDisplay = document.getElementById('spinCostDisplay');
     const spinButton = document.getElementById('spinButton');
-    const wheelImage = document.getElementById('wheelImage'); // <-- Changed from wheelElement
+    const wheelImage = document.getElementById('wheelImage');
     const prizeLegend = document.getElementById('prize-legend');
     const resultMessage = document.getElementById('result-message');
     const winningsAmountDisplay = document.getElementById('winningsAmount');
@@ -18,46 +18,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // This prize structure MUST match the backend's `wheel.js` and your wheel_image.png segments
     const PRIZES = [
-       
-  
-        { name: "Free AI Bot!", color: '#FFD700' }, 
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        { name: "Lose", color: 'rgb(0, 0, 0)' },
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
-        { name: "Lose", color: 'rgb(0, 0, 0)' },
-        { name: "2x Win!", color: 'rgb(255, 255, 0)' },
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        { name: "2x Win!", color: 'rgb(255, 255, 0)' },
-        { name: "Lose", color: 'rgb(0, 0, 0)' },
-        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        { name: "2x Win!", color: 'rgb(255, 255, 0)' },
-        { name: "Lose", color: 'rgb(0, 0, 0)' },
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        { name: "Lose", color: 'rgb(0, 0, 0)' },
-        { name: "2x Win!", color: 'rgb(255, 255, 0)' },
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        { name: "Lose", color: 'rgb(0, 0, 0)' },
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        { name: "2x Win!", color: 'rgb(255, 255, 0)' },
-        { name: "Lose", color: 'rgb(0, 0, 0)' },
-        { name: "10x Win!", color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", color: 'rgb(255, 255, 255)' },
-        
-    
+        { name: "Free AI Bot!", type: "bot", color: '#FFD700' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
+        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
+        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
+        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
+        { name: "2x Win!", type: "multiplier", multiplier: 2, color: 'rgb(255, 255, 0)' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
+        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
+        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
+        { name: "2x Win!", type: "multiplier", multiplier: 2, color: 'rgb(255, 255, 0)' },
+        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
+        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
+        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
+        { name: "2x Win!", type: "multiplier", multiplier: 2, color: 'rgb(255, 255, 0)' },
+        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
+        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
+        { name: "2x Win!", type: "multiplier", multiplier: 2, color: 'rgb(255, 255, 0)' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
+        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
+        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
+        { name: "2x Win!", type: "multiplier", multiplier: 2, color: 'rgb(255, 255, 0)' },
+        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
+        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' }
     ];
     const SEGMENT_COUNT = PRIZES.length;
     const SEGMENT_ANGLE = 360 / SEGMENT_COUNT;
-
 
     function showSpinError(message) {
         if(spinError) {
@@ -87,7 +82,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Core Logic ---
     async function fetchUserUbtBalance() {
-        // ... (This function remains the same as before) ...
+        try {
+            if (!token) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            const response = await fetch(`${API_URL}/api/wheel/balance`, {
+                method: 'GET',
+                headers: {
+                    'x-auth-token': token
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch UBT balance');
+            }
+
+            const data = await response.json();
+            currentUserUbtBalance = data.balance;
+            
+            if (ubtBalanceDisplay) {
+                ubtBalanceDisplay.textContent = data.balance.toFixed(2);
+            }
+        } catch (error) {
+            console.error('Error fetching UBT balance:', error);
+            showSpinError('Error loading your UBT balance. Please try again later.');
+        }
     }
 
     async function handleSpin() {
@@ -107,16 +128,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof API_URL === 'undefined') throw new Error('API_URL is not defined.');
             const response = await fetch(`${API_URL}/api/wheel/spin`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'x-auth-token': token 
+                },
+                body: JSON.stringify({
+                    betAmount: COST_PER_SPIN
+                })
             });
             
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || "Spin request failed.");
 
-            const prizeIndex = PRIZES.findIndex(p => p.name === result.prize.name);
-            const targetAngle = prizeIndex >= 0 ? prizeIndex * SEGMENT_ANGLE : Math.random() * 360;
-            
-            const randomSpins = 5 + Math.floor(Math.random() * 3);
+            // Find the prize in our local PRIZES array that matches the backend result
+            const prizeIndex = PRIZES.findIndex(p => p.name === result.prize);
+            if (prizeIndex === -1) {
+                throw new Error('Invalid prize received from server');
+            }
+
+            const targetAngle = prizeIndex * SEGMENT_ANGLE;
+            const randomSpins = 5 + Math.floor(Math.random() * 3); // 5-7 full spins
             const currentRotation = parseFloat(wheelImage.style.transform.replace(/[^0-9-.]/g, '')) || 0;
             const finalRotation = currentRotation - (currentRotation % 360) + (randomSpins * 360) + targetAngle;
             
@@ -130,9 +161,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 spinButton.textContent = 'Spin Now!';
                 if (result.success) {
                     if (resultMessage) resultMessage.textContent = result.message;
-                    const winnings = result.prize.type === 'bot' ? (result.prize.bonusUbt || 0) : (COST_PER_SPIN * result.prize.multiplier);
-                    if (winningsAmountDisplay) winningsAmountDisplay.textContent = winnings;
-                    if (newUbtBalanceDisplay && typeof result.newBalance === 'number') newUbtBalanceDisplay.textContent = result.newBalance.toFixed(2);
+                    if (winningsAmountDisplay) winningsAmountDisplay.textContent = result.creditsAdded || 0;
+                    if (newUbtBalanceDisplay && typeof result.newBalance === 'number') {
+                        newUbtBalanceDisplay.textContent = result.newBalance.toFixed(2);
+                    }
                     if (ubtBalanceDisplay && typeof result.newBalance === 'number') {
                         ubtBalanceDisplay.textContent = result.newBalance.toFixed(2);
                         currentUserUbtBalance = result.newBalance;

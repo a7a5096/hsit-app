@@ -9,11 +9,11 @@ const router = express.Router();
 
 // Define prizes and their weights (probabilities)
 const PRIZES = [
-    { name: 'Black', multiplier: 0, weight: 21.9, message: 'You landed on Black. No prize this time!' },
-    { name: 'Blue', multiplier: 2, weight: 21.9, message: 'You landed on Blue! You won back your bet!' },
-    { name: 'White', multiplier: 1, weight: 37.5, message: 'Amazing! You landed on White and won 5x your bet!' },
-    { name: 'Red', multiplier: 10, weight: 17.7, message: 'Jackpot! You landed on Red and won 10x your bet!' },
-    { name: 'GOLD', multiplier: 0, weight: 1, message: 'Unbelievable! You won a FREE UBT Bot #5!', isBot: true }
+    { name: "Free AI Bot!", type: "bot", weight: 1, message: "Unbelievable! You won a FREE AI Bot!" },
+    { name: "1x Win", type: "multiplier", multiplier: 1, weight: 37.5, message: "You won 1x your bet!" },
+    { name: "Lose", type: "multiplier", multiplier: 0, weight: 21.9, message: "Sorry, no prize this time!" },
+    { name: "2x Win!", type: "multiplier", multiplier: 2, weight: 21.9, message: "Amazing! You won 2x your bet!" },
+    { name: "10x Win!", type: "multiplier", multiplier: 10, weight: 17.7, message: "Jackpot! You won 10x your bet!" }
 ];
 
 // Helper function to select a prize based on weights
@@ -27,16 +27,41 @@ const selectPrize = () => {
             return PRIZES[i];
         }
     }
-    // Fallback, should not happen if weights sum up correctly
-    return PRIZES[0]; // Default to Black if something goes wrong
+    return PRIZES[0]; // Default to first prize if something goes wrong
 };
+
+// @route   GET api/wheel/balance
+// @desc    Get user's UBT balance
+// @access  Private
+router.get('/balance', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        // Initialize balance if it doesn't exist
+        if (!user.balances) {
+            user.balances = { ubt: 0 };
+        }
+        user.balances.ubt = user.balances.ubt || 0;
+
+        res.json({
+            success: true,
+            balance: user.balances.ubt
+        });
+    } catch (err) {
+        console.error('Error fetching balance:', err.message);
+        res.status(500).json({ success: false, message: 'Server error while fetching balance.' });
+    }
+});
 
 // @route   POST api/wheel/spin
 // @desc    Process a spin on the lucky wheel
 // @access  Private
 router.post('/spin', auth, async (req, res) => {
     const { betAmount } = req.body;
-    let session; // Declare session variable outside try-catch for wider scope
+    let session;
 
     // 1. Validate betAmount
     if (typeof betAmount !== 'number' || betAmount < 0.5 || betAmount > 10) {
@@ -44,7 +69,6 @@ router.post('/spin', auth, async (req, res) => {
     }
 
     try {
-        // Start Mongoose session for atomicity (ensures all or nothing for balance and transaction updates)
         session = await mongoose.startSession();
         session.startTransaction();
 
@@ -59,9 +83,8 @@ router.post('/spin', auth, async (req, res) => {
         if (!user.balances) {
             user.balances = { ubt: 0 };
         }
-        user.balances.ubt = user.balances.ubt || 0; // Ensure ubt is a number
+        user.balances.ubt = user.balances.ubt || 0;
 
-        // Record initial balance for transaction log
         const initialBalance = user.balances.ubt;
 
         // 2. Check if user has sufficient UBT balance
@@ -82,15 +105,20 @@ router.post('/spin', auth, async (req, res) => {
         let prizeMessage = prize.message;
 
         // 5. Award prize and update balance
-        if (prize.multiplier > 0) {
+        if (prize.type === 'multiplier' && prize.multiplier > 0) {
             creditsAdded = betAmount * prize.multiplier;
             user.balances.ubt += creditsAdded;
-        } else if (prize.isBot) {
+        } else if (prize.type === 'bot') {
             wasBotWon = true;
-            newBotStarted = true; // Assuming winning the bot immediately starts it or registers it for activation
-            // Placeholder: If you have a specific way to track bots on the user model,
-            // you would update it here (e.g., user.bots.push({ name: 'UBT Bot #5', status: 'active' }));
-            // As per our discussion, I'm just setting flags for the transaction log.
+            newBotStarted = true;
+            // Add bot to user's account if you have a bots array
+            if (!user.bots) user.bots = [];
+            user.bots.push({
+                name: 'AI Bot',
+                status: 'active',
+                startDate: new Date(),
+                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+            });
         }
 
         const finalBalance = user.balances.ubt;
@@ -99,7 +127,7 @@ router.post('/spin', auth, async (req, res) => {
         const transaction = new Transaction({
             user: user._id,
             type: 'wheel_spin',
-            amount: -betAmount, // Negative for the cost of the spin
+            amount: -betAmount,
             asset: 'ubt',
             status: 'completed',
             details: {
@@ -115,11 +143,9 @@ router.post('/spin', auth, async (req, res) => {
             date: new Date()
         });
 
-        // Save user and transaction within the session
         await user.save({ session });
         await transaction.save({ session });
 
-        // Commit the transaction
         await session.commitTransaction();
         session.endSession();
 
