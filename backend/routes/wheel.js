@@ -123,28 +123,37 @@ router.post('/spin', auth, async (req, res) => {
 
         const finalBalance = user.balances.ubt;
 
-        // 6. Create transaction record
-        const transaction = new Transaction({
-            user: user._id,
-            type: 'wheel_spin',
-            amount: -betAmount,
-            asset: 'ubt',
+        // Create transaction record for the spin
+        const spinTransaction = new Transaction({
+            userId: user._id,
+            txHash: `wheel_spin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            fromAddress: user.walletAddresses.ubt || 'system',
+            amount: betAmount,
+            currency: 'UBT',
+            ubtAmount: betAmount,
             status: 'completed',
-            details: {
-                initial_balance: initialBalance,
-                bet: betAmount,
-                spin_result: prize.name,
-                credits_added: creditsAdded,
-                final_balance: finalBalance,
-                was_bot_won: wasBotWon,
-                new_bot_started: newBotStarted,
-                prize_message: prizeMessage
-            },
-            date: new Date()
+            type: 'wager',
+            description: `Wheel spin - ${prize.name}`
         });
 
+        await spinTransaction.save({ session });
+
+        // Create transaction record for the prize
+        const prizeTransaction = new Transaction({
+            userId: user._id,
+            txHash: `wheel_prize_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            fromAddress: 'system',
+            amount: creditsAdded,
+            currency: 'UBT',
+            ubtAmount: creditsAdded,
+            status: 'completed',
+            type: 'reward',
+            description: `Wheel prize - ${prize.name}`
+        });
+
+        await prizeTransaction.save({ session });
+
         await user.save({ session });
-        await transaction.save({ session });
 
         await session.commitTransaction();
         session.endSession();
