@@ -99,14 +99,22 @@ app.post('/api/daily-signin/signin', authMiddleware, async (req, res) => {
         const newTotalUbtBalance = currentUbtBalance + calculatedReward;
         user.balances.ubt = new mongoose.Types.Decimal128(newTotalUbtBalance.toFixed(2));
         
-        await new Transaction({
-            user: userId, // Corrected from userId to user: userId
+                await new Transaction({
+            user: userId, // Corrected to 'user' field as per Transaction model schema
             type: 'reward',
-            amount: calculatedReward,
-            currency: 'UBT', // Note: Transaction model has 'asset' field too, consider using that.
+            amount: calculatedReward, // This is the amount of the reward
+            ubtAmount: calculatedReward, // Use calculatedReward for ubtAmount as well
+            currency: 'UBT',
             description: 'Daily Sign-in Bonus',
-            status: 'completed'
+            status: 'completed',
+            // Add placeholder values for required fields that don't directly apply to 'reward' type
+            fromAddress: 'system', // Indicates the reward comes from the system
+            txHash: `DAILY_SIGNIN_${userId}_${Date.now()}`, // Unique ID for this transaction
+            // The Transaction model schema now expects 'user' instead of 'userId'.
+            // Ensure you have imported mongoose and Transaction in this file.
+            // (These imports are already present in your server.js)
         }).save();
+
         
         await user.save();
 
