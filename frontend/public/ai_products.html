@@ -1089,6 +1089,43 @@
     <div id="statusMessage" class="status-message"></div>
 
     <script>
+        // Global variables
+        const API_URL = 'https://hsit-backend.onrender.com';
+        
+        // Bot data
+        const ALL_BOTS_DATA = [
+            {
+                id: 'GO-1',
+                name: 'Basic Trading Bot',
+                price: 1000,
+                description: 'Entry-level trading bot with basic features',
+                isGrandOpening: true
+            },
+            {
+                id: 'GO-2',
+                name: 'Advanced Trading Bot',
+                price: 2500,
+                description: 'Advanced trading bot with enhanced features',
+                isGrandOpening: true
+            },
+            {
+                id: 'VIP-1',
+                name: 'VIP Trading Bot',
+                price: 5000,
+                description: 'Premium trading bot with exclusive features',
+                isGrandOpening: false
+            }
+        ];
+
+        // Calculate days left until grand opening offer ends
+        function calculateDaysLeft() {
+            const endDate = new Date('2024-04-30'); // Set your end date here
+            const today = new Date();
+            const diffTime = endDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return Math.max(0, diffDays);
+        }
+
         // Use a global object for the balance manager that balanceManager.js will interact with
         // This simulates the balanceManager being available globally from its own script.
         const balanceManager = {
