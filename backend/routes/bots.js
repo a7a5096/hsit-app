@@ -32,7 +32,7 @@ const bots = [
 
 // Helper function to get bot by ID
 function getBotById(id) {
-    return bots.find(bot => bot.id === parseInt(id));
+    return bots.find(bot => String(bot.id) === String(id));
 }
 
 // @route   GET api/bots
