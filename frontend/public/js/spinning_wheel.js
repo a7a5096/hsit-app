@@ -18,38 +18,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // This prize structure MUST match the backend's `wheel.js` and your wheel_image.png segments
     const PRIZES = [
-        { name: "Free AI Bot!", type: "bot", color: '#FFD700' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
-        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
-        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
-        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
-        { name: "2x Win!", type: "multiplier", multiplier: 2, color: 'rgb(255, 255, 0)' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
-        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
-        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
-        { name: "2x Win!", type: "multiplier", multiplier: 2, color: 'rgb(255, 255, 0)' },
-        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
-        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
-        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
-        { name: "2x Win!", type: "multiplier", multiplier: 2, color: 'rgb(255, 255, 0)' },
-        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
-        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
-        { name: "2x Win!", type: "multiplier", multiplier: 2, color: 'rgb(255, 255, 0)' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
-        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
-        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' },
-        { name: "2x Win!", type: "multiplier", multiplier: 2, color: 'rgb(255, 255, 0)' },
-        { name: "Lose", type: "multiplier", multiplier: 0, color: 'rgb(0, 0, 0)' },
-        { name: "10x Win!", type: "multiplier", multiplier: 10, color: 'rgb(255, 0, 0)' },
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: 'rgb(255, 255, 255)' }
+        { name: "A.I. BOT #5 (Value $3000)", type: "bot", color: "#ffe600" }, // 1 - yellow/green
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 2 - black
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 3 - white
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#f00" }, // 4 - red
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 5 - black
+        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#06f" },// 6 - blue
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 7 - white
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 8 - black
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#f00" }, // 9 - red
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 10 - black
+        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#06f" },// 11 - blue
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 12 - white
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 13 - black
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#f00" }, // 14 - red
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 15 - black
+        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#06f" },// 16 - blue
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 17 - white
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 18 - black
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#f00" }, // 19 - red
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 20 - black
+        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#06f" },// 21 - blue
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 22 - white
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 23 - black
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#f00" }, // 24 - red
     ];
     const SEGMENT_COUNT = PRIZES.length;
     const SEGMENT_ANGLE = 360 / SEGMENT_COUNT;
