@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const productsGrid = document.querySelector('.products-grid');
+    const productsGrid = document.getElementById('bots-grid');
     const statusMessage = document.getElementById('statusMessage');
 
     const API_BASE_URL = typeof API_URL !== 'undefined' ? API_URL : 'https://hsit-backend.onrender.com';
