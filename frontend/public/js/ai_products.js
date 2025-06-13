@@ -10,8 +10,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Update countdown timer
     function updateCountdown() {
-        const endDate = new Date('2024-04-15');
         const now = new Date();
+        const endDate = new Date(now);
+        endDate.setDate(now.getDate() + 24); // Set end date to 24 days from now
         const diff = endDate - now;
         const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
         daysLeftCountdown.textContent = days;
