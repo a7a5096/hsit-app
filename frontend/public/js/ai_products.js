@@ -9,16 +9,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Update countdown timer
-    function updateCountdown() {
-        const now = new Date();
-        const endDate = new Date(now);
-        endDate.setDate(now.getDate() + 24); // Set end date to 24 days from now
-        const diff = endDate - now;
-        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-        daysLeftCountdown.textContent = days;
+    async function updateCountdown() {
+        try {
+            const API_BASE_URL = typeof API_URL !== 'undefined' ? API_URL : 'https://hsit-backend.onrender.com';
+            const token = getToken();
+            if (!token) return;
+
+            const response = await fetch(`${API_BASE_URL}/api/bots`, {
+                headers: {
+                    'x-auth-token': token,
+                    'Cache-Control': 'no-cache'
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch countdown data');
+            const data = await response.json();
+            
+            if (daysLeftCountdown) {
+                daysLeftCountdown.textContent = data.grandOpeningRemainingDays;
+            }
+        } catch (error) {
+            console.error('Error updating countdown:', error);
+        }
     }
-    updateCountdown();
-    setInterval(updateCountdown, 86400000); // Update daily
+
+    // Initial update
+    await updateCountdown();
+    // Update every hour to ensure accuracy
+    setInterval(updateCountdown, 3600000);
 
     // Show status message
     function showStatus(message, type = 'success') {

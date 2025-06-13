@@ -40,4 +40,28 @@ Setting.decreaseBonusCountdown = async function(decreaseBy = 5) {
     return newValue;
 };
 
+// Helper function to get or create the grand opening end date
+Setting.getGrandOpeningEndDate = async function() {
+    let setting = await this.findOne({ name: 'grandOpeningEndDate' });
+    if (!setting) {
+        // Initialize if it doesn't exist - set to 24 days from now
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 24);
+        setting = await this.findOneAndUpdate(
+            { name: 'grandOpeningEndDate' },
+            { value: endDate.toISOString() },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+    }
+    return new Date(setting.value);
+};
+
+// Helper function to get remaining days
+Setting.getGrandOpeningRemainingDays = async function() {
+    const endDate = await this.getGrandOpeningEndDate();
+    const now = new Date();
+    const diff = endDate - now;
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+};
+
 export default Setting;

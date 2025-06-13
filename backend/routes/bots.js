@@ -31,6 +31,7 @@ function getBotById(id) {
 router.get('/', async (req, res) => {
     try {
         const bonusCountdownPercent = await Setting.getBonusCountdown();
+        const remainingDays = await Setting.getGrandOpeningRemainingDays();
 
         const botsWithBonusInfo = bots.map(bot => ({
             ...bot,
@@ -41,7 +42,8 @@ router.get('/', async (req, res) => {
         res.json({
             success: true,
             bots: botsWithBonusInfo,
-            globalBonusCountdownPercent: bonusCountdownPercent
+            globalBonusCountdownPercent: bonusCountdownPercent,
+            grandOpeningRemainingDays: remainingDays
         });
     } catch (err) {
         console.error("Error fetching bots or bonus countdown:", err.message);
