@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log("Asset Center JS: DOMContentLoaded.");
 
+    // Fetch purchased bots when page loads
+    fetchPurchasedBots();
+
     function updateDisplay(balance) {
         if (ubtBalanceAmountEl) ubtBalanceAmountEl.textContent = `${balance.toFixed(2)} UBT`;
         if (totalValueDisplayEl) totalValueDisplayEl.textContent = balance.toFixed(2);
@@ -33,6 +36,41 @@ document.addEventListener('DOMContentLoaded', function() {
         updateDisplay(0); // Show 0 or error if balanceManager isn't there
     }
 });
+
+async function fetchPurchasedBots() {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.error('No token found');
+            return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/bots/purchased`, {
+            headers: {
+                'x-auth-token': token
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                // Token expired or invalid
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            updatePurchasedBots(data.bots);
+        } else {
+            console.error('Failed to fetch bots:', data.message);
+        }
+    } catch (error) {
+        console.error('Error fetching purchased bots:', error);
+    }
+}
 
 async function updatePurchasedBots(bots) {
     const container = document.querySelector('.purchased-bots-container');
