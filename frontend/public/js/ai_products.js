@@ -29,14 +29,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 3000);
     }
 
+    // Get fresh token
+    function getToken() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            showStatus('Please log in to continue', 'error');
+            return null;
+        }
+        return token;
+    }
+
     // Fetch bots data
     try {
         const API_BASE_URL = typeof API_URL !== 'undefined' ? API_URL : 'https://hsit-backend.onrender.com';
-        const token = localStorage.getItem('token');
-        if (!token) {
-            showStatus('Please log in to view bots', 'error');
-            return;
-        }
+        const token = getToken();
+        if (!token) return;
 
         const response = await fetch(`${API_BASE_URL}/api/bots`, {
             headers: {
@@ -44,6 +51,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 'Cache-Control': 'no-cache'
             }
         });
+        
+        if (response.status === 401) {
+            showStatus('Session expired. Please log in again.', 'error');
+            setTimeout(() => window.location.href = '/login.html', 2000);
+            return;
+        }
+        
         if (!response.ok) throw new Error('Failed to fetch bots');
         const data = await response.json();
         const bots = data.bots;
@@ -98,10 +112,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const botId = e.target.dataset.botId;
                 const price = parseFloat(e.target.dataset.price);
                 
-                if (!token) {
-                    showStatus('Please log in to purchase bots', 'error');
-                    return;
-                }
+                const token = getToken();
+                if (!token) return;
 
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/bots/purchase`, {
@@ -114,6 +126,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
 
                     const data = await response.json();
+                    
+                    if (response.status === 401) {
+                        showStatus('Session expired. Please log in again.', 'error');
+                        setTimeout(() => window.location.href = '/login.html', 2000);
+                        return;
+                    }
                     
                     if (response.ok) {
                         showStatus('Bot purchased successfully! 🎉');
