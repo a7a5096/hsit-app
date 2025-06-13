@@ -33,3 +33,138 @@ document.addEventListener('DOMContentLoaded', function() {
         updateDisplay(0); // Show 0 or error if balanceManager isn't there
     }
 });
+
+async function updatePurchasedBots(bots) {
+    const container = document.querySelector('.purchased-bots-container');
+    const emptyMessage = container.querySelector('.empty-bots-message');
+    
+    if (!bots || bots.length === 0) {
+        emptyMessage.style.display = 'block';
+        return;
+    }
+
+    emptyMessage.style.display = 'none';
+
+    // Create table for bot details
+    const table = document.createElement('table');
+    table.className = 'bot-summary-table';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Bot Name</th>
+                <th>Purchase Date</th>
+                <th>Investment</th>
+                <th>Payments Received</th>
+                <th>Status</th>
+                <th>Remaining Days</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector('tbody');
+    let totalInvestment = 0;
+    let totalPaymentsReceived = 0;
+    let totalExpectedPayments = 0;
+    let activeBots = 0;
+    let completedBots = 0;
+
+    bots.forEach(bot => {
+        const daysActive = calculateDaysActive(bot.purchaseDate);
+        const totalDays = 365; // Assuming 1 year term
+        const remainingDays = Math.max(0, totalDays - daysActive);
+        const status = remainingDays > 0 ? 'Active' : 'Completed';
+        const paymentsReceived = calculateBonusPayments(bot);
+        const expectedPayments = calculateRemainingBonusPayments(bot);
+
+        totalInvestment += bot.price;
+        totalPaymentsReceived += paymentsReceived;
+        totalExpectedPayments += expectedPayments;
+        
+        if (status === 'Active') activeBots++;
+        else completedBots++;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${bot.name}</td>
+            <td>${new Date(bot.purchaseDate).toLocaleDateString()}</td>
+            <td>$${bot.price.toFixed(2)}</td>
+            <td>$${paymentsReceived.toFixed(2)}</td>
+            <td><span class="bot-status status-${status.toLowerCase()}">${status}</span></td>
+            <td>${remainingDays}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    // Create detailed summary section
+    const summary = document.createElement('div');
+    summary.className = 'bot-detailed-summary';
+    summary.innerHTML = `
+        <h3>Investment Summary</h3>
+        <div class="summary-stats">
+            <div class="summary-stat">
+                <span class="stat-value">$${totalInvestment.toFixed(2)}</span>
+                <span class="stat-label">Total Investment</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-value">$${totalPaymentsReceived.toFixed(2)}</span>
+                <span class="stat-label">Payments Received</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-value">$${totalExpectedPayments.toFixed(2)}</span>
+                <span class="stat-label">Expected Future Payments</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-value">$${(totalPaymentsReceived + totalExpectedPayments - totalInvestment).toFixed(2)}</span>
+                <span class="stat-label">Total Expected Profit</span>
+            </div>
+        </div>
+        <div class="summary-stats">
+            <div class="summary-stat">
+                <span class="stat-value">${activeBots}</span>
+                <span class="stat-label">Active Bots</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-value">${completedBots}</span>
+                <span class="stat-label">Completed Bots</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-value">${((totalPaymentsReceived / totalInvestment) * 100).toFixed(1)}%</span>
+                <span class="stat-label">ROI (Current)</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-value">${(((totalPaymentsReceived + totalExpectedPayments) / totalInvestment) * 100).toFixed(1)}%</span>
+                <span class="stat-label">ROI (Expected)</span>
+            </div>
+        </div>
+        <p class="info-text">* Expected future payments are calculated based on remaining days and current performance</p>
+    `;
+
+    // Clear container and add new content
+    container.innerHTML = '';
+    container.appendChild(table);
+    container.appendChild(summary);
+}
+
+function calculateDaysActive(purchaseDate) {
+    const purchase = new Date(purchaseDate);
+    const now = new Date();
+    const diffTime = Math.abs(now - purchase);
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+function calculateBonusPayments(bot) {
+    const daysActive = calculateDaysActive(bot.purchaseDate);
+    const dailyPayment = bot.price * 0.003; // 0.3% daily return
+    return Math.min(daysActive * dailyPayment, bot.price * 1.5); // Cap at 150% of investment
+}
+
+function calculateRemainingBonusPayments(bot) {
+    const daysActive = calculateDaysActive(bot.purchaseDate);
+    const totalDays = 365; // Assuming 1 year term
+    const remainingDays = Math.max(0, totalDays - daysActive);
+    const dailyPayment = bot.price * 0.003; // 0.3% daily return
+    const totalExpected = bot.price * 1.5; // Cap at 150% of investment
+    const currentPayments = calculateBonusPayments(bot);
+    return Math.max(0, totalExpected - currentPayments);
+}

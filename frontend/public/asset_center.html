@@ -51,6 +51,119 @@
         </section>
         
         <div id="statusMessage" class="status-message" style="display: none;"></div>
+
+        <section class="content-section">
+            <div class="card-style">
+                <h2>Your AI Bots</h2>
+                <div class="purchased-bots-container">
+                    <div class="empty-bots-message" style="display: none;">
+                        <p>You haven't purchased any bots yet.</p>
+                        <a href="ai_products.html" class="btn btn-primary">Browse Bots</a>
+                    </div>
+                    <!-- Bot table and summary will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <style>
+            .bot-summary-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 1rem 0;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                overflow: hidden;
+            }
+
+            .bot-summary-table th,
+            .bot-summary-table td {
+                padding: 12px;
+                text-align: left;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .bot-summary-table th {
+                background: rgba(0, 0, 0, 0.2);
+                font-weight: 600;
+            }
+
+            .bot-summary-table tr:hover {
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            .bot-detailed-summary {
+                margin-top: 2rem;
+                padding: 1.5rem;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+            }
+
+            .summary-stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1.5rem;
+                margin: 1.5rem 0;
+            }
+
+            .summary-stat {
+                text-align: center;
+                padding: 1rem;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 8px;
+            }
+
+            .stat-value {
+                display: block;
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: #10b981;
+                margin-bottom: 0.5rem;
+            }
+
+            .stat-label {
+                color: #9ca3af;
+                font-size: 0.9rem;
+            }
+
+            .info-text {
+                color: #9ca3af;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                text-align: center;
+            }
+
+            .bot-status {
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 0.9rem;
+                font-weight: 500;
+            }
+
+            .status-active {
+                background: rgba(16, 185, 129, 0.2);
+                color: #10b981;
+            }
+
+            .status-completed {
+                background: rgba(59, 130, 246, 0.2);
+                color: #3b82f6;
+            }
+
+            .status-pending {
+                background: rgba(245, 158, 11, 0.2);
+                color: #f59e0b;
+            }
+
+            .bonus-badge {
+                display: inline-block;
+                padding: 2px 6px;
+                background: rgba(139, 92, 246, 0.2);
+                color: #8b5cf6;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                margin-left: 8px;
+            }
+        </style>
     </main>
     
     <script src="js/config.js"></script>
