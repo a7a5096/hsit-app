@@ -1223,9 +1223,11 @@
             // Buy button clicks
             document.getElementById('bots-grid').addEventListener('click', (e) => {
                 if (e.target.classList.contains('buy-btn')) {
-                    const botId = e.target.dataset.botId; // Get original string ID (e.g., "GO-1")
-                    // Find the bot in ALL_BOTS_DATA array based on its ID
-                    selectedBot = ALL_BOTS_DATA.find(b => String(b.id) === String(botId));
+                    const botCard = e.target.closest('.bot-card');
+                    const botId = e.target.dataset.botId;
+                    const botName = botCard.querySelector('.bot-name').textContent;
+                    const botPrice = parseFloat(e.target.dataset.botPrice.replace(/,/g, ''));
+                    selectedBot = { id: botId, name: botName, price: botPrice };
                     showPurchaseModal(selectedBot);
                 }
             });
