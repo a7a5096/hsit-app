@@ -45,7 +45,7 @@ async function fetchPurchasedBots() {
             return;
         }
 
-        const response = await fetch(`${API_BASE_URL}/api/bots/purchased`, {
+        const response = await fetch(`${API_URL}/api/bots/purchased`, {
             headers: {
                 'x-auth-token': token
             }
