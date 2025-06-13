@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const stats = `
                 <div class="product-info-stats">
                     <div>
-                        <span>${bot.dailyCredit}%</span>
+                        <span>${bot.dailyCredit} UBT</span>
                         <label>Daily Return</label>
                     </div>
                     <div>
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <label>Lock Period</label>
                     </div>
                     <div>
-                        <span>${bot.totalReturnAmount}%</span>
+                        <span>${bot.totalReturnAmount} UBT</span>
                         <label>Total Return</label>
                     </div>
                 </div>
