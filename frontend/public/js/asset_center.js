@@ -70,14 +70,17 @@ async function updatePurchasedBots(bots) {
     let completedBots = 0;
 
     bots.forEach(bot => {
-        const daysActive = calculateDaysActive(bot.purchaseDate);
-        const totalDays = 365; // Assuming 1 year term
+        // Use new fields if present, fallback to old
+        const purchaseDate = bot.purchaseDate ? new Date(bot.purchaseDate) : (bot.purchaseDate ? new Date(bot.purchaseDate) : new Date());
+        const investment = typeof bot.investmentAmount === 'number' ? bot.investmentAmount : (typeof bot.price === 'number' ? bot.price : 0);
+        const daysActive = calculateDaysActive(purchaseDate);
+        const totalDays = bot.lockInDays || bot.lockPeriod || 365; // fallback to 1 year if not present
         const remainingDays = Math.max(0, totalDays - daysActive);
         const status = remainingDays > 0 ? 'Active' : 'Completed';
-        const paymentsReceived = calculateBonusPayments(bot);
-        const expectedPayments = calculateRemainingBonusPayments(bot);
+        const paymentsReceived = calculateBonusPayments(bot, daysActive, investment, totalDays);
+        const expectedPayments = calculateRemainingBonusPayments(bot, daysActive, investment, totalDays);
 
-        totalInvestment += bot.price;
+        totalInvestment += investment;
         totalPaymentsReceived += paymentsReceived;
         totalExpectedPayments += expectedPayments;
         
@@ -87,8 +90,8 @@ async function updatePurchasedBots(bots) {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${bot.name}</td>
-            <td>${new Date(bot.purchaseDate).toLocaleDateString()}</td>
-            <td>$${bot.price.toFixed(2)}</td>
+            <td>${purchaseDate.toLocaleDateString()}</td>
+            <td>$${investment.toFixed(2)}</td>
             <td>$${paymentsReceived.toFixed(2)}</td>
             <td><span class="bot-status status-${status.toLowerCase()}">${status}</span></td>
             <td>${remainingDays}</td>
@@ -153,18 +156,16 @@ function calculateDaysActive(purchaseDate) {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
-function calculateBonusPayments(bot) {
-    const daysActive = calculateDaysActive(bot.purchaseDate);
-    const dailyPayment = bot.price * 0.003; // 0.3% daily return
-    return Math.min(daysActive * dailyPayment, bot.price * 1.5); // Cap at 150% of investment
+function calculateBonusPayments(bot, daysActive, investment, totalDays) {
+    // Use bot-specific logic if available, fallback to generic
+    const dailyPayment = bot.dailyCredit || bot.dailyPayment || investment * 0.003;
+    return Math.min(daysActive * dailyPayment, investment * 1.5); // Cap at 150% of investment
 }
 
-function calculateRemainingBonusPayments(bot) {
-    const daysActive = calculateDaysActive(bot.purchaseDate);
-    const totalDays = 365; // Assuming 1 year term
+function calculateRemainingBonusPayments(bot, daysActive, investment, totalDays) {
     const remainingDays = Math.max(0, totalDays - daysActive);
-    const dailyPayment = bot.price * 0.003; // 0.3% daily return
-    const totalExpected = bot.price * 1.5; // Cap at 150% of investment
-    const currentPayments = calculateBonusPayments(bot);
+    const dailyPayment = bot.dailyCredit || bot.dailyPayment || investment * 0.003;
+    const totalExpected = investment * 1.5;
+    const currentPayments = calculateBonusPayments(bot, daysActive, investment, totalDays);
     return Math.max(0, totalExpected - currentPayments);
 }
