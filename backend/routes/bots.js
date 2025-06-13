@@ -98,11 +98,11 @@ router.post('/purchase', auth, async (req, res) => {
              user.balances.ubt = 0; // Initialize if undefined or not a number
         }
 
-        if (user.balances.ubt < bot.cost) {
+        if (user.balances.ubt < bot.price) {
             return res.status(400).json({ success: false, msg: 'Insufficient UBT balance' });
         }
     
-        user.balances.ubt -= bot.cost;
+        user.balances.ubt -= bot.price;
     
         // Add bot to user's purchased bots (ensure array exists)
         if (!user.botsPurchased) {
@@ -126,7 +126,7 @@ router.post('/purchase', auth, async (req, res) => {
             userId: req.user.id, // Corrected: use userId field name if your model uses it
             type: 'bot_purchase', // More specific type
             currency: 'UBT',
-            amount: -bot.cost, // Cost is negative
+            amount: -bot.price, // Cost is negative
             status: 'completed',
             description: transactionDescription,
             relatedAsset: `bot_${bot.id}` // Example of linking to asset
