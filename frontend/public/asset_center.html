@@ -67,17 +67,17 @@
 
         <style>
             .bot-summary-table {
-                width: 100%;
+                width: 80%;
                 border-collapse: collapse;
-                margin: 1rem 0;
+                margin: 0.5rem 0;
                 background: rgba(255, 255, 255, 0.05);
-                border-radius: 8px;
+                border-radius: 4px;
                 overflow: hidden;
             }
 
             .bot-summary-table th,
             .bot-summary-table td {
-                padding: 12px;
+                padding: 6px;
                 text-align: left;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             }
@@ -95,7 +95,7 @@
                 margin-top: 2rem;
                 padding: 1.5rem;
                 background: rgba(255, 255, 255, 0.05);
-                border-radius: 8px;
+                border-radius: 4px;
             }
 
             .summary-stats {
@@ -165,7 +165,20 @@
             }
         </style>
     </main>
-    
+
+    /*
+ * Mobile Optimization for Bot Summary Table
+ * Hides specific columns on screens smaller than 768px.
+ */
+@media (max-width: 768px) {
+  /* Hide the table headers */
+  .col-investment,
+  .col-purchased,
+  .col-active {
+    display: none;
+  }
+}
+
     <script src="js/config.js"></script>
     <script src="js/balanceManager.js"></script>
     <script src="js/auth.js"></script>
