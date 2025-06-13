@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             'Content-Type': 'application/json',
                             'x-auth-token': token
                         },
-                        body: JSON.stringify({ botId })
+                        body: JSON.stringify({ botId: parseInt(botId) })
                     });
 
                     const data = await response.json();
