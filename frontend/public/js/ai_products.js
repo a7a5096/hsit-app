@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
                         },
-                        body: JSON.stringify({ botId, price })
+                        body: JSON.stringify({ botId })
                     });
 
                     const data = await response.json();
