@@ -49,8 +49,38 @@ router.get('/', async (req, res) => {
     }
 });
 
+// @route   GET api/bots/purchased
+// @desc    Get all bots purchased by the authenticated user
+// @access  Private
+router.get('/purchased', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, msg: 'User not found' });
+        }
+        if (!user.bots || user.bots.length === 0) {
+            return res.json({ success: true, bots: [] });
+        }
+        // Join user.bots with master bots list for full details
+        const purchasedBots = user.bots.map(userBot => {
+            const bot = bots.find(b => String(b.id) === String(userBot.botId));
+            if (!bot) return null;
+            return {
+                ...bot,
+                purchaseDate: userBot.purchasedAt,
+                investmentAmount: userBot.investmentAmount,
+                status: userBot.status
+            };
+        }).filter(Boolean);
+        res.json({ success: true, bots: purchasedBots });
+    } catch (err) {
+        console.error('Error fetching purchased bots:', err);
+        res.status(500).json({ success: false, msg: 'Server error while fetching purchased bots.' });
+    }
+});
+
 // @route   GET api/bots/:id
-// @desc    Get bot by ID (no changes needed here for the countdown bar, but could add bonus info if desired)
+// @desc    Get bot by ID
 // @access  Public
 router.get('/:id', async (req, res) => {
     try {
@@ -58,7 +88,6 @@ router.get('/:id', async (req, res) => {
         if (!bot) {
             return res.status(404).json({ success: false, msg: 'Bot not found' });
         }
-        // You could also add bonusCountdownPercent and hasActiveBonus here if needed for a single bot view
         res.json({ success: true, bot });
     } catch (err) {
         console.error(err.message);
@@ -175,36 +204,6 @@ router.post('/purchase', auth, async (req, res) => {
     } catch (err) {
         console.error("Error during bot purchase:",err.message);
         res.status(500).json({ success: false, message: 'Server error during purchase.' });
-    }
-});
-
-// @route   GET api/bots/purchased
-// @desc    Get all bots purchased by the authenticated user
-// @access  Private
-router.get('/purchased', auth, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ success: false, msg: 'User not found' });
-        }
-        if (!user.bots || user.bots.length === 0) {
-            return res.json({ success: true, bots: [] });
-        }
-        // Join user.bots with master bots list for full details
-        const purchasedBots = user.bots.map(userBot => {
-            const bot = bots.find(b => String(b.id) === String(userBot.botId));
-            if (!bot) return null;
-            return {
-                ...bot,
-                purchaseDate: userBot.purchasedAt,
-                investmentAmount: userBot.investmentAmount,
-                status: userBot.status
-            };
-        }).filter(Boolean);
-        res.json({ success: true, bots: purchasedBots });
-    } catch (err) {
-        console.error('Error fetching purchased bots:', err);
-        res.status(500).json({ success: false, msg: 'Server error while fetching purchased bots.' });
     }
 });
 
