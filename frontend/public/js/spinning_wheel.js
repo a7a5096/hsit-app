@@ -42,6 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
         { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 22 - white
         { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 23 - black
         { name: "2x Win", type: "multiplier", multiplier: 2, color: "#f00" }, // 24 - red
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 25 - black
+        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#06f" },// 26 - blue
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 27 - white
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 28 - black
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#f00" }, // 29 - red
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 30 - black
+        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#06f" },// 31 - blue
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 32 - white
     ];
     const SEGMENT_COUNT = PRIZES.length;
     const SEGMENT_ANGLE = 360 / SEGMENT_COUNT;

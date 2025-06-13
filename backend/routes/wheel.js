@@ -7,7 +7,7 @@ import Transaction from '../models/Transaction.js'; // Assuming Transaction mode
 
 const router = express.Router();
 
-// Define prizes in the order of the wheel segments (24 segments, equally likely)
+// Define prizes in the order of the wheel segments (32 segments, equally likely)
 const PRIZES = [
     { name: "A.I. BOT #5 (Value $3000)", type: "bot", message: "Unbelievable! You won A.I. BOT #5!" }, // 1 - yellow/green
     { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 2 - black
@@ -33,6 +33,14 @@ const PRIZES = [
     { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 22 - white
     { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 23 - black
     { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 24 - red
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 25 - black
+    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 26 - blue
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 27 - white
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 28 - black
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 29 - red
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 30 - black
+    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 31 - blue
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 32 - white
 ];
 
 // Helper function to select a random segment (prize)
