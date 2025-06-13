@@ -1300,7 +1300,7 @@ img {
 .bots-grid {
     display: grid;
     /* Create a responsive grid that adjusts the number of columns based on screen width */
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem; /* Space between bot cards */
     padding: 1rem;
 }
@@ -1317,11 +1317,22 @@ img {
 }
 
 /* Media query for smaller screens */
-@media (max-width: 600px) {
+@media (max-width: 400px) {
     .bots-grid {
         /* On smaller screens, switch to a single-column layout */
         grid-template-columns: 1fr;
     }
 }
-
+/*
+ * Mobile Optimization for Bot Summary Table
+ * Hides specific columns on screens smaller than 450px.
+ */
+@media (max-width: 450px) {
+  /* Hide the table headers */
+  .col-investment,
+  .col-purchased,
+  .col-active {
+    display: none;
+  }
+}
 
