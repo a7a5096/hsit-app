@@ -31,7 +31,7 @@ const corsMiddleware = () => {
     },
     credentials: true,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
-    allowedHeaders: "Content-Type, Authorization, X-Requested-With, Accept, x-auth-token, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+    allowedHeaders: "Content-Type, Authorization, X-Requested-With, Accept, x-auth-token, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Cache-Control",
     exposedHeaders: "Content-Type, Authorization, Access-Control-Allow-Origin, Access-Control-Allow-Credentials",
     maxAge: 86400, // 24 hours
     preflightContinue: false,
