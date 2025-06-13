@@ -1290,19 +1290,38 @@ img {
 .modal-content .button-group .btn {
     min-width: 120px;
 }
-/* Mobile Optimizations for Asset Center */
-@media (max-width: 768px) {
-    .bots-grid {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 1rem; /* Adjust gap as needed */
-    }
 
-    .bot-card {
-        flex: 1 1 100%; /* Full width on small screens */
-        max-width: 100%;
-        margin-bottom: 1rem;
+/*
+ * Mobile Optimization for Asset Center - Bots Purchased Section
+ * This code makes the bot display grid responsive.
+ */
+
+/* Target the container for the bot cards */
+.bots-grid {
+    display: grid;
+    /* Create a responsive grid that adjusts the number of columns based on screen width */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem; /* Space between bot cards */
+    padding: 1rem;
+}
+
+/* Styling for individual bot cards for a consistent look */
+.bot-card {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 600px) {
+    .bots-grid {
+        /* On smaller screens, switch to a single-column layout */
+        grid-template-columns: 1fr;
     }
 }
+
 
