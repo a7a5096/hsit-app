@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
         const botsWithBonusInfo = bots.map(bot => ({
             ...bot,
             // A bot has an active bonus if it's eligible AND the countdown is > 0
-            hasActiveBonus: bot.offersBonus && bonusCountdownPercent > 0
+            hasActiveBonus: bot.hasBonus && bonusCountdownPercent > 0
         }));
 
         res.json({
@@ -148,8 +148,8 @@ router.post('/purchase', auth, async (req, res) => {
         // Handle bonus payment if applicable
         const currentBonusCountdown = await Setting.getBonusCountdown();
         let bonusAwarded = 0;
-        if (bot.offersBonus && currentBonusCountdown > 0) {
-            bonusAwarded = bot.bonusPayment || 0;
+        if (bot.hasBonus && currentBonusCountdown > 0) {
+            bonusAwarded = bot.bonusCreditAmount || 0;
             user.balances.ubt += bonusAwarded; // Add bonus to UBT balance
             console.log(`Awarded ${bonusAwarded} UBT bonus for ${bot.name} to user ${user.username}`);
         }
