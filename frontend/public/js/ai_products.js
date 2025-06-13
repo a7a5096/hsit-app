@@ -130,8 +130,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Add click handlers for buy buttons
         document.querySelectorAll('.btn-buy-bot').forEach(button => {
             button.addEventListener('click', async (e) => {
-                const botId = e.target.dataset.botId;
-                const price = parseFloat(e.target.dataset.price);
+                const button = e.target.closest('.btn-buy-bot');
+                if (!button) return;
+                
+                const botId = button.dataset.botId;
+                const price = parseFloat(button.dataset.price);
                 
                 const token = getToken();
                 if (!token) return;
