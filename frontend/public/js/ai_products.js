@@ -31,9 +31,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Fetch bots data
     try {
-        const response = await fetch('/api/bots');
+        const API_BASE_URL = typeof API_URL !== 'undefined' ? API_URL : 'https://hsit-backend.onrender.com';
+        const response = await fetch(`${API_BASE_URL}/api/bots`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Cache-Control': 'no-cache'
+            }
+        });
         if (!response.ok) throw new Error('Failed to fetch bots');
-        const bots = await response.json();
+        const data = await response.json();
+        const bots = data.bots;
 
         // Render bots
         bots.forEach(bot => {
@@ -86,7 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const price = parseFloat(e.target.dataset.price);
                 
                 try {
-                    const response = await fetch('/api/bots/purchase', {
+                    const response = await fetch(`${API_BASE_URL}/api/bots/purchase`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
