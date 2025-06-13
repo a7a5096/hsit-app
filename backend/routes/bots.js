@@ -183,9 +183,12 @@ router.post('/purchase', auth, async (req, res) => {
         if (bonusAwarded > 0) {
             const bonusTransaction = new Transaction({
                 userId: req.user.id,
-                type: 'bonus_award',
+                txHash: `bonus_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                fromAddress: user.walletAddresses?.ubt || 'system',
+                amount: bonusAwarded,
+                ubtAmount: bonusAwarded,
                 currency: 'UBT',
-                amount: bonusAwarded, // Bonus is positive
+                type: 'wager', // Changed from 'bonus_award' to 'wager'
                 status: 'completed',
                 description: `Bonus for purchasing ${bot.name}`,
                 relatedAsset: `bot_${bot.id}`
