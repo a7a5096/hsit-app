@@ -1327,7 +1327,7 @@ img {
  * Mobile Optimization for Bot Summary Table
  * Hides specific columns on screens smaller than 450px.
  */
-@media (max-width: 450px) {
+@media (max-width: 720px) {
   /* Hide the table headers */
   .col-investment,
   .col-purchased,
