@@ -102,22 +102,32 @@ router.get('/:id', async (req, res) => {
 // @access  Private
 router.post('/purchase', auth, async (req, res) => {
     const { botId } = req.body;
+    console.log('Purchase request received:', { botId, body: req.body });
   
     try {
         const bot = getBotById(botId);
         if (!bot) {
+            console.log('Bot not found:', botId);
             return res.status(404).json({ success: false, msg: 'Bot not found' });
         }
     
         const user = await User.findById(req.user.id);
         if (!user) {
+            console.log('User not found:', req.user.id);
             return res.status(404).json({ success: false, msg: 'User not found' });
         }
     
         // Ensure user.balances.ubt exists and is a number
         if (typeof user.balances?.ubt !== 'number') {
-             user.balances.ubt = 0; // Initialize if undefined or not a number
+            console.log('Initializing UBT balance for user:', req.user.id);
+            user.balances.ubt = 0; // Initialize if undefined or not a number
         }
+
+        console.log('User balance check:', { 
+            userBalance: user.balances.ubt, 
+            botPrice: bot.price,
+            hasEnoughBalance: user.balances.ubt >= bot.price
+        });
 
         if (user.balances.ubt < bot.price) {
             return res.status(400).json({ success: false, msg: 'Insufficient UBT balance' });

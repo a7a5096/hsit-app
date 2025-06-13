@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!token) return;
 
                 try {
+                    console.log('Attempting to purchase bot:', { botId, price });
                     const response = await fetch(`${API_BASE_URL}/api/bots/purchase`, {
                         method: 'POST',
                         headers: {
@@ -150,6 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
 
                     const data = await response.json();
+                    console.log('Purchase response:', data);
                     
                     if (response.status === 401) {
                         localStorage.removeItem('token'); // Clear invalid token
@@ -162,7 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         showStatus('Bot purchased successfully! 🎉');
                         setTimeout(() => window.location.href = '/dashboard', 2000);
                     } else {
-                        showStatus(data.message || 'Failed to purchase bot', 'error');
+                        showStatus(data.msg || data.message || 'Failed to purchase bot', 'error');
                     }
                 } catch (error) {
                     console.error('Purchase error:', error);
