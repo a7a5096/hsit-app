@@ -1248,7 +1248,7 @@
                                     'Content-Type': 'application/json',
                                     'x-auth-token': token
                                 },
-                                body: JSON.stringify({ botId: selectedBot.id, price: selectedBot.price })
+                                body: JSON.stringify({ botId: selectedBot.id })
                             });
                             const result = await response.json();
 
