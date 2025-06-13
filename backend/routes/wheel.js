@@ -10,36 +10,36 @@ const router = express.Router();
 // Define prizes in the order of the wheel segments (32 segments, equally likely)
 const PRIZES = [
     { name: "A.I. BOT #5 (Value $3000)", type: "bot", message: "Unbelievable! You won A.I. BOT #5!" }, // 1 - yellow/green
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 2 - black
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 3 - white
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 4 - red
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 5 - black
-    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 6 - blue
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 7 - white
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 8 - black
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 9 - red
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 2 - white
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 3 - black
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 4 - white
+    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" }, // 5 - red
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 6 - black
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 7 - blue
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 8 - white
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 9 - blue
     { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 10 - black
-    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 11 - blue
+    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" }, // 11 - red
     { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 12 - white
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 13 - black
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 14 - red
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 15 - black
-    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 16 - blue
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 17 - white
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 18 - black
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 19 - red
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 13 - blue
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 14 - black
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 15 - blue
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 16 - white
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 17 - black
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 18 - white
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 19 - blue
     { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 20 - black
-    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 21 - blue
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 22 - white
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 23 - black
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 24 - red
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 21 - white
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 22 - black
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 23 - blue
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 24 - white
     { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 25 - black
-    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 26 - blue
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 27 - white
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 26 - white
+    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" }, // 27 - red
     { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 28 - black
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 29 - red
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 29 - white
     { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 30 - black
-    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 31 - blue
+    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" }, // 31 - red
     { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 32 - white
 ];
 
