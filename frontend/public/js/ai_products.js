@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const response = await fetch(`${API_BASE_URL}/api/bots`, {
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'x-auth-token': token,
                 'Cache-Control': 'no-cache'
             }
         });
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
+                            'x-auth-token': token
                         },
                         body: JSON.stringify({ botId })
                     });
