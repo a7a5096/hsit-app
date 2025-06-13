@@ -29,11 +29,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 3000);
     }
 
-    // Get fresh token
+    // Get fresh token and validate it
     function getToken() {
         const token = localStorage.getItem('token');
         if (!token) {
             showStatus('Please log in to continue', 'error');
+            setTimeout(() => window.location.href = '/login', 2000);
             return null;
         }
         return token;
@@ -53,8 +54,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         
         if (response.status === 401) {
+            localStorage.removeItem('token'); // Clear invalid token
             showStatus('Session expired. Please log in again.', 'error');
-            setTimeout(() => window.location.href = '/login.html', 2000);
+            setTimeout(() => window.location.href = '/login', 2000);
             return;
         }
         
@@ -86,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const bonusInfo = bot.hasBonus ? `
                 <div class="bonus-info">
-                    <p>🎉 Grand Opening Bonus: ${bot.totalProfit}% Total Profit</p>
+                    <p>🎉 Grand Opening Bonus: ${bot.totalProfit} UBT Total Profit</p>
                 </div>
             ` : '';
 
@@ -94,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <img src="/images/logobots.png" alt="${bot.name}" class="bot-logo-img">
                 <div class="product-details">
                     <h3>${bot.name}</h3>
-                    <p class="product-description">Advanced AI trading bot with ${bot.dailyCredit}% daily returns and ${bot.lockInDays} days lock period.</p>
+                    <p class="product-description">Advanced AI trading bot with ${bot.dailyCredit} UBT daily returns and ${bot.lockInDays} days lock period.</p>
                 </div>
                 ${stats}
                 ${bonusInfo}
@@ -128,14 +130,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const data = await response.json();
                     
                     if (response.status === 401) {
+                        localStorage.removeItem('token'); // Clear invalid token
                         showStatus('Session expired. Please log in again.', 'error');
-                        setTimeout(() => window.location.href = '/login.html', 2000);
+                        setTimeout(() => window.location.href = '/login', 2000);
                         return;
                     }
                     
                     if (response.ok) {
                         showStatus('Bot purchased successfully! 🎉');
-                        setTimeout(() => window.location.href = '/dashboard.html', 2000);
+                        setTimeout(() => window.location.href = '/dashboard', 2000);
                     } else {
                         showStatus(data.message || 'Failed to purchase bot', 'error');
                     }
