@@ -123,13 +123,16 @@ router.post('/purchase', auth, async (req, res) => {
 
         const transactionDescription = `Purchased ${bot.name} bot` + (bonusAwarded > 0 ? ` (Bonus: ${bonusAwarded} UBT)` : '');
         const transaction = new Transaction({
-            userId: req.user.id, // Corrected: use userId field name if your model uses it
-            type: 'bot_purchase', // More specific type
-            currency: 'UBT',
+            userId: req.user.id,
+            txHash: `bot_purchase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            fromAddress: user.walletAddresses?.ubt || 'system',
             amount: -bot.price, // Cost is negative
+            ubtAmount: bot.price, // Amount of UBT spent
+            currency: 'UBT',
             status: 'completed',
+            type: 'wager', // Use a valid enum value
             description: transactionDescription,
-            relatedAsset: `bot_${bot.id}` // Example of linking to asset
+            // relatedAddress: `bot_${bot.id}` // Optional, if you want to keep a reference
         });
         await transaction.save();
 
