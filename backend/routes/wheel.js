@@ -7,27 +7,38 @@ import Transaction from '../models/Transaction.js'; // Assuming Transaction mode
 
 const router = express.Router();
 
-// Define prizes and their weights (probabilities)
+// Define prizes in the order of the wheel segments (24 segments, equally likely)
 const PRIZES = [
-    { name: "Free AI Bot!", type: "bot", weight: 1, message: "Unbelievable! You won a FREE AI Bot!" },
-    { name: "1x Win", type: "multiplier", multiplier: 1, weight: 37.5, message: "You won 1x your bet!" },
-    { name: "Lose", type: "multiplier", multiplier: 0, weight: 21.9, message: "Sorry, no prize this time!" },
-    { name: "2x Win!", type: "multiplier", multiplier: 2, weight: 21.9, message: "Amazing! You won 2x your bet!" },
-    { name: "10x Win!", type: "multiplier", multiplier: 10, weight: 17.7, message: "Jackpot! You won 10x your bet!" }
+    { name: "A.I. BOT #5 (Value $3000)", type: "bot", message: "Unbelievable! You won A.I. BOT #5!" }, // 1 - yellow/green
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 2 - black
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 3 - white
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 4 - red
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 5 - black
+    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 6 - blue
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 7 - white
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 8 - black
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 9 - red
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 10 - black
+    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 11 - blue
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 12 - white
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 13 - black
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 14 - red
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 15 - black
+    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 16 - blue
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 17 - white
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 18 - black
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 19 - red
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 20 - black
+    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" },// 21 - blue
+    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 22 - white
+    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" },   // 23 - black
+    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Amazing! You won 2x your bet!" }, // 24 - red
 ];
 
-// Helper function to select a prize based on weights
+// Helper function to select a random segment (prize)
 const selectPrize = () => {
-    let totalWeight = PRIZES.reduce((sum, prize) => sum + prize.weight, 0);
-    let randomNumber = Math.random() * totalWeight;
-
-    for (let i = 0; i < PRIZES.length; i++) {
-        randomNumber -= PRIZES[i].weight;
-        if (randomNumber <= 0) {
-            return PRIZES[i];
-        }
-    }
-    return PRIZES[0]; // Default to first prize if something goes wrong
+    const index = Math.floor(Math.random() * PRIZES.length);
+    return PRIZES[index];
 };
 
 // @route   GET api/wheel/balance
