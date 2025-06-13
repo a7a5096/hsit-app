@@ -32,9 +32,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch bots data
     try {
         const API_BASE_URL = typeof API_URL !== 'undefined' ? API_URL : 'https://hsit-backend.onrender.com';
+        const token = localStorage.getItem('token');
+        if (!token) {
+            showStatus('Please log in to view bots', 'error');
+            return;
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/bots`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Authorization': `Bearer ${token}`,
                 'Cache-Control': 'no-cache'
             }
         });
@@ -71,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ` : '';
 
             card.innerHTML = `
-                <img src="/images/bot-${bot.id}.png" alt="${bot.name}" class="bot-logo-img">
+                <img src="/images/logobots.png" alt="${bot.name}" class="bot-logo-img">
                 <div class="product-details">
                     <h3>${bot.name}</h3>
                     <p class="product-description">Advanced AI trading bot with ${bot.dailyCredit}% daily returns and ${bot.lockInDays} days lock period.</p>
@@ -92,12 +98,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const botId = e.target.dataset.botId;
                 const price = parseFloat(e.target.dataset.price);
                 
+                if (!token) {
+                    showStatus('Please log in to purchase bots', 'error');
+                    return;
+                }
+
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/bots/purchase`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            'Authorization': `Bearer ${token}`
                         },
                         body: JSON.stringify({ botId, price })
                     });
@@ -111,6 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         showStatus(data.message || 'Failed to purchase bot', 'error');
                     }
                 } catch (error) {
+                    console.error('Purchase error:', error);
                     showStatus('Error processing purchase', 'error');
                 }
             });
