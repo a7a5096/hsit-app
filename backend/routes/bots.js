@@ -104,7 +104,19 @@ router.post('/purchase', auth, async (req, res) => {
     
         user.balances.ubt -= bot.price;
     
-        // Add bot to user's purchased bots (ensure array exists)
+        // Add bot to user's bots array (new structure)
+        if (!user.bots) user.bots = [];
+        const alreadyOwned = user.bots.some(b => String(b.botId) === String(botId));
+        if (!alreadyOwned) {
+            user.bots.push({
+                botId: String(bot.id),
+                name: bot.name,
+                investmentAmount: bot.price,
+                purchasedAt: new Date(),
+                status: 'active'
+            });
+        }
+        // Also update botsPurchased for backward compatibility
         if (!user.botsPurchased) {
             user.botsPurchased = [];
         }
@@ -173,6 +185,36 @@ router.post('/purchase', auth, async (req, res) => {
     } catch (err) {
         console.error("Error during bot purchase:",err.message);
         res.status(500).json({ success: false, message: 'Server error during purchase.' });
+    }
+});
+
+// @route   GET api/bots/purchased
+// @desc    Get all bots purchased by the authenticated user
+// @access  Private
+router.get('/purchased', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, msg: 'User not found' });
+        }
+        if (!user.bots || user.bots.length === 0) {
+            return res.json({ success: true, bots: [] });
+        }
+        // Join user.bots with master bots list for full details
+        const purchasedBots = user.bots.map(userBot => {
+            const bot = bots.find(b => String(b.id) === String(userBot.botId));
+            if (!bot) return null;
+            return {
+                ...bot,
+                purchaseDate: userBot.purchasedAt,
+                investmentAmount: userBot.investmentAmount,
+                status: userBot.status
+            };
+        }).filter(Boolean);
+        res.json({ success: true, bots: purchasedBots });
+    } catch (err) {
+        console.error('Error fetching purchased bots:', err);
+        res.status(500).json({ success: false, msg: 'Server error while fetching purchased bots.' });
     }
 });
 
