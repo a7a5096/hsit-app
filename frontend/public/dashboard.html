@@ -6,8 +6,31 @@
     <title>Dashboard - HSIT</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      /* Futuristic Dashboard Theme */
+      body.dashboard-page.futuristic-dashboard { font-family: 'Orbitron', sans-serif; background: linear-gradient(135deg, #0b0b23, #1a1a40); color: #e0e0e0; transition: background 0.5s ease; }
+      body.dashboard-page.futuristic-dashboard .dashboard-header { background: linear-gradient(90deg, #7f00ff, #e100ff); padding: 12px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+      body.dashboard-page.futuristic-dashboard .header-title { font-size: 1.4rem; color: #ffffff; text-shadow: 0 0 8px rgba(255,255,255,0.7); }
+      body.dashboard-page.futuristic-dashboard .btn-logout { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(6px); color: #fff; transition: box-shadow 0.3s; }
+      body.dashboard-page.futuristic-dashboard .btn-logout:hover { box-shadow: 0 0 10px rgba(255,255,255,0.7); }
+      body.dashboard-page.futuristic-dashboard .dashboard-main { padding: 20px 16px; }
+      body.dashboard-page.futuristic-dashboard .banner { position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.7); margin-bottom: 30px; }
+      body.dashboard-page.futuristic-dashboard .banner img.banner-image { display: block; width: 100%; }
+      body.dashboard-page.futuristic-dashboard .operations-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 20px; }
+      body.dashboard-page.futuristic-dashboard .operation-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); border-radius: 8px; padding: 16px 8px; text-align: center; transition: transform 0.2s, box-shadow 0.3s; }
+      body.dashboard-page.futuristic-dashboard .operation-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(127,0,255,0.5); }
+      body.dashboard-page.futuristic-dashboard .operation-card .icon img { filter: brightness(1.2) drop-shadow(0 0 6px rgba(255,255,255,0.5)); width: 40px; height: 40px; margin-bottom: 8px; }
+      body.dashboard-page.futuristic-dashboard .service-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 20px; margin-top: 20px; }
+      body.dashboard-page.futuristic-dashboard .service-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); border-radius: 8px; padding: 20px; transition: box-shadow 0.3s; }
+      body.dashboard-page.futuristic-dashboard .service-card:hover { box-shadow: 0 8px 20px rgba(0,210,255,0.5); }
+      @media (max-width: 600px) {
+        body.dashboard-page.futuristic-dashboard .operations-grid { grid-template-columns: 1fr 1fr; }
+        body.dashboard-page.futuristic-dashboard .service-grid { grid-template-columns: 1fr; }
+      }
+    </style>
 </head>
-<body class="dashboard-page">
+<body class="dashboard-page futuristic-dashboard">
     <header class="dashboard-header">
         <span class="header-title">Home</span>
         <a href="index.html" class="btn btn-logout">Log Out <i class="fas fa-sign-out-alt"></i></a>
