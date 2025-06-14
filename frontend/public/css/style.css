@@ -1366,3 +1366,10 @@ img {
   min-width: 480px; /* prevent columns from squishing too much */
 }
 
+/* Shrink all bot table text to 9pt narrow font */
+.bot-summary-table th,
+.bot-summary-table td {
+    font-size: 9pt !important;
+    font-family: 'Arial Narrow', Arial, sans-serif;
+}
+

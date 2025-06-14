@@ -90,7 +90,6 @@ async function updatePurchasedBots(bots) {
         <thead>
             <tr>
                 <th>Bot Name</th>
-                <th>Purchase Date</th>
                 <th>Investment</th>
                 <th>Payments Received</th>
                 <th>Status</th>
@@ -128,8 +127,7 @@ async function updatePurchasedBots(bots) {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${bot.name}</td>
-            <td>${purchaseDate.toLocaleDateString()}</td>
-            <td>$${investment.toFixed(2)}</td>
+            <td>$${investment.toFixed(0)}</td>
             <td>$${paymentsReceived.toFixed(2)}</td>
             <td><span class="bot-status status-${status.toLowerCase()}">${status}</span></td>
             <td>${remainingDays}</td>
