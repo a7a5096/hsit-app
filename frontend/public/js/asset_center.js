@@ -92,8 +92,8 @@ async function updatePurchasedBots(bots) {
                 <th>Bot Name</th>
                 <th>Paid</th>
                 <th>Earned</th>
-                <th></th>
-                <th>Days Left</th>
+                <th>Status</th>
+                <th>Ends In</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -130,7 +130,7 @@ async function updatePurchasedBots(bots) {
             <td>$${investment.toFixed(0)}</td>
             <td>$${paymentsReceived.toFixed(2)}</td>
             <td><span class="bot-status status-${status.toLowerCase()}">${status === 'Active' ? 'Started' : 'Completed'}</span></td>
-            <td>${remainingDays}</td>
+            <td>${remainingDays} days</td>
         `;
         tbody.appendChild(row);
     });
