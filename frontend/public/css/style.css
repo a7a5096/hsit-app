@@ -1376,23 +1376,18 @@ img {
   min-width: 360px; /* allow narrower tables */
 }
 
-/* Shrink all bot table text to 9pt narrow font */
+/* Shrink all bot table text to 8pt narrow font */
 .bot-summary-table th,
 .bot-summary-table td {
-    font-size: 9pt !important;
+    font-size: 8pt !important;
     font-family: 'Arial Narrow', Arial, sans-serif;
 }
 
 /* Enable wrapping and shrink status column */
-.bot-summary-table th,
-.bot-summary-table td {
-    white-space: normal;
-    word-wrap: break-word;
-}
 .bot-summary-table th:nth-child(4),
 .bot-summary-table td:nth-child(4),
 .bot-status {
-    font-size: 8pt !important;
+    font-size: 7pt !important;
 }
 
 /* Asset Center Bot Table Tweaks */
@@ -1409,6 +1404,6 @@ img {
 .bot-summary-table th:nth-child(4),
 .bot-summary-table td:nth-child(4),
 .bot-status {
-    font-size: 8pt !important;
+    font-size: 7pt !important;
 }
 
