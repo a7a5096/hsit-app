@@ -28,23 +28,20 @@
         body.dashboard-page.futuristic-dashboard .operations-grid { grid-template-columns: 1fr 1fr; }
         body.dashboard-page.futuristic-dashboard .service-grid { grid-template-columns: 1fr; }
       }
-      /* Scroll indicator arrow */
-      body.dashboard-page.futuristic-dashboard .dashboard-header::after {
-        content: "\f078";
-        font-family: "Font Awesome 5 Free";
-        font-weight: 900;
-        position: absolute;
-        bottom: -10px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 1.5rem;
+      @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(10px); }
+        60% { transform: translateY(5px); }
+      }
+      /* Scroll indicator below operations grid */
+      body.dashboard-page.futuristic-dashboard .scroll-indicator {
+        text-align: center;
+        margin: 16px auto;
+      }
+      body.dashboard-page.futuristic-dashboard .scroll-indicator i {
+        font-size: 2rem;
         color: #ffffff;
         animation: bounce 2s infinite;
-      }
-      @keyframes bounce {
-        0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-        40% { transform: translateX(-50%) translateY(10px); }
-        60% { transform: translateX(-50%) translateY(5px); }
       }
     </style>
 </head>
@@ -99,7 +96,8 @@
                     </div>
                     <span>My team</span>
                 </a>
-         
+            </div>
+            <div class="scroll-indicator"><i class="fas fa-chevron-down"></i></div>
         </section>
 
         <section class="dashboard-section">
