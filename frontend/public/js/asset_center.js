@@ -91,8 +91,8 @@ async function updatePurchasedBots(bots) {
             <tr>
                 <th>Bot Name</th>
                 <th>Investment</th>
-                <th>Payments Received</th>
-                <th>Status</th>
+                <th>Earned</th>
+                <th></th>
                 <th>Remaining Days</th>
             </tr>
         </thead>
@@ -129,7 +129,7 @@ async function updatePurchasedBots(bots) {
             <td>${bot.name}</td>
             <td>$${investment.toFixed(0)}</td>
             <td>$${paymentsReceived.toFixed(2)}</td>
-            <td><span class="bot-status status-${status.toLowerCase()}">${status}</span></td>
+            <td><span class="bot-status status-${status.toLowerCase()}">${status === 'Active' ? 'Started' : 'Completed'}</span></td>
             <td>${remainingDays}</td>
         `;
         tbody.appendChild(row);
