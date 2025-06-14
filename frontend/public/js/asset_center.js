@@ -89,7 +89,7 @@ async function updatePurchasedBots(bots) {
     table.innerHTML = `
         <thead>
             <tr>
-                <th>Bot Name</th>
+                <th>Bot</th>
                 <th>Paid</th>
                 <th>Earned</th>
                 <th>Status</th>
