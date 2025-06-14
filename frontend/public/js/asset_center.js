@@ -93,7 +93,7 @@ async function updatePurchasedBots(bots) {
                 <th>Paid</th>
                 <th>Earned</th>
                 <th>Status</th>
-                <th>Ends In</th>
+                <th>Ends</th>
             </tr>
         </thead>
         <tbody></tbody>
