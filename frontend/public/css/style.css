@@ -1336,3 +1336,33 @@ img {
   }
 }
 
+/* --- Additional Asset Center Mobile Tweaks (<=480px) --- */
+@media (max-width: 480px) {
+  /* Stack balance rows vertically so long labels don't overflow */
+  .balance-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .asset-value {
+    text-align: left; /* match flow direction */
+  }
+  /* Slightly increase body padding for breathing room */
+  .page-main {
+    padding: 16px;
+  }
+  /* Make the total balance headline more readable */
+  .total-value {
+    font-size: 2.2rem;
+  }
+}
+
+/* --- Bot Summary Table Improvements --- */
+.purchased-bots-container {
+  overflow-x: auto; /* enable horizontal scroll on very small screens */
+}
+.bot-summary-table {
+  width: 100%; /* full-width on all devices */
+  min-width: 480px; /* prevent columns from squishing too much */
+}
+
