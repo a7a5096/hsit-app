@@ -90,7 +90,7 @@ async function updatePurchasedBots(bots) {
         <thead>
             <tr>
                 <th>Bot Name</th>
-                <th>Investment</th>
+                <th>Paid</th>
                 <th>Earned</th>
                 <th></th>
                 <th>Remaining Days</th>
@@ -126,7 +126,7 @@ async function updatePurchasedBots(bots) {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${bot.name}</td>
+            <td>${bot.name.replace(/UBT/g, '').trim()}</td>
             <td>$${investment.toFixed(0)}</td>
             <td>$${paymentsReceived.toFixed(2)}</td>
             <td><span class="bot-status status-${status.toLowerCase()}">${status === 'Active' ? 'Started' : 'Completed'}</span></td>
