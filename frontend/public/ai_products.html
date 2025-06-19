@@ -489,29 +489,56 @@
             color: #f59e0b;
         }
         .btn-more-info {
-            background: linear-gradient(135deg, #ff8c00, #ff5e57);
-            color: #1a1a2e;
-            padding: 0.75rem;
-            border: none;
+            /* Outline style for repositioned More Info button */
+            background: transparent;
+            color: #fff;
+            border: 1px solid #fff;
+            padding: 0.5rem 1rem;
             border-radius: 12px;
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-right: 0.5rem;
+            display: block;
+            margin: 0.5rem auto;
         }
         .btn-more-info:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(255, 140, 0, 0.3);
+            background: rgba(255,255,255,0.1);
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+        /* Position info icon if needed */
+        .product-card {
+            position: relative;
+        }
+        .btn-more-info.info-icon {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.3s ease;
+        }
+        .btn-more-info.info-icon:hover {
+            color: #00ff88;
         }
         .info-modal-content {
             max-height: 50vh;
             overflow-y: auto;
         }
         .grand-opening-info {
-            font-size: 1rem;
+            font-size: 0.5rem;
             color: #333;
             margin-top: 0.5rem;
+            text-align: center;
+        }
+        /* Card-level info overrides */
+        .product-card .grand-opening-info {
+            color: rgba(255,255,255,0.8);
         }
     </style>
 </head>

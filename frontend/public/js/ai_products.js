@@ -111,20 +111,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             ` : '';
 
+            // Build card content with repositioned More Info and bonus note
             card.innerHTML = `
                 <img src="/images/logobots.png" alt="${bot.name}" class="bot-logo-img">
+                <button class="btn-more-info" data-bot-id="${bot.id}">More Info</button>
                 <div class="product-details">
                     <h3>${bot.name}</h3>
                     <p class="product-description">Advanced AI trading bot with ${bot.dailyCredit} UBT daily returns and ${bot.lockInDays} days lock period.</p>
                 </div>
                 ${stats}
                 ${bonusInfo}
-                <div class="product-actions">
-                    <button class="btn-more-info" data-bot-id="${bot.id}">More Info</button>
-                    <button class="btn-buy-bot" data-bot-id="${bot.id}" data-price="${bot.price}">
-                        Buy Now - ${bot.price} UBT
-                    </button>
-                </div>
+                <p class="grand-opening-info">Bonus payment will be credited to your account within 48 hours of purchasing the bot.</p>
+                <button class="btn-buy-bot" data-bot-id="${bot.id}" data-price="${bot.price}">
+                    Buy Now - ${bot.price} UBT
+                </button>
             `;
 
             botsGrid.appendChild(card);
