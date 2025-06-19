@@ -27,6 +27,12 @@
       body.dashboard-page.futuristic-dashboard .prize-description { color: #fff; }
       body.dashboard-page.futuristic-dashboard #result-area { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); border-radius: 8px; padding: 20px; margin-top: 20px; color: #e0e0e0; text-align: center; }
       body.dashboard-page.futuristic-dashboard .error-message { display: block; color: #ff4757; background: rgba(255,71,87,0.1); border-radius: 4px; padding: 10px; margin-top: 10px; }
+      .spin-flex { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+      @media (min-width: 768px) {
+        .spin-flex { flex-direction: row; align-items: flex-start; justify-content: center; }
+        .spin-flex .content-section { flex: 1 1 0; max-width: 400px; }
+        .spin-flex #prize-legend { flex: 1 1 0; max-width: 400px; }
+      }
     </style>
 </head>
 <body class="dashboard-page futuristic-dashboard">
@@ -36,31 +42,33 @@
     </header>
 
     <main class="dashboard-main">
-        <section class="content-section card-style">
-            <h2>Spin the Wheel!</h2>
-            <div class="balance-info" style="text-align: center; margin-bottom: 20px; font-size: 1.1rem;">
-                <p>Your UBT Balance: <strong id="ubtBalanceDisplay" style="color: #50fa7b;">Loading...</strong></p>
-                <p style="font-size: 0.9rem;">Cost per Spin: <span id="spinCostDisplay">10</span> UBT</p> 
-            </div>
+        <div class="spin-flex">
+            <section class="content-section card-style">
+                <h2>Spin the Wheel!</h2>
+                <div class="balance-info" style="text-align: center; margin-bottom: 20px; font-size: 1.1rem;">
+                    <p>Your UBT Balance: <strong id="ubtBalanceDisplay" style="color: #50fa7b;">Loading...</strong></p>
+                    <p style="font-size: 0.9rem;">Cost per Spin: <span id="spinCostDisplay">10</span> UBT</p> 
+                </div>
 
-            <div class="wheel-container">
-                <div class="pointer">▼</div>
-                <img src="images/wheel_image.png" alt="Spinning Wheel" id="wheelImage" class="wheel-image-style">
+                <div class="wheel-container">
+                    <div class="pointer">▼</div>
+                    <img src="images/wheel_image.png" alt="Spinning Wheel" id="wheelImage" class="wheel-image-style">
+                    
+                    <button id="spinButton" class="btn btn-primary btn-spin">Spin Now!</button> 
+                </div>
                 
-                <button id="spinButton" class="btn btn-primary btn-spin">Spin Now!</button> 
-            </div>
-            
-            <div id="result-area" class="result-area">
-                <h3>Result:</h3>
-                <p id="result-message" style="min-height: 1.5em; font-weight: bold;"></p>
-                <p>Winnings: <span id="winningsAmount">0</span> UBT</p>
-                <p>Your New Balance: <span id="newUbtBalance">N/A</span> UBT</p>
-            </div>
-             <p id="spinError" class="error-message" style="display:none;"></p>
-        </section>
+                <div id="result-area" class="result-area">
+                    <h3>Result:</h3>
+                    <p id="result-message" style="min-height: 1.5em; font-weight: bold;"></p>
+                    <p>Winnings: <span id="winningsAmount">0</span> UBT</p>
+                    <p>Your New Balance: <span id="newUbtBalance">N/A</span> UBT</p>
+                </div>
+                 <p id="spinError" class="error-message" style="display:none;"></p>
+            </section>
 
-        <div id="prize-legend" class="content-section card-style">
-             <h3>Prize Legend</h3>
+            <div id="prize-legend" class="content-section card-style">
+                 <h3>Prize Legend</h3>
+            </div>
         </div>
         
         <div id="statusMessage" class="status-message" style="display: none;"></div>
