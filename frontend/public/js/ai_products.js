@@ -119,9 +119,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 ${stats}
                 ${bonusInfo}
-                <button class="btn-buy-bot" data-bot-id="${bot.id}" data-price="${bot.price}">
-                    Buy Now - ${bot.price} UBT
-                </button>
+                <div class="product-actions">
+                    <button class="btn-more-info" data-bot-id="${bot.id}">More Info</button>
+                    <button class="btn-buy-bot" data-bot-id="${bot.id}" data-price="${bot.price}">
+                        Buy Now - ${bot.price} UBT
+                    </button>
+                </div>
             `;
 
             botsGrid.appendChild(card);
@@ -172,6 +175,45 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
         });
+
+        // Add click handlers for More Info buttons
+        const infoModal = document.getElementById('infoModal');
+        const infoDetails = document.getElementById('infoDetails');
+        const closeInfoBtn = document.getElementById('closeInfoModal');
+
+        document.querySelectorAll('.btn-more-info').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const botId = button.dataset.botId;
+                const bot = bots.find(b => b.id === parseInt(botId));
+                if (!bot) return;
+                infoDetails.innerHTML = buildProjectionTable(bot);
+                infoModal.style.display = 'block';
+            });
+        });
+
+        closeInfoBtn.addEventListener('click', () => {
+            infoModal.style.display = 'none';
+        });
+
+        infoModal.addEventListener('click', (e) => {
+            if (e.target === infoModal) infoModal.style.display = 'none';
+        });
+
+        // Build projection table for each day of the bot's run
+        function buildProjectionTable(bot) {
+            const investment = bot.price || 0;
+            const dailyCredit = bot.dailyCredit || 0;
+            const totalDays = bot.lockInDays || 0;
+            let html = '<table class="bot-summary-table"><thead><tr><th>Day</th><th>Paid</th><th>Earned</th><th>Status</th><th>Ends In</th></tr></thead><tbody>';
+            for (let day = 1; day <= totalDays; day++) {
+                const earned = dailyCredit * day;
+                const remainingDays = totalDays - day;
+                const status = remainingDays > 0 ? 'Active' : 'Completed';
+                html += `<tr><td>Day ${day}</td><td>${investment.toFixed(0)}</td><td>${earned.toFixed(2)}</td><td><span class="bot-status status-${status.toLowerCase()}">${status}</span></td><td>${remainingDays} days</td></tr>`;
+            }
+            html += '</tbody></table>';
+            return html;
+        }
 
     } catch (error) {
         console.error('Error:', error);

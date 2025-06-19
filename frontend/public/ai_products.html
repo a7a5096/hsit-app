@@ -443,6 +443,76 @@
                 padding: 2rem;
             }
         }
+
+        .bot-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .bot-summary-table th,
+        .bot-summary-table td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .bot-summary-table th {
+            background: rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+            color: #fff8dc;
+        }
+        .bot-summary-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .bot-summary-table th:nth-child(even),
+        .bot-summary-table td:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        .bot-status {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        .status-completed {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+        .btn-more-info {
+            background: linear-gradient(135deg, #ff8c00, #ff5e57);
+            color: #1a1a2e;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 0.5rem;
+        }
+        .btn-more-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 140, 0, 0.3);
+        }
+        .info-modal-content {
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        .grand-opening-info {
+            font-size: 1rem;
+            color: #333;
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -464,6 +534,7 @@
         <div class="grand-opening-banner">
             <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎉 Grand Opening Special!</h3>
             <p id="grand-opening-timer">Limited time offer - Enhanced returns for early adopters • <span id="daysLeftCountdown">24</span> days remaining</p>
+            <p class="grand-opening-info">Bonus payment will be credited to your account within 48 hours of purchasing the bot.</p>
         </div>
 
         <div class="bots-grid" id="bots-grid">
@@ -479,6 +550,14 @@
                 <button id="confirmPurchaseBtn" class="modal-btn btn-confirm">Confirm Purchase</button>
                 <button id="cancelPurchaseBtn" class="modal-btn btn-cancel">Cancel</button>
             </div>
+        </div>
+    </div>
+
+    <div id="infoModal" class="modal">
+        <div class="modal-content info-modal-content">
+            <h2>Bot Projection Details</h2>
+            <div id="infoDetails"></div>
+            <button id="closeInfoModal" class="modal-btn btn-cancel">Close</button>
         </div>
     </div>
 
