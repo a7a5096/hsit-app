@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const bonusInfo = bot.hasBonus ? `
                 <div class="bonus-info">
-                    <p>🎉 Grand Opening Bonus: ${bot.totalProfit} UBT BONUS</p>
+                    <p>🎉 Grand Opening Bonus: ${Math.round(bot.price * 0.2)} UBT BONUS</p>
                 </div>
             ` : '';
 
