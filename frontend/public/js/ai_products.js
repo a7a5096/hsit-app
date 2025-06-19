@@ -121,10 +121,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 ${stats}
                 ${bonusInfo}
-                <p class="grand-opening-info">Bonus payment will be credited to your account within 48 hours of purchasing the bot.</p>
                 <button class="btn-buy-bot" data-bot-id="${bot.id}" data-price="${bot.price}">
                     Buy Now - ${bot.price} UBT
                 </button>
+                <p class="grand-opening-info">* Bonus payment will be credited to your account within 48 hours of purchasing the bot.</p>
             `;
 
             botsGrid.appendChild(card);
