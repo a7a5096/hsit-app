@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Zone Crypto Trading Strategy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .video-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f23 50%, #16213e 100%);
+        }
+
+        .scene {
+            width: 90%;
+            max-width: 1200px;
+            height: 80%;
+            position: relative;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .scene.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .title {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 2rem;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5, #00d2ff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        .subtitle {
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            text-align: center;
+            color: #a8b2d1;
+            margin-bottom: 3rem;
+            max-width: 800px;
+        }
+
+        .world-map {
+            width: 100%;
+            max-width: 800px;
+            height: 400px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400"><rect width="800" height="400" fill="%23151515"/><path d="M100,200 Q200,150 300,200 T500,200 Q600,150 700,200" stroke="%2300d2ff" stroke-width="2" fill="none" opacity="0.3"/><circle cx="600" cy="180" r="50" fill="%23ff6b6b" opacity="0.5"><animate attributeName="r" values="50;70;50" dur="3s" repeatCount="indefinite"/></circle><circle cx="200" cy="220" r="40" fill="%2300d2ff" opacity="0.5"><animate attributeName="r" values="40;55;40" dur="3s" repeatCount="indefinite"/></circle><text x="600" y="180" text-anchor="middle" fill="white" font-size="14" font-weight="bold">CHINA</text><text x="200" y="220" text-anchor="middle" fill="white" font-size="14" font-weight="bold">USA</text></svg>') center/contain no-repeat;
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .chart-container {
+            width: 100%;
+            max-width: 700px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-line {
+            width: 100%;
+            height: 200px;
+            position: relative;
+        }
+
+        .chart-path {
+            stroke: #00d2ff;
+            stroke-width: 3;
+            fill: none;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawLine 3s ease-in-out forwards;
+        }
+
+        @keyframes drawLine {
+            to { stroke-dashoffset: 0; }
+        }
+
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 2rem;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transform: translateY(50px);
+            opacity: 0;
+            animation: slideUp 0.5s ease-out forwards;
+        }
+
+        .info-card:nth-child(1) { animation-delay: 0.2s; }
+        .info-card:nth-child(2) { animation-delay: 0.4s; }
+        .info-card:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes slideUp {
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .warning-box {
+            background: rgba(255, 107, 107, 0.1);
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            max-width: 700px;
+            text-align: center;
+        }
+
+        .warning-title {
+            color: #ff6b6b;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: #00d2ff;
+            transition: width 0.3s ease;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .info-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                bottom: 20px;
+            }
+            
+            .control-btn {
+                padding: 0.6rem 1.5rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <!-- Scene 1: Introduction -->
+        <div class="scene active" id="scene1">
+            <h1 class="title">Time Zone Trading Strategy</h1>
+            <p class="subtitle">Understanding how global time zones affect cryptocurrency trading volumes</p>
+            <div class="world-map"></div>
+        </div>
+
+        <!-- Scene 2: The Concept -->
+        <div class="scene" id="scene2">
+            <h2 class="title">The Trading Concept</h2>
+            <div class="info-cards">
+                <div class="info-card">
+                    <div class="icon">🌙</div>
+                    <h3>Night Trading</h3>
+                    <p>When major Asian markets sleep, trading volumes typically decrease, potentially affecting prices</p>
+                </div>
+                <div class="info-card">
+                    <div class="icon">☀️</div>
+                    <h3>Day Trading</h3>
+                    <p>During Asian market hours, increased activity can lead to higher trading volumes</p>
+                </div>
+                <div class="info-card">
+                    <div class="icon">🤖</div>
+                    <h3>Automated Bots</h3>
+                    <p>Trading bots execute trades based on these time-based patterns</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scene 3: How It Works -->
+        <div class="scene" id="scene3">
+            <h2 class="title">How the Strategy Works</h2>
+            <div class="chart-container">
+                <svg class="chart-line" viewBox="0 0 700 200">
+                    <path class="chart-path" d="M50,150 Q150,170 250,140 T450,100 Q550,80 650,120" />
+                    <text x="150" y="190" fill="#666" font-size="12">Asian Night</text>
+                    <text x="550" y="190" fill="#666" font-size="12">Asian Day</text>
+                </svg>
+            </div>
+            <p class="subtitle">Bots aim to buy during lower volume periods and sell during higher volume periods</p>
+        </div>
+
+        <!-- Scene 4: Important Considerations -->
+        <div class="scene" id="scene4">
+            <h2 class="title">Important Considerations</h2>
+            <div class="warning-box">
+                <div class="warning-title">⚠️ Risk Disclosure</div>
+                <p>• Cryptocurrency trading involves significant risk<br>
+                   • Past performance doesn't guarantee future results<br>
+                   • Market patterns can change unpredictably<br>
+                   • Daily profits are not guaranteed<br>
+                   • You can lose some or all of your investment</p>
+            </div>
+            <div class="info-cards" style="margin-top: 2rem;">
+                <div class="info-card">
+                    <div class="icon">📊</div>
+                    <h3>Market Volatility</h3>
+                    <p>Crypto markets are highly volatile and can move against any strategy</p>
+                </div>
+                <div class="info-card">
+                    <div class="icon">🌍</div>
+                    <h3>Global Markets</h3>
+                    <p>Crypto trades 24/7 across all time zones, not just Asia</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scene 5: Final Message -->
+        <div class="scene" id="scene5">
+            <h2 class="title">Remember</h2>
+            <div class="subtitle" style="font-size: 1.5rem; line-height: 1.8;">
+                <p>✓ This strategy observes time-based volume patterns</p>
+                <p>✓ Profits are distributed when available</p>
+                <p>✓ Results vary and losses are possible</p>
+                <p>✓ Never invest more than you can afford to lose</p>
+            </div>
+            <div class="warning-box" style="margin-top: 3rem;">
+                <p style="font-size: 1.1rem;">Always do your own research and consider consulting with financial advisors before making investment decisions.</p>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="control-btn" onclick="previousScene()">Previous</button>
+            <button class="control-btn" onclick="playPause()" id="playBtn">Pause</button>
+            <button class="control-btn" onclick="nextScene()">Next</button>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <script>
+        let currentScene = 1;
+        const totalScenes = 5;
+        let isPlaying = true;
+        let sceneTimer;
+        let progressInterval;
+        let progress = 0;
+
+        function showScene(sceneNumber) {
+            // Hide all scenes
+            document.querySelectorAll('.scene').forEach(scene => {
+                scene.classList.remove('active');
+            });
+            
+            // Show current scene
+            const scene = document.getElementById(`scene${sceneNumber}`);
+            if (scene) {
+                scene.classList.add('active');
+            }
+            
+            // Reset progress for new scene
+            progress = 0;
+            updateProgressBar();
+        }
+
+        function nextScene() {
+            clearTimers();
+            currentScene = currentScene < totalScenes ? currentScene + 1 : 1;
+            showScene(currentScene);
+            if (isPlaying) {
+                startAutoPlay();
+            }
+        }
+
+        function previousScene() {
+            clearTimers();
+            currentScene = currentScene > 1 ? currentScene - 1 : totalScenes;
+            showScene(currentScene);
+            if (isPlaying) {
+                startAutoPlay();
+            }
+        }
+
+        function playPause() {
+            isPlaying = !isPlaying;
+            const playBtn = document.getElementById('playBtn');
+            playBtn.textContent = isPlaying ? 'Pause' : 'Play';
+            
+            if (isPlaying) {
+                startAutoPlay();
+            } else {
+                clearTimers();
+            }
+        }
+
+        function clearTimers() {
+            clearTimeout(sceneTimer);
+            clearInterval(progressInterval);
+        }
+
+        function startAutoPlay() {
+            // Clear any existing timers
+            clearTimers();
+            
+            // Update progress bar
+            progressInterval = setInterval(() => {
+                progress += 2; // Increase by 2% every 100ms
+                updateProgressBar();
+                
+                if (progress >= 100) {
+                    nextScene();
+                }
+            }, 100);
+            
+            // Set scene timer as backup
+            sceneTimer = setTimeout(() => {
+                nextScene();
+            }, 5000); // 5 seconds per scene
+        }
+
+        function updateProgressBar() {
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = `${progress}%`;
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextScene();
+            if (e.key === 'ArrowLeft') previousScene();
+            if (e.key === ' ') {
+                e.preventDefault();
+                playPause();
+            }
+        });
+
+        // Start autoplay
+        startAutoPlay();
+    </script>
+</body>
+</html>
