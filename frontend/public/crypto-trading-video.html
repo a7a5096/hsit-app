@@ -177,10 +177,10 @@
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(255, 255, 255, 0.3);
             color: white;
-            padding: 0.8rem 2rem;
-            border-radius: 50px;
+            padding: 0.56rem 1.4rem;
+            border-radius: 35px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.7rem;
             transition: all 0.3s ease;
         }
 
@@ -209,8 +209,8 @@
             }
             
             .control-btn {
-                padding: 0.6rem 1.5rem;
-                font-size: 0.9rem;
+                padding: 0.42rem 1.05rem;
+                font-size: 0.63rem;
             }
         }
     </style>
@@ -303,15 +303,15 @@
             </div>
         </div>
 
-        <!-- Controls -->
-        <div class="controls">
-            <button class="control-btn" onclick="previousScene()">Previous</button>
-            <button class="control-btn" onclick="playPause()" id="playBtn">Pause</button>
-            <button class="control-btn" onclick="nextScene()">Next</button>
-        </div>
-
         <!-- Progress bar -->
         <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="control-btn" onclick="previousScene()">Previous</button>
+        <button class="control-btn" onclick="playPause()" id="playBtn">Pause</button>
+        <button class="control-btn" onclick="nextScene()">Next</button>
     </div>
     </div>
 
