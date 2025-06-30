@@ -139,12 +139,19 @@ router.post('/purchase', auth, async (req, res) => {
         if (!user.bots) user.bots = [];
         const alreadyOwned = user.bots.some(b => String(b.botId) === String(botId));
         if (!alreadyOwned) {
+            const completionDate = new Date();
+            completionDate.setDate(completionDate.getDate() + bot.lockInDays);
+            
             user.bots.push({
                 botId: String(bot.id),
                 name: bot.name,
                 investmentAmount: bot.price,
                 purchasedAt: new Date(),
-                status: 'active'
+                status: 'active',
+                completionDate: completionDate,
+                totalPayout: bot.totalReturnAmount,
+                payoutProcessed: false,
+                lockInDays: bot.lockInDays
             });
         }
         // Also update botsPurchased for backward compatibility

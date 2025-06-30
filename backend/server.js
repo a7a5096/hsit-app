@@ -22,6 +22,7 @@ import ubtRoutes from './routes/ubt.js';
 import exchangeRatesRoutes from './routes/exchangeRates.js';
 import depositRoutes from './routes/deposit.js';
 import wheelRoutes from './routes/wheel.js';
+import botCompletionRoutes from './routes/botCompletion.js';
 
 
 // Initialize Express app
@@ -40,6 +41,7 @@ app.use('/api/ubt', ubtRoutes);
 app.use('/api/exchange-rates', exchangeRatesRoutes);
 app.use('/api/deposit', depositRoutes);
 app.use('/api/wheel', wheelRoutes);
+app.use('/api/bot-completion', botCompletionRoutes);
 
 // --- Explicitly Define Daily Sign-In Routes ---
 app.get('/api/daily-signin/status', authMiddleware, async (req, res) => {
