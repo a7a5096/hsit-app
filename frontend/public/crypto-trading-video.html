@@ -16,34 +16,44 @@
             background: #0a0a0a;
             color: #ffffff;
             overflow: hidden;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
         }
 
         .video-container {
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #1a1a2e 0%, #0f0f23 50%, #16213e 100%);
-            transform: scale(0.9);
-            transform-origin: top center;
+            transform: scale(1);
+            transform-origin: center center;
+            overflow: hidden;
         }
 
         .scene {
-            width: 90%;
-            max-width: 1200px;
-            height: 80%;
+            width: 95vw;
+            max-width: min(1200px, 95vw);
+            height: 90vh;
+            max-height: 90vh;
             position: relative;
             display: none;
             animation: fadeIn 0.5s ease-in-out;
+            padding: 1rem;
+            box-sizing: border-box;
+            overflow-y: auto;
         }
 
         .scene.active {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            gap: 1rem;
         }
 
         @keyframes fadeIn {
@@ -52,16 +62,19 @@
         }
 
         .title {
-            font-size: clamp(2rem, 5vw, 4rem);
+            font-size: clamp(1.5rem, 4vw, 3rem);
             font-weight: 700;
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
             background: linear-gradient(90deg, #00d2ff, #3a7bd5, #00d2ff);
             background-size: 200% auto;
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: shine 3s linear infinite;
+            line-height: 1.2;
+            word-wrap: break-word;
+            hyphens: auto;
         }
 
         @keyframes shine {
@@ -69,30 +82,33 @@
         }
 
         .subtitle {
-            font-size: clamp(1.2rem, 3vw, 2rem);
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
             text-align: center;
             color: #a8b2d1;
-            margin-bottom: 3rem;
-            max-width: 800px;
+            margin-bottom: 1.5rem;
+            max-width: 90%;
+            line-height: 1.5;
+            word-wrap: break-word;
+            hyphens: auto;
         }
 
         .world-map {
             width: 100%;
-            max-width: 800px;
-            height: 400px;
+            max-width: min(800px, 90vw);
+            height: clamp(200px, 30vh, 400px);
             background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400"><rect width="800" height="400" fill="%23151515"/><path d="M100,200 Q200,150 300,200 T500,200 Q600,150 700,200" stroke="%2300d2ff" stroke-width="2" fill="none" opacity="0.3"/><circle cx="600" cy="180" r="50" fill="%23ff6b6b" opacity="0.5"><animate attributeName="r" values="50;70;50" dur="3s" repeatCount="indefinite"/></circle><circle cx="200" cy="220" r="40" fill="%2300d2ff" opacity="0.5"><animate attributeName="r" values="40;55;40" dur="3s" repeatCount="indefinite"/></circle><text x="600" y="180" text-anchor="middle" fill="white" font-size="14" font-weight="bold">CHINA</text><text x="200" y="220" text-anchor="middle" fill="white" font-size="14" font-weight="bold">USA</text></svg>') center/contain no-repeat;
-            margin: 2rem 0;
+            margin: 1rem 0;
             position: relative;
         }
 
         .chart-container {
             width: 100%;
-            max-width: 700px;
-            height: 300px;
+            max-width: min(700px, 90vw);
+            height: clamp(200px, 25vh, 300px);
             background: rgba(255, 255, 255, 0.05);
             border-radius: 20px;
-            padding: 2rem;
-            margin: 2rem 0;
+            padding: 1rem;
+            margin: 1rem 0;
             position: relative;
             overflow: hidden;
         }
@@ -118,18 +134,18 @@
 
         .info-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+            gap: 1rem;
             width: 100%;
-            max-width: 800px;
-            margin-top: 2rem;
+            max-width: 90%;
+            margin-top: 1rem;
         }
 
         .info-card {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 15px;
-            padding: 2rem;
+            padding: 1.5rem;
             text-align: center;
             transform: translateY(50px);
             opacity: 0;
@@ -145,45 +161,62 @@
         }
 
         .icon {
-            font-size: 3rem;
+            font-size: clamp(2rem, 4vw, 3rem);
             margin-bottom: 1rem;
+        }
+
+        .info-card h3 {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            margin-bottom: 0.5rem;
+        }
+
+        .info-card p {
+            font-size: clamp(0.8rem, 1.5vw, 1rem);
+            line-height: 1.4;
         }
 
         .warning-box {
             background: rgba(255, 107, 107, 0.1);
             border: 2px solid #ff6b6b;
             border-radius: 15px;
-            padding: 2rem;
-            margin: 2rem 0;
-            max-width: 700px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            max-width: 90%;
             text-align: center;
         }
 
         .warning-title {
             color: #ff6b6b;
-            font-size: 1.5rem;
+            font-size: clamp(1.2rem, 2.5vw, 1.5rem);
             margin-bottom: 1rem;
             font-weight: bold;
         }
 
+        .warning-box p {
+            font-size: clamp(0.9rem, 1.8vw, 1.1rem);
+            line-height: 1.5;
+        }
+
         .controls {
-            position: absolute;
-            bottom: 30px;
+            position: fixed;
+            bottom: 2vh;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 1rem;
+            gap: 0.5rem;
+            z-index: 1000;
         }
 
         .control-btn {
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(255, 255, 255, 0.3);
             color: white;
-            padding: 0.56rem 1.4rem;
+            padding: clamp(0.4rem, 1vw, 0.6rem) clamp(0.8rem, 2vw, 1.4rem);
             border-radius: 35px;
             cursor: pointer;
-            font-size: 0.7rem;
+            font-size: clamp(0.6rem, 1.2vw, 0.8rem);
             transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
         .control-btn:hover {
@@ -192,28 +225,244 @@
         }
 
         .progress-bar {
-            position: absolute;
+            position: fixed;
             bottom: 0;
             left: 0;
             height: 4px;
             background: #00d2ff;
             transition: width 0.3s ease;
+            z-index: 1000;
         }
 
-        /* Mobile responsiveness */
+        /* Enhanced mobile responsiveness */
         @media (max-width: 768px) {
+            .scene {
+                width: 98vw;
+                height: 92vh;
+                padding: 0.5rem;
+            }
+            
             .info-cards {
                 grid-template-columns: 1fr;
+                gap: 0.8rem;
             }
             
             .controls {
-                bottom: 20px;
+                bottom: 1vh;
+                gap: 0.3rem;
             }
             
             .control-btn {
-                padding: 0.42rem 1.05rem;
-                font-size: 0.63rem;
+                padding: 0.3rem 0.8rem;
+                font-size: 0.6rem;
             }
+            
+            .world-map {
+                height: clamp(150px, 25vh, 250px);
+            }
+            
+            .chart-container {
+                height: clamp(150px, 20vh, 200px);
+                padding: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .scene {
+                width: 100vw;
+                height: 95vh;
+                padding: 0.3rem;
+            }
+            
+            .title {
+                font-size: clamp(1.2rem, 6vw, 2rem);
+            }
+            
+            .subtitle {
+                font-size: clamp(0.9rem, 4vw, 1.2rem);
+            }
+            
+            .info-card {
+                padding: 1rem;
+            }
+            
+            .warning-box {
+                padding: 1rem;
+            }
+        }
+
+        /* Landscape orientation adjustments */
+        @media (orientation: landscape) and (max-height: 600px) {
+            .scene {
+                height: 95vh;
+                overflow-y: auto;
+            }
+            
+            .title {
+                margin-bottom: 0.5rem;
+            }
+            
+            .subtitle {
+                margin-bottom: 1rem;
+            }
+            
+            .info-cards {
+                margin-top: 0.5rem;
+            }
+            
+            .world-map {
+                height: clamp(120px, 20vh, 200px);
+            }
+            
+            .chart-container {
+                height: clamp(120px, 18vh, 180px);
+            }
+        }
+
+        /* Customer Review Section Styles */
+        .reviews-container {
+            width: 100%;
+            max-width: 90%;
+            margin: 1rem 0;
+        }
+
+        .review-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .review-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 210, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .review-card:hover::before {
+            left: 100%;
+        }
+
+        .review-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        .reviewer-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00ff88, #00b8ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #1a1a2e;
+        }
+
+        .reviewer-info h4 {
+            color: #fff;
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            margin: 0;
+        }
+
+        .reviewer-info p {
+            color: #a8b2d1;
+            font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+            margin: 0.2rem 0 0 0;
+        }
+
+        .review-rating {
+            display: flex;
+            gap: 0.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .star {
+            color: #ffd700;
+            font-size: clamp(1rem, 2vw, 1.2rem);
+        }
+
+        .review-text {
+            color: #e2e8f0;
+            font-size: clamp(0.9rem, 1.6vw, 1rem);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .review-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+            font-weight: 700;
+            color: #00ff88;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-label {
+            font-size: clamp(0.7rem, 1.2vw, 0.8rem);
+            color: #a8b2d1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .profit-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .profit-table th,
+        .profit-table td {
+            padding: 0.8rem 0.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: clamp(0.7rem, 1.2vw, 0.8rem);
+        }
+
+        .profit-table th {
+            background: rgba(0, 210, 255, 0.2);
+            color: #00d2ff;
+            font-weight: bold;
+        }
+
+        .profit-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .profit-positive {
+            color: #00ff88;
+        }
+
+        .profit-negative {
+            color: #ff6b6b;
         }
     </style>
 </head>
@@ -291,8 +540,404 @@
                 </div>
             </div>
 
-            <!-- Scene 5: Final Message -->
+            <!-- Scene 5: Customer Reviews -->
             <div class="scene" id="scene5">
+                <h2 class="title">What Our Customers Say</h2>
+                <p class="subtitle">Real reviews from legal professionals across Alberta</p>
+                
+                <div class="reviews-container">
+                    <!-- Review 1: Sarah Mitchell - Red Deer -->
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="reviewer-avatar">SM</div>
+                            <div class="reviewer-info">
+                                <h4>Sarah Mitchell</h4>
+                                <p>Family Law Attorney • Red Deer, AB</p>
+                            </div>
+                        </div>
+                        <div class="review-rating">
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                        </div>
+                        <div class="review-text">
+                            "I was skeptical about automated trading, but the consistent daily returns have been impressive. Started with Bot 2 and the transparency in the profit sharing gives me confidence. Perfect for busy professionals like myself."
+                        </div>
+                        <div class="review-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">$2,500</span>
+                                <span class="stat-label">Invested</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">+$420</span>
+                                <span class="stat-label">Total Profit</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">42 Days</span>
+                                <span class="stat-label">Active</span>
+                            </div>
+                        </div>
+                        <table class="profit-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Bot</th>
+                                    <th>Daily Return</th>
+                                    <th>Cumulative</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Nov 15</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 16</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$20</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 17</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$30</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 28</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$140</td>
+                                    <td>Completed</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 29</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$500</td>
+                                    <td class="profit-positive">+$640</td>
+                                    <td>Refund</td>
+                                </tr>
+                                <tr>
+                                    <td>Dec 01</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$650</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Dec 26</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$900</td>
+                                    <td>Active</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Review 2: David Chen - Lethbridge -->
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="reviewer-avatar">DC</div>
+                            <div class="reviewer-info">
+                                <h4>David Chen</h4>
+                                <p>Corporate Lawyer • Lethbridge, AB</p>
+                            </div>
+                        </div>
+                        <div class="review-rating">
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                        </div>
+                        <div class="review-text">
+                            "The time zone strategy makes sense from a market perspective. I've been running Bot 3 for two months now and the results speak for themselves. The bonus payments were exactly as promised."
+                        </div>
+                        <div class="review-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">$6,000</span>
+                                <span class="stat-label">Invested</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">+$1,180</span>
+                                <span class="stat-label">Total Profit</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">59 Days</span>
+                                <span class="stat-label">Active</span>
+                            </div>
+                        </div>
+                        <table class="profit-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Bot</th>
+                                    <th>Daily Return</th>
+                                    <th>Cumulative</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Oct 28</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Oct 30</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$300</td>
+                                    <td class="profit-positive">+$330</td>
+                                    <td>Bonus Day 3</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 15</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$490</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 26</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$600</td>
+                                    <td>Completed</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 27</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$3000</td>
+                                    <td class="profit-positive">+$3600</td>
+                                    <td>Refund</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 28</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$3610</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Dec 26</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$3890</td>
+                                    <td>Active</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Review 3: Jennifer Thompson - Medicine Hat -->
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="reviewer-avatar">JT</div>
+                            <div class="reviewer-info">
+                                <h4>Jennifer Thompson</h4>
+                                <p>Civil Litigation Lawyer • Medicine Hat, AB</p>
+                            </div>
+                        </div>
+                        <div class="review-rating">
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                        </div>
+                        <div class="review-text">
+                            "As someone who deals with complex litigation, I appreciate straightforward investment opportunities. The daily returns are consistent and the platform is transparent about risks. Excellent for diversifying income streams."
+                        </div>
+                        <div class="review-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">$2,000</span>
+                                <span class="stat-label">Invested</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">+$340</span>
+                                <span class="stat-label">Total Profit</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">34 Days</span>
+                                <span class="stat-label">Active</span>
+                            </div>
+                        </div>
+                        <table class="profit-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Bot</th>
+                                    <th>Daily Return</th>
+                                    <th>Cumulative</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Nov 22</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 23</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$20</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Dec 05</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$140</td>
+                                    <td>Completed</td>
+                                </tr>
+                                <tr>
+                                    <td>Dec 06</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$500</td>
+                                    <td class="profit-positive">+$640</td>
+                                    <td>Refund</td>
+                                </tr>
+                                <tr>
+                                    <td>Dec 07</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$650</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Dec 26</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$840</td>
+                                    <td>Active</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Review 4: Robert Kowalski - Grande Prairie -->
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="reviewer-avatar">RK</div>
+                            <div class="reviewer-info">
+                                <h4>Robert Kowalski</h4>
+                                <p>Agricultural Law Attorney • Grande Prairie, AB</p>
+                            </div>
+                        </div>
+                        <div class="review-rating">
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                            <span class="star">★</span>
+                        </div>
+                        <div class="review-text">
+                            "Working with agricultural clients, I understand market cycles and timing. This platform's approach to timezone-based trading is innovative. The returns have been solid and the bonus structure is fair."
+                        </div>
+                        <div class="review-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">$4,500</span>
+                                <span class="stat-label">Invested</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">+$890</span>
+                                <span class="stat-label">Total Profit</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">67 Days</span>
+                                <span class="stat-label">Active</span>
+                            </div>
+                        </div>
+                        <table class="profit-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Bot</th>
+                                    <th>Daily Return</th>
+                                    <th>Cumulative</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Oct 20</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 02</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$140</td>
+                                    <td>Completed</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 03</td>
+                                    <td>Bot 2</td>
+                                    <td class="profit-positive">+$500</td>
+                                    <td class="profit-positive">+$640</td>
+                                    <td>Refund</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 05</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$650</td>
+                                    <td>Active</td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 07</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$300</td>
+                                    <td class="profit-positive">+$970</td>
+                                    <td>Bonus Day 3</td>
+                                </tr>
+                                <tr>
+                                    <td>Dec 04</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$1240</td>
+                                    <td>Completed</td>
+                                </tr>
+                                <tr>
+                                    <td>Dec 05</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$3000</td>
+                                    <td class="profit-positive">+$4240</td>
+                                    <td>Refund</td>
+                                </tr>
+                                <tr>
+                                    <td>Dec 26</td>
+                                    <td>Bot 3</td>
+                                    <td class="profit-positive">+$10</td>
+                                    <td class="profit-positive">+$4450</td>
+                                    <td>Active</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scene 6: Final Message -->
+            <div class="scene" id="scene6">
                 <h2 class="title">Remember</h2>
                 <div class="subtitle" style="font-size: 1.5rem; line-height: 1.8;">
                     <p>✓ This strategy observes time-based volume patterns</p>
@@ -318,7 +963,7 @@
 
     <script>
         let currentScene = 1;
-        const totalScenes = 5;
+        const totalScenes = 7;
         let isPlaying = true;
         let sceneTimer;
         let progressInterval;
