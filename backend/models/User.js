@@ -7,7 +7,11 @@ const OwnedBotSchema = new mongoose.Schema({
   name: { type: String, required: true },
   investmentAmount: { type: Number, required: true },
   purchasedAt: { type: Date, default: Date.now },
-  status: { type: String, default: 'active' }
+  status: { type: String, default: 'active' },
+  completionDate: { type: Date }, // When the bot cycle completes
+  totalPayout: { type: Number }, // Total amount to be paid out on completion
+  payoutProcessed: { type: Boolean, default: false }, // Whether payout has been processed
+  lockInDays: { type: Number } // Store lock-in period for completion calculation
 }, { _id: false });
 
 
