@@ -12,6 +12,34 @@
             50% { opacity: 1; }
         }
         
+        /* Override auth-container to use full width */
+        .auth-container {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 10px !important;
+            margin: 0 !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+        }
+        
+        /* Make auth-page use full width */
+        .auth-page {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        /* Adjust form styling for full width */
+        .form-group {
+            margin-bottom: 15px;
+            padding: 0 5px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 8px;
+        }
+        
         .reviews-ticker {
             position: fixed;
             bottom: 0;
@@ -72,10 +100,6 @@
             font-size: 12px;
             z-index: 1001;
         }
-        
-        .auth-container {
-            margin-bottom: 80px; /* Add space for ticker */
-        }
     </style>
 </head>
 <body class="auth-page">
@@ -100,60 +124,6 @@
         </form>
         <div class="auth-switch">
             Don't have an account? <a href="signup.html">Sign Up</a>
-        </div>
-        
-        <!-- Video Page Promotion Banner -->
-        <div class="video-promo-banner" style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            overflow: hidden;
-        ">
-            <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%); animation: pulse 3s ease-in-out infinite;"></div>
-            <div style="position: relative; z-index: 2;">
-                <h3 style="color: #fff; margin: 0 0 10px 0; font-size: 1.2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                    🚀 Discover Our Trading Strategy
-                </h3>
-                <p style="color: rgba(255,255,255,0.9); margin: 0 0 15px 0; font-size: 0.9rem;">
-                    Watch an exclusive presentation about our time-zone based crypto trading approach
-                </p>
-                <a href="crypto-trading-video.html#reviews" style="
-                    display: inline-block;
-                    background: rgba(255, 255, 255, 0.2);
-                    color: #fff;
-                    padding: 12px 24px;
-                    border-radius: 25px;
-                    text-decoration: none;
-                    font-weight: bold;
-                    border: 2px solid rgba(255, 255, 255, 0.3);
-                    transition: all 0.3s ease;
-                    backdrop-filter: blur(10px);
-                    margin-right: 10px;
-                " onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0,0,0,0.2)'" 
-                   onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                    ▶️ Watch Strategy Video
-                </a>
-                <a href="crypto-trading-video.html#reviews" style="
-                    display: inline-block;
-                    background: rgba(0, 210, 255, 0.2);
-                    color: #fff;
-                    padding: 12px 24px;
-                    border-radius: 25px;
-                    text-decoration: none;
-                    font-weight: bold;
-                    border: 2px solid rgba(0, 210, 255, 0.3);
-                    transition: all 0.3s ease;
-                    backdrop-filter: blur(10px);
-                " onmouseover="this.style.background='rgba(0,210,255,0.3)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0,210,255,0.2)'" 
-                   onmouseout="this.style.background='rgba(0,210,255,0.2)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                    ⭐ See Customer Reviews
-                </a>
-            </div>
         </div>
         
         <div id="statusMessage" class="status-message" style="display: none;"></div>
