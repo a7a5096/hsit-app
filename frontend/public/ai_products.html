@@ -621,6 +621,96 @@
 
     <div id="statusMessage" class="status-message"></div>
 
+    <!-- Horizontal Scrolling Reviews Ticker -->
+    <div class="reviews-ticker">
+        <div class="ticker-content">
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"Consistent daily returns have been impressive. Perfect for busy professionals like myself."</span>
+                <span class="review-author">- Sarah Mitchell, Family Law Attorney, Red Deer AB</span>
+            </div>
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"The time zone strategy makes sense from a market perspective. Results speak for themselves."</span>
+                <span class="review-author">- David Chen, Corporate Lawyer, Lethbridge AB</span>
+            </div>
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"Daily returns are consistent and the platform is transparent about risks. Excellent for diversifying income."</span>
+                <span class="review-author">- Jennifer Thompson, Civil Litigation Lawyer, Medicine Hat AB</span>
+            </div>
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"Platform's approach to timezone-based trading is innovative. Returns have been solid."</span>
+                <span class="review-author">- Robert Kowalski, Agricultural Law Attorney, Grande Prairie AB</span>
+            </div>
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"Started with Bot 2 and the transparency in profit sharing gives me confidence."</span>
+                <span class="review-author">- Sarah Mitchell, Red Deer AB</span>
+            </div>
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"Running Bot 3 for two months now. The bonus payments were exactly as promised."</span>
+                <span class="review-author">- David Chen, Lethbridge AB</span>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .reviews-ticker {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(90deg, #1a1a2e, #16213e, #1a1a2e);
+            color: #fff;
+            padding: 12px 0;
+            overflow: hidden;
+            z-index: 1000;
+            border-top: 2px solid #00d2ff;
+            box-shadow: 0 -4px 20px rgba(0, 210, 255, 0.2);
+        }
+        
+        .ticker-content {
+            display: flex;
+            animation: scroll-left 48s linear infinite;
+            white-space: nowrap;
+        }
+        
+        @keyframes scroll-left {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        
+        .review-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 80px;
+            font-size: 14px;
+        }
+        
+        .review-stars {
+            color: #ffd700;
+            margin-right: 10px;
+        }
+        
+        .review-text {
+            color: #e2e8f0;
+            margin-right: 15px;
+        }
+        
+        .review-author {
+            color: #00d2ff;
+            font-weight: bold;
+        }
+
+        /* Add margin to main content to account for ticker */
+        .main-content {
+            margin-bottom: 60px;
+        }
+    </style>
+
     <script src="/js/ai_products.js"></script>
 </body>
 </html>
