@@ -22,30 +22,31 @@
             padding: 0;
             height: 100vh;
             width: 100vw;
-        }
-
-        .video-container {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .video-container {
+            width: 1200px;
+            height: 800px;
+            position: relative;
             background: linear-gradient(135deg, #1a1a2e 0%, #0f0f23 50%, #16213e 100%);
-            transform: scale(1);
             transform-origin: center center;
             overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         }
 
         .scene {
-            width: 95vw;
-            max-width: min(1200px, 95vw);
-            height: 90vh;
-            max-height: 90vh;
-            position: relative;
+            width: 1200px;
+            height: 800px;
+            position: absolute;
+            top: 0;
+            left: 0;
             display: none;
             animation: fadeIn 0.5s ease-in-out;
-            padding: 1rem;
+            padding: 40px;
             box-sizing: border-box;
             overflow-y: auto;
         }
@@ -55,7 +56,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            gap: 1rem;
+            gap: 20px;
         }
 
         @keyframes fadeIn {
@@ -64,10 +65,10 @@
         }
 
         .title {
-            font-size: clamp(1.5rem, 4vw, 3rem);
+            font-size: 48px;
             font-weight: 700;
             text-align: center;
-            margin-bottom: 1rem;
+            margin-bottom: 20px;
             background: linear-gradient(90deg, #00d2ff, #3a7bd5, #00d2ff);
             background-size: 200% auto;
             -webkit-background-clip: text;
@@ -75,8 +76,6 @@
             -webkit-text-fill-color: transparent;
             animation: shine 3s linear infinite;
             line-height: 1.2;
-            word-wrap: break-word;
-            hyphens: auto;
         }
 
         @keyframes shine {
@@ -84,33 +83,29 @@
         }
 
         .subtitle {
-            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            font-size: 24px;
             text-align: center;
             color: #a8b2d1;
-            margin-bottom: 1.5rem;
-            max-width: 90%;
+            margin-bottom: 30px;
+            max-width: 800px;
             line-height: 1.5;
-            word-wrap: break-word;
-            hyphens: auto;
         }
 
         .world-map {
-            width: 100%;
-            max-width: min(800px, 90vw);
-            height: clamp(200px, 30vh, 400px);
+            width: 800px;
+            height: 400px;
             background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400"><rect width="800" height="400" fill="%23151515"/><path d="M100,200 Q200,150 300,200 T500,200 Q600,150 700,200" stroke="%2300d2ff" stroke-width="2" fill="none" opacity="0.3"/><circle cx="600" cy="180" r="50" fill="%23ff6b6b" opacity="0.5"><animate attributeName="r" values="50;70;50" dur="3s" repeatCount="indefinite"/></circle><circle cx="200" cy="220" r="40" fill="%2300d2ff" opacity="0.5"><animate attributeName="r" values="40;55;40" dur="3s" repeatCount="indefinite"/></circle><text x="600" y="180" text-anchor="middle" fill="white" font-size="14" font-weight="bold">CHINA</text><text x="200" y="220" text-anchor="middle" fill="white" font-size="14" font-weight="bold">USA</text></svg>') center/contain no-repeat;
-            margin: 1rem 0;
+            margin: 20px 0;
             position: relative;
         }
 
         .chart-container {
-            width: 100%;
-            max-width: min(700px, 90vw);
-            height: clamp(200px, 25vh, 300px);
+            width: 700px;
+            height: 300px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 20px;
-            padding: 1rem;
-            margin: 1rem 0;
+            padding: 20px;
+            margin: 20px 0;
             position: relative;
             overflow: hidden;
         }
@@ -136,18 +131,17 @@
 
         .info-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
-            gap: 1rem;
-            width: 100%;
-            max-width: 90%;
-            margin-top: 1rem;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 900px;
+            margin-top: 20px;
         }
 
         .info-card {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 15px;
-            padding: 1.5rem;
+            padding: 30px;
             text-align: center;
             transform: translateY(50px);
             opacity: 0;
@@ -163,17 +157,17 @@
         }
 
         .icon {
-            font-size: clamp(2rem, 4vw, 3rem);
-            margin-bottom: 1rem;
+            font-size: 48px;
+            margin-bottom: 20px;
         }
 
         .info-card h3 {
-            font-size: clamp(1rem, 2vw, 1.2rem);
-            margin-bottom: 0.5rem;
+            font-size: 20px;
+            margin-bottom: 10px;
         }
 
         .info-card p {
-            font-size: clamp(0.8rem, 1.5vw, 1rem);
+            font-size: 16px;
             line-height: 1.4;
         }
 
@@ -181,21 +175,21 @@
             background: rgba(255, 107, 107, 0.1);
             border: 2px solid #ff6b6b;
             border-radius: 15px;
-            padding: 1.5rem;
-            margin: 1rem 0;
-            max-width: 90%;
+            padding: 30px;
+            margin: 20px 0;
+            max-width: 800px;
             text-align: center;
         }
 
         .warning-title {
             color: #ff6b6b;
-            font-size: clamp(1.2rem, 2.5vw, 1.5rem);
-            margin-bottom: 1rem;
+            font-size: 24px;
+            margin-bottom: 20px;
             font-weight: bold;
         }
 
         .warning-box p {
-            font-size: clamp(0.9rem, 1.8vw, 1.1rem);
+            font-size: 18px;
             line-height: 1.5;
         }
 
@@ -965,6 +959,30 @@
     </div>
 
     <script>
+        // Scale-to-fit functionality
+        function scaleToFit() {
+            const container = document.querySelector('.video-container');
+            const containerWidth = 1200;
+            const containerHeight = 800;
+            
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // Calculate scale factors for both dimensions
+            const scaleX = (viewportWidth * 0.95) / containerWidth; // 95% of viewport width
+            const scaleY = (viewportHeight * 0.95) / containerHeight; // 95% of viewport height
+            
+            // Use the smaller scale factor to ensure everything fits
+            const scale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 100%
+            
+            // Apply the scale transform
+            container.style.transform = `scale(${scale})`;
+        }
+        
+        // Apply scaling on load and resize
+        window.addEventListener('load', scaleToFit);
+        window.addEventListener('resize', scaleToFit);
+        
         let currentScene = 1;
         const totalScenes = 7;
         let isPlaying = true;

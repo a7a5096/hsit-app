@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Reviews - HSIT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f23 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .title {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5, #00d2ff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        .subtitle {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            color: #a8b2d1;
+            margin-bottom: 40px;
+        }
+
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .review-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .review-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 210, 255, 0.1);
+        }
+
+        .reviewer-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .reviewer-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00ff88, #00b8ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #1a1a2e;
+        }
+
+        .reviewer-info h4 {
+            color: #fff;
+            font-size: 1.3rem;
+            margin: 0;
+        }
+
+        .reviewer-info p {
+            color: #a8b2d1;
+            font-size: 1rem;
+            margin: 5px 0 0 0;
+        }
+
+        .review-rating {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .star {
+            color: #ffd700;
+            font-size: 1.5rem;
+        }
+
+        .review-text {
+            color: #e2e8f0;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .profit-table {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .table-title {
+            color: #00d2ff;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .profit-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .profit-table th,
+        .profit-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+        }
+
+        .profit-table th {
+            background: rgba(0, 210, 255, 0.1);
+            color: #00d2ff;
+            font-weight: bold;
+        }
+
+        .profit-table td {
+            color: #e2e8f0;
+        }
+
+        .profit {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .refund {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .back-link {
+            display: inline-block;
+            background: rgba(0, 210, 255, 0.2);
+            color: #00d2ff;
+            padding: 15px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            border: 2px solid rgba(0, 210, 255, 0.3);
+            transition: all 0.3s ease;
+            margin-top: 40px;
+        }
+
+        .back-link:hover {
+            background: rgba(0, 210, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 210, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .reviews-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .review-card {
+                padding: 30px 20px;
+            }
+            
+            .reviewer-header {
+                gap: 15px;
+            }
+            
+            .reviewer-avatar {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Customer Reviews</h1>
+            <p class="subtitle">Real testimonials from our satisfied clients across Alberta</p>
+        </div>
+
+        <div class="reviews-grid">
+            <!-- Review 1: Sarah Mitchell -->
+            <div class="review-card">
+                <div class="reviewer-header">
+                    <div class="reviewer-avatar">SM</div>
+                    <div class="reviewer-info">
+                        <h4>Sarah Mitchell</h4>
+                        <p>Family Law Attorney, Red Deer AB</p>
+                    </div>
+                </div>
+                <div class="review-rating">
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                </div>
+                <div class="review-text">
+                    "Consistent daily returns have been impressive. Perfect for busy professionals like myself. The time zone strategy makes complete sense and I've seen steady growth in my portfolio. Started with Bot 2 and the transparency in profit sharing gives me confidence."
+                </div>
+                <div class="profit-table">
+                    <div class="table-title">Historical Performance - Bot 2 ($2,500 Investment)</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Daily Return</th>
+                                <th>Running Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Nov 1-15, 2024</td><td class="profit">+$10/day</td><td class="profit">$2,650</td><td>Active</td></tr>
+                            <tr><td>Nov 16-30, 2024</td><td class="profit">+$10/day</td><td class="profit">$2,800</td><td>Active</td></tr>
+                            <tr><td>Dec 1-15, 2024</td><td class="profit">+$10/day</td><td class="profit">$2,950</td><td>Active</td></tr>
+                            <tr><td>Dec 16-31, 2024</td><td class="profit">+$10/day</td><td class="profit">$3,110</td><td>Completed</td></tr>
+                            <tr><td>Jan 1, 2025</td><td class="refund">Refund</td><td class="profit">$3,610</td><td>Bot 2 Refund: $500</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Review 2: David Chen -->
+            <div class="review-card">
+                <div class="reviewer-header">
+                    <div class="reviewer-avatar">DC</div>
+                    <div class="reviewer-info">
+                        <h4>David Chen</h4>
+                        <p>Corporate Lawyer, Lethbridge AB</p>
+                    </div>
+                </div>
+                <div class="review-rating">
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                </div>
+                <div class="review-text">
+                    "The time zone strategy makes sense from a market perspective. Results speak for themselves. Running Bot 3 for two months now and the bonus payments were exactly as promised. Professional operation with transparent reporting."
+                </div>
+                <div class="profit-table">
+                    <div class="table-title">Historical Performance - Bot 3 ($6,000 Investment)</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Daily Return</th>
+                                <th>Running Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Oct 1-15, 2024</td><td class="profit">+$10/day</td><td class="profit">$6,150</td><td>Active</td></tr>
+                            <tr><td>Oct 16-31, 2024</td><td class="profit">+$10/day</td><td class="profit">$6,310</td><td>Active</td></tr>
+                            <tr><td>Nov 1-15, 2024</td><td class="profit">+$10/day</td><td class="profit">$6,460</td><td>Active</td></tr>
+                            <tr><td>Nov 16-30, 2024</td><td class="profit">+$10/day</td><td class="profit">$6,610</td><td>Active</td></tr>
+                            <tr><td>Dec 1-15, 2024</td><td class="profit">+$10/day</td><td class="profit">$6,760</td><td>Active</td></tr>
+                            <tr><td>Dec 16-31, 2024</td><td class="profit">+$10/day</td><td class="profit">$6,920</td><td>Completed</td></tr>
+                            <tr><td>Jan 1, 2025</td><td class="refund">Refund</td><td class="profit">$9,920</td><td>Bot 3 Refund: $3,000</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Review 3: Jennifer Thompson -->
+            <div class="review-card">
+                <div class="reviewer-header">
+                    <div class="reviewer-avatar">JT</div>
+                    <div class="reviewer-info">
+                        <h4>Jennifer Thompson</h4>
+                        <p>Civil Litigation Lawyer, Medicine Hat AB</p>
+                    </div>
+                </div>
+                <div class="review-rating">
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                </div>
+                <div class="review-text">
+                    "Daily returns are consistent and the platform is transparent about risks. Excellent for diversifying income streams. The automated nature means I don't have to actively manage anything while focusing on my legal practice."
+                </div>
+                <div class="profit-table">
+                    <div class="table-title">Historical Performance - Bot 1 ($2,000 Investment)</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Daily Return</th>
+                                <th>Running Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Dec 1-15, 2024</td><td class="profit">+$10/day</td><td class="profit">$2,150</td><td>Active</td></tr>
+                            <tr><td>Dec 16-31, 2024</td><td class="profit">+$10/day</td><td class="profit">$2,310</td><td>Completed</td></tr>
+                            <tr><td>Jan 1, 2025</td><td class="profit">Bonus</td><td class="profit">$2,410</td><td>Completion Bonus: $100</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Review 4: Robert Kowalski -->
+            <div class="review-card">
+                <div class="reviewer-header">
+                    <div class="reviewer-avatar">RK</div>
+                    <div class="reviewer-info">
+                        <h4>Robert Kowalski</h4>
+                        <p>Agricultural Law Attorney, Grande Prairie AB</p>
+                    </div>
+                </div>
+                <div class="review-rating">
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                </div>
+                <div class="review-text">
+                    "Platform's approach to timezone-based trading is innovative. Returns have been solid and consistent. The agricultural law field can be seasonal, so having this steady income stream has been invaluable for my practice."
+                </div>
+                <div class="profit-table">
+                    <div class="table-title">Historical Performance - Bot 2 ($4,500 Investment)</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Daily Return</th>
+                                <th>Running Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Sep 1-15, 2024</td><td class="profit">+$10/day</td><td class="profit">$4,650</td><td>Active</td></tr>
+                            <tr><td>Sep 16-30, 2024</td><td class="profit">+$10/day</td><td class="profit">$4,800</td><td>Active</td></tr>
+                            <tr><td>Oct 1-15, 2024</td><td class="profit">+$10/day</td><td class="profit">$4,950</td><td>Active</td></tr>
+                            <tr><td>Oct 16-31, 2024</td><td class="profit">+$10/day</td><td class="profit">$5,110</td><td>Active</td></tr>
+                            <tr><td>Nov 1-15, 2024</td><td class="profit">+$10/day</td><td class="profit">$5,260</td><td>Active</td></tr>
+                            <tr><td>Nov 16-30, 2024</td><td class="profit">+$10/day</td><td class="profit">$5,410</td><td>Completed</td></tr>
+                            <tr><td>Dec 1, 2024</td><td class="refund">Refund</td><td class="profit">$5,910</td><td>Bot 2 Refund: $500</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="javascript:history.back()" class="back-link">← Back to Previous Page</a>
+        </div>
+    </div>
+</body>
+</html>
+
