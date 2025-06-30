@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Strategy Video - HSIT</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .strategy-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 20px rgba(0, 210, 255, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #b0b8c4;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .video-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 50px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .video-placeholder {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(45deg, #1a1a2e, #16213e);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            border: 2px solid rgba(0, 210, 255, 0.3);
+        }
+
+        .play-button {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.3);
+        }
+
+        .play-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(0, 210, 255, 0.5);
+        }
+
+        .play-button::after {
+            content: '▶';
+            color: white;
+            font-size: 30px;
+            margin-left: 5px;
+        }
+
+        .strategy-points {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .strategy-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 210, 255, 0.2);
+            border-color: rgba(0, 210, 255, 0.3);
+        }
+
+        .strategy-card h3 {
+            color: #00d2ff;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .strategy-card .icon {
+            font-size: 2rem;
+            margin-right: 15px;
+        }
+
+        .strategy-card p {
+            color: #b0b8c4;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .strategy-card ul {
+            color: #e2e8f0;
+            padding-left: 20px;
+        }
+
+        .strategy-card li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .profit-showcase {
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.1), rgba(58, 123, 213, 0.1));
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 50px;
+            border: 2px solid rgba(0, 210, 255, 0.2);
+        }
+
+        .profit-showcase h2 {
+            font-size: 2.5rem;
+            color: #00d2ff;
+            margin-bottom: 20px;
+        }
+
+        .profit-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #b0b8c4;
+            font-size: 0.9rem;
+        }
+
+        .cta-section {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: inline-block;
+            border: 2px solid transparent;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #00d2ff;
+            border-color: #00d2ff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 210, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .strategy-container {
+                padding: 20px 10px;
+            }
+            
+            .video-section, .profit-showcase, .cta-section {
+                padding: 20px;
+            }
+            
+            .video-placeholder {
+                height: 250px;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="back-button" onclick="history.back()">← Back</button>
+    
+    <div class="strategy-container">
+        <div class="header">
+            <h1>🚀 Time Zone Trading Strategy</h1>
+            <p>Discover how our innovative approach leverages global market timing to generate consistent daily returns for our members.</p>
+        </div>
+
+        <div class="video-section">
+            <div class="video-placeholder">
+                <div class="play-button" onclick="playVideo()"></div>
+            </div>
+            <h2 style="color: #00d2ff; margin-bottom: 20px; text-align: center;">How We Generate Daily Profits</h2>
+            <p style="text-align: center; color: #b0b8c4; font-size: 1.1rem; line-height: 1.6;">
+                Watch this exclusive video to understand our proprietary time zone arbitrage strategy that has been generating consistent returns for our members since 2019.
+            </p>
+        </div>
+
+        <div class="strategy-points">
+            <div class="strategy-card">
+                <h3><span class="icon">🌍</span>Global Market Timing</h3>
+                <p>Our strategy capitalizes on the overlapping trading hours between major financial centers:</p>
+                <ul>
+                    <li>Asian market opening (Tokyo, Hong Kong)</li>
+                    <li>European market overlap (London, Frankfurt)</li>
+                    <li>American market transitions (New York, Chicago)</li>
+                    <li>After-hours volatility patterns</li>
+                </ul>
+            </div>
+
+            <div class="strategy-card">
+                <h3><span class="icon">🤖</span>Automated Execution</h3>
+                <p>Our advanced trading bots execute trades with precision timing:</p>
+                <ul>
+                    <li>Millisecond-level market entry and exit</li>
+                    <li>Risk management protocols</li>
+                    <li>24/7 market monitoring</li>
+                    <li>Adaptive algorithm adjustments</li>
+                </ul>
+            </div>
+
+            <div class="strategy-card">
+                <h3><span class="icon">📊</span>Proven Results</h3>
+                <p>Our track record speaks for itself:</p>
+                <ul>
+                    <li>Consistent daily returns since 2019</li>
+                    <li>Transparent profit sharing</li>
+                    <li>Risk-adjusted performance metrics</li>
+                    <li>Member testimonials and case studies</li>
+                </ul>
+            </div>
+
+            <div class="strategy-card">
+                <h3><span class="icon">🔒</span>Risk Management</h3>
+                <p>Safety and security are our top priorities:</p>
+                <ul>
+                    <li>Diversified trading strategies</li>
+                    <li>Stop-loss mechanisms</li>
+                    <li>Capital preservation protocols</li>
+                    <li>Regular strategy optimization</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="profit-showcase">
+            <h2>💰 Member Profit Statistics</h2>
+            <p style="color: #b0b8c4; font-size: 1.1rem; margin-bottom: 30px;">
+                Real performance data from our active trading community
+            </p>
+            
+            <div class="profit-stats">
+                <div class="stat-item">
+                    <div class="stat-number">$10</div>
+                    <div class="stat-label">Average Daily Return<br>Per Active Bot</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">94.7%</div>
+                    <div class="stat-label">Profitable Trading Days<br>Last 12 Months</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">2,847</div>
+                    <div class="stat-label">Active Members<br>Worldwide</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">$2.3M</div>
+                    <div class="stat-label">Total Member Profits<br>This Year</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2 style="color: #00d2ff; margin-bottom: 20px;">Ready to Start Earning?</h2>
+            <p style="color: #b0b8c4; font-size: 1.1rem; margin-bottom: 30px;">
+                Join thousands of members who are already benefiting from our time zone trading strategy. 
+                Start with as little as $200 and watch your investment grow with consistent daily returns.
+            </p>
+            
+            <div class="cta-buttons">
+                <a href="signup.html" class="btn btn-primary">Start Trading Today</a>
+                <a href="ai_products.html" class="btn btn-secondary">View Trading Bots</a>
+                <a href="reviews.html" class="btn btn-secondary">Read Success Stories</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function playVideo() {
+            alert('Video player would be integrated here. This demonstrates the interactive video concept showing:\n\n• Live market data visualization\n• Real-time trading bot execution\n• Profit generation in action\n• Time zone advantage explanation\n\nContact support for full video access.');
+        }
+
+        // Add smooth scrolling for internal links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Add loading animation
+        window.addEventListener('load', function() {
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.5s ease-in-out';
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+    </script>
+</body>
+</html>
+
