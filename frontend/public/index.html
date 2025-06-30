@@ -16,7 +16,7 @@
         .auth-container {
             max-width: 100% !important;
             width: 100% !important;
-            padding: 10px !important;
+            padding: 5px !important;
             margin: 0 !important;
             background-color: transparent !important;
             box-shadow: none !important;
@@ -29,15 +29,38 @@
             margin: 0 !important;
         }
         
-        /* Adjust form styling for full width */
+        /* Crop logo area - make it smaller and remove margins */
+        .auth-container .logo {
+            max-width: 80px !important;
+            margin-bottom: 5px !important;
+            margin-top: 0 !important;
+        }
+        
+        /* Reduce spacing in title */
+        .auth-container h1 {
+            margin-bottom: 10px !important;
+            margin-top: 5px !important;
+        }
+        
+        /* Adjust form styling for compact layout */
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 8px !important;
             padding: 0 5px;
         }
         
         .form-group input {
             width: 100%;
-            padding: 12px 8px;
+            padding: 8px !important;
+        }
+        
+        /* Reduce spacing around forgot password link */
+        .form-group[style*="margin-top: 15px"] {
+            margin-top: 5px !important;
+        }
+        
+        /* Reduce spacing around auth-switch */
+        .auth-switch {
+            margin-top: 8px !important;
         }
         
         .reviews-ticker {
@@ -131,7 +154,6 @@
 
     <!-- Horizontal Scrolling Reviews Ticker -->
     <div class="reviews-ticker">
-        <div class="ticker-label">CUSTOMER REVIEWS</div>
         <div class="ticker-content">
             <div class="review-item">
                 <span class="review-stars">★★★★★</span>
