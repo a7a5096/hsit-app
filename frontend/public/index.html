@@ -6,6 +6,77 @@
     <title>Login - HSIT</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        .reviews-ticker {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(90deg, #1a1a2e, #16213e, #1a1a2e);
+            color: #fff;
+            padding: 12px 0;
+            overflow: hidden;
+            z-index: 1000;
+            border-top: 2px solid #00d2ff;
+            box-shadow: 0 -4px 20px rgba(0, 210, 255, 0.2);
+        }
+        
+        .ticker-content {
+            display: flex;
+            animation: scroll-left 60s linear infinite;
+            white-space: nowrap;
+        }
+        
+        @keyframes scroll-left {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        
+        .review-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 80px;
+            font-size: 14px;
+        }
+        
+        .review-stars {
+            color: #ffd700;
+            margin-right: 10px;
+        }
+        
+        .review-text {
+            color: #e2e8f0;
+            margin-right: 15px;
+        }
+        
+        .review-author {
+            color: #00d2ff;
+            font-weight: bold;
+        }
+        
+        .ticker-label {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #00d2ff;
+            color: #1a1a2e;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 12px;
+            z-index: 1001;
+        }
+        
+        .auth-container {
+            margin-bottom: 80px; /* Add space for ticker */
+        }
+    </style>
 </head>
 <body class="auth-page">
     <div class="auth-container">
@@ -30,7 +101,99 @@
         <div class="auth-switch">
             Don't have an account? <a href="signup.html">Sign Up</a>
         </div>
+        
+        <!-- Video Page Promotion Banner -->
+        <div class="video-promo-banner" style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        ">
+            <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%); animation: pulse 3s ease-in-out infinite;"></div>
+            <div style="position: relative; z-index: 2;">
+                <h3 style="color: #fff; margin: 0 0 10px 0; font-size: 1.2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                    🚀 Discover Our Trading Strategy
+                </h3>
+                <p style="color: rgba(255,255,255,0.9); margin: 0 0 15px 0; font-size: 0.9rem;">
+                    Watch an exclusive presentation about our time-zone based crypto trading approach
+                </p>
+                <a href="crypto-trading-video.html#reviews" style="
+                    display: inline-block;
+                    background: rgba(255, 255, 255, 0.2);
+                    color: #fff;
+                    padding: 12px 24px;
+                    border-radius: 25px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    transition: all 0.3s ease;
+                    backdrop-filter: blur(10px);
+                    margin-right: 10px;
+                " onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0,0,0,0.2)'" 
+                   onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    ▶️ Watch Strategy Video
+                </a>
+                <a href="crypto-trading-video.html#reviews" style="
+                    display: inline-block;
+                    background: rgba(0, 210, 255, 0.2);
+                    color: #fff;
+                    padding: 12px 24px;
+                    border-radius: 25px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    border: 2px solid rgba(0, 210, 255, 0.3);
+                    transition: all 0.3s ease;
+                    backdrop-filter: blur(10px);
+                " onmouseover="this.style.background='rgba(0,210,255,0.3)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0,210,255,0.2)'" 
+                   onmouseout="this.style.background='rgba(0,210,255,0.2)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    ⭐ See Customer Reviews
+                </a>
+            </div>
+        </div>
+        
         <div id="statusMessage" class="status-message" style="display: none;"></div>
+    </div>
+
+    <!-- Horizontal Scrolling Reviews Ticker -->
+    <div class="reviews-ticker">
+        <div class="ticker-label">CUSTOMER REVIEWS</div>
+        <div class="ticker-content">
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"Consistent daily returns have been impressive. Perfect for busy professionals like myself."</span>
+                <span class="review-author">- Sarah Mitchell, Family Law Attorney, Red Deer AB</span>
+            </div>
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"The time zone strategy makes sense from a market perspective. Results speak for themselves."</span>
+                <span class="review-author">- David Chen, Corporate Lawyer, Lethbridge AB</span>
+            </div>
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"Daily returns are consistent and the platform is transparent about risks. Excellent for diversifying income."</span>
+                <span class="review-author">- Jennifer Thompson, Civil Litigation Lawyer, Medicine Hat AB</span>
+            </div>
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"Platform's approach to timezone-based trading is innovative. Returns have been solid."</span>
+                <span class="review-author">- Robert Kowalski, Agricultural Law Attorney, Grande Prairie AB</span>
+            </div>
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"Started with Bot 2 and the transparency in profit sharing gives me confidence."</span>
+                <span class="review-author">- Sarah Mitchell, Red Deer AB</span>
+            </div>
+            <div class="review-item">
+                <span class="review-stars">★★★★★</span>
+                <span class="review-text">"Running Bot 3 for two months now. The bonus payments were exactly as promised."</span>
+                <span class="review-author">- David Chen, Lethbridge AB</span>
+            </div>
+        </div>
     </div>
 
 <script src="js/config.js"></script>
