@@ -217,7 +217,7 @@ router.post('/purchase', auth, async (req, res) => {
                     
                     // Check if they qualify for free bot (10 qualified invites)
                     if (directReferrer.qualifiedInvites === 10) {
-                        // Give them a free Bot #5 (500 UBT value)
+                        // Give them a free Bot #5 (3200 UBT value)
                         const freeBot = getBotById(5);
                         if (freeBot) {
                             const completionDate = new Date();
