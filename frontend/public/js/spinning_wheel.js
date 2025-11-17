@@ -17,40 +17,40 @@ document.addEventListener('DOMContentLoaded', () => {
     let isSpinning = false;
     let totalRotation = 0; // Track cumulative rotation
 
-    // This prize structure MUST match the backend's `wheel.js` and your wheel_image.png segments
+    // Prize structure matching the ACTUAL wheel_image.png layout (32 segments, clockwise from top)
     const PRIZES = [
-        { name: "A.I. BOT #5 (Value $3000)", type: "bot", color: "#ffe600" }, // 1 - yellow/green
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 2 - white
-        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 3 - black
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 4 - white
-        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#f00" }, // 5 - red
-        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 6 - black
-        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#06f" }, // 7 - blue
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 8 - white
-        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#06f" }, // 9 - blue
-        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 10 - black
-        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#f00" }, // 11 - red
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 12 - white
-        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#06f" }, // 13 - blue
-        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 14 - black
-        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#06f" }, // 15 - blue
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 16 - white
-        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 17 - black
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 18 - white
-        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#06f" }, // 19 - blue
-        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 20 - black
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 21 - white
-        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 22 - black
-        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#06f" }, // 23 - blue
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 24 - white
-        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 25 - black
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 26 - white
-        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#f00" }, // 27 - red
-        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 28 - black
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 29 - white
-        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" },   // 30 - black
-        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#f00" }, // 31 - red
-        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#fff" }, // 32 - white
+        { name: "A.I. BOT #5 (Value $3000)", type: "bot", color: "#50C878" }, // 0 - green/yellow WIDE
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 1 - black narrow
+        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#DC143C" }, // 2 - red WIDE
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 3 - black narrow
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#FFF" }, // 4 - white narrow
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 5 - black narrow
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#FFF" }, // 6 - white narrow
+        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#DC143C" }, // 7 - red WIDE
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 8 - black narrow
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#4169E1" }, // 9 - blue WIDE
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#FFF" }, // 10 - white narrow
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#4169E1" }, // 11 - blue WIDE
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 12 - black narrow
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#FFF" }, // 13 - white narrow
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 14 - black narrow
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#4169E1" }, // 15 - blue WIDE
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#FFF" }, // 16 - white narrow
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 17 - black narrow
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#FFF" }, // 18 - white narrow
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#4169E1" }, // 19 - blue WIDE
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 20 - black narrow
+        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#DC143C" }, // 21 - red WIDE
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 22 - black narrow
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#FFF" }, // 23 - white narrow
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 24 - black narrow
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#FFF" }, // 25 - white narrow
+        { name: "10x Win", type: "multiplier", multiplier: 10, color: "#DC143C" }, // 26 - red WIDE
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 27 - black narrow
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#4169E1" }, // 28 - blue WIDE
+        { name: "1x Win", type: "multiplier", multiplier: 1, color: "#FFF" }, // 29 - white narrow
+        { name: "2x Win", type: "multiplier", multiplier: 2, color: "#4169E1" }, // 30 - blue WIDE
+        { name: "Lose", type: "multiplier", multiplier: 0, color: "#000" }, // 31 - black narrow
     ];
     const SEGMENT_COUNT = PRIZES.length;
     const SEGMENT_ANGLE = 360 / SEGMENT_COUNT;
