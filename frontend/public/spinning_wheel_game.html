@@ -3,40 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feeling Lucky! - Spin Wheel Game</title>
+    <title>Holiday Fortune - TSAI</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       
       body { 
         font-family: 'Orbitron', sans-serif; 
-        background: linear-gradient(135deg, #0b0b23, #1a1a40); 
+        background: linear-gradient(135deg, #0a1628, #1a2f4d, #0d1b2a); 
         color: #e0e0e0; 
         min-height: 100vh;
         overflow-x: hidden;
+        position: relative;
+      }
+      
+      /* Christmas decorations */
+      .christmas-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+      }
+      
+      .snowflake {
+        position: absolute;
+        top: -10px;
+        color: #fff;
+        font-size: 1em;
+        opacity: 0.8;
+        animation: fall linear infinite;
+        text-shadow: 0 0 5px rgba(255,255,255,0.8);
+      }
+      
+      @keyframes fall {
+        to { transform: translateY(100vh) rotate(360deg); }
       }
       
       .dashboard-header { 
-        background: linear-gradient(90deg, #5c009c, #a100c2); 
+        background: linear-gradient(90deg, #c41e3a, #165b33, #c41e3a); 
         padding: 15px 20px; 
         box-shadow: 0 4px 20px rgba(0,0,0,0.5); 
         display: flex;
         justify-content: space-between;
         align-items: center;
+        position: relative;
+        z-index: 10;
+        border-bottom: 3px solid #ffd700;
       }
       
       .header-title { 
-        font-size: 1.8rem; 
+        font-family: 'Mountains of Christmas', cursive;
+        font-size: 2rem; 
         color: #ffffff; 
-        text-shadow: 0 0 10px rgba(255,255,255,0.7); 
+        text-shadow: 0 0 20px rgba(255,215,0,0.8), 0 0 30px rgba(255,215,0,0.5); 
+        font-weight: 700;
       }
       
       .btn-logout { 
-        background: rgba(0,0,0,0.3); 
-        border: 1px solid rgba(255,255,255,0.3); 
+        background: rgba(0,0,0,0.4); 
+        border: 2px solid rgba(255,215,0,0.5); 
         backdrop-filter: blur(6px); 
-        color: #fff; 
+        color: #ffd700; 
         padding: 10px 20px;
         border-radius: 8px;
         text-decoration: none;
@@ -44,35 +76,41 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
+        font-weight: 600;
       }
       
       .btn-logout:hover { 
-        box-shadow: 0 0 15px rgba(255,255,255,0.7); 
+        box-shadow: 0 0 20px rgba(255,215,0,0.8); 
         transform: translateX(-3px);
+        border-color: #ffd700;
       }
       
       .dashboard-main { 
         padding: 40px 20px; 
         max-width: 1400px;
         margin: 0 auto;
+        position: relative;
+        z-index: 5;
       }
       
       .content-section { 
-        background: rgba(255,255,255,0.05); 
-        border: 1px solid rgba(255,255,255,0.1); 
+        background: rgba(255,255,255,0.08); 
+        border: 2px solid rgba(255,215,0,0.3); 
         backdrop-filter: blur(10px); 
-        border-radius: 16px; 
+        border-radius: 20px; 
         padding: 30px; 
         margin-bottom: 30px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 40px rgba(255,215,0,0.1);
       }
       
       .content-section h2 { 
-        color: #fff; 
+        font-family: 'Mountains of Christmas', cursive;
+        color: #ffd700; 
         text-align: center;
-        font-size: 2rem;
+        font-size: 2.5rem;
         margin-bottom: 20px;
-        text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        text-shadow: 0 0 20px rgba(255,215,0,0.6), 0 0 40px rgba(255,215,0,0.3);
+        font-weight: 700;
       }
       
       .balance-info {
@@ -80,318 +118,406 @@
         margin-bottom: 30px; 
         font-size: 1.2rem;
         padding: 20px;
-        background: rgba(0,255,136,0.1);
+        background: linear-gradient(135deg, rgba(196,30,58,0.2), rgba(22,91,51,0.2));
         border-radius: 12px;
-        border: 1px solid rgba(0,255,136,0.3);
+        border: 2px solid rgba(255,215,0,0.3);
       }
       
       .balance-info strong {
-        color: #00ff88;
+        color: #ffd700;
         font-size: 1.5rem;
-        text-shadow: 0 0 10px rgba(0,255,136,0.5);
+        text-shadow: 0 0 10px rgba(255,215,0,0.5);
       }
       
-      .wheel-container {
-        position: relative;
+      /* Bet amount selector */
+      .bet-selector {
+        text-align: center;
+        margin: 30px auto;
+        padding: 25px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 15px;
+        border: 2px solid rgba(255,215,0,0.2);
+        max-width: 600px;
+      }
+      
+      .bet-selector h3 {
+        font-family: 'Mountains of Christmas', cursive;
+        color: #ffd700;
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px rgba(255,215,0,0.4);
+      }
+      
+      .bet-buttons {
         display: flex;
-        flex-direction: column;
+        justify-content: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+      
+      .bet-btn {
+        background: linear-gradient(135deg, #c41e3a, #a01729);
+        border: 2px solid #ffd700;
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Orbitron', sans-serif;
+        box-shadow: 0 4px 15px rgba(196,30,58,0.4);
+      }
+      
+      .bet-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(255,215,0,0.6);
+        background: linear-gradient(135deg, #d4243e, #c41e3a);
+      }
+      
+      .bet-btn.active {
+        background: linear-gradient(135deg, #165b33, #0d4525);
+        border-color: #00ff88;
+        box-shadow: 0 0 20px rgba(0,255,136,0.6);
+        transform: scale(1.1);
+      }
+      
+      .selected-bet {
+        font-size: 1.3rem;
+        color: #ffd700;
+        margin-top: 15px;
+        font-weight: 700;
+        text-shadow: 0 0 10px rgba(255,215,0,0.5);
+      }
+      
+      /* Gift boxes grid */
+      .gifts-container {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 12px;
+        max-width: 900px;
+        margin: 30px auto;
+        padding: 20px;
+        background: rgba(0,0,0,0.2);
+        border-radius: 15px;
+        border: 2px solid rgba(255,215,0,0.2);
+      }
+      
+      .gift-box {
+        aspect-ratio: 1;
+        background: linear-gradient(135deg, #c41e3a, #165b33);
+        border: 3px solid #ffd700;
+        border-radius: 10px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.3s;
+        display: flex;
         align-items: center;
         justify-content: center;
-        margin: 40px auto;
+        font-size: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        transform-style: preserve-3d;
         perspective: 1000px;
       }
       
-      .pointer {
-        font-size: 48px;
-        color: #ffcc00;
-        position: absolute;
-        top: -30px;
-        z-index: 10;
-        text-shadow: 0 0 20px rgba(255,204,0,0.8), 0 4px 8px rgba(0,0,0,0.6);
-        animation: pointer-pulse 1.5s ease-in-out infinite;
+      .gift-box:hover {
+        transform: scale(1.1) translateY(-5px);
+        box-shadow: 0 8px 30px rgba(255,215,0,0.6);
+        border-color: #fff;
       }
       
-      @keyframes pointer-pulse {
-        0%, 100% { transform: translateY(0) scale(1); }
-        50% { transform: translateY(5px) scale(1.1); }
-      }
-      
-      .wheel-wrapper {
-        position: relative;
-        width: 400px;
-        height: 400px;
-        margin: 20px auto;
-      }
-      
-      .wheel-image-style {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        box-shadow: 0 0 40px rgba(0,255,136,0.4), 0 0 80px rgba(161,0,194,0.3);
-        transition: transform 6s cubic-bezier(0.17, 0.67, 0.12, 0.99);
-        will-change: transform;
-      }
-      
-      .wheel-image-style.spinning {
-        box-shadow: 0 0 60px rgba(0,255,136,0.8), 0 0 120px rgba(161,0,194,0.6);
-      }
-      
-      #spinButton { 
-        background: linear-gradient(135deg, #00ff88, #00b8ff); 
-        color: #1a1a2e; 
-        padding: 16px 48px; 
-        border: none; 
-        border-radius: 50px; 
-        font-size: 1.3rem; 
-        font-weight: 700; 
-        cursor: pointer; 
-        transition: all 0.3s ease; 
-        margin-top: 30px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        box-shadow: 0 8px 24px rgba(0,255,136,0.3);
-        position: relative;
-        overflow: hidden;
-      }
-      
-      #spinButton::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.3);
-        transform: translate(-50%, -50%);
-        transition: width 0.6s, height 0.6s;
-      }
-      
-      #spinButton:hover::before {
-        width: 300px;
-        height: 300px;
-      }
-      
-      #spinButton:hover { 
-        transform: translateY(-3px); 
-        box-shadow: 0 12px 32px rgba(0,255,136,0.5); 
-      }
-      
-      #spinButton:disabled { 
-        background: rgba(255,255,255,0.1); 
-        color: rgba(255,255,255,0.5); 
+      .gift-box.disabled {
+        opacity: 0.3;
         cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
+        pointer-events: none;
       }
       
+      .gift-box.flipping {
+        animation: flip 0.6s ease-in-out;
+      }
+      
+      @keyframes flip {
+        0% { transform: rotateY(0deg); }
+        50% { transform: rotateY(90deg); }
+        100% { transform: rotateY(0deg); }
+      }
+      
+      .gift-box .gift-icon {
+        font-size: 2.5rem;
+        filter: drop-shadow(0 0 10px rgba(255,215,0,0.5));
+      }
+      
+      .gift-box .prize-reveal {
+        display: none;
+        text-align: center;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #fff;
+        text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        padding: 5px;
+      }
+      
+      .gift-box.revealed .gift-icon {
+        display: none;
+      }
+      
+      .gift-box.revealed .prize-reveal {
+        display: block;
+      }
+      
+      /* Play button */
+      .play-button {
+        background: linear-gradient(135deg, #165b33, #0d4525);
+        border: 3px solid #ffd700;
+        color: #fff;
+        padding: 18px 50px;
+        border-radius: 15px;
+        font-size: 1.5rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Mountains of Christmas', cursive;
+        box-shadow: 0 6px 25px rgba(22,91,51,0.6);
+        display: block;
+        margin: 30px auto;
+        text-shadow: 0 0 10px rgba(255,255,255,0.5);
+      }
+      
+      .play-button:hover:not(:disabled) {
+        transform: scale(1.05) translateY(-3px);
+        box-shadow: 0 8px 35px rgba(255,215,0,0.8);
+        background: linear-gradient(135deg, #1a7040, #165b33);
+      }
+      
+      .play-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #555;
+      }
+      
+      /* Result area */
       .result-area {
-        text-align: center; 
+        text-align: center;
         margin-top: 30px;
-        padding: 30px;
-        background: rgba(0,255,136,0.05);
-        border-radius: 16px;
-        border: 2px solid rgba(0,255,136,0.2);
-        min-height: 200px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+        padding: 25px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 15px;
+        border: 2px solid rgba(255,215,0,0.3);
+        min-height: 150px;
       }
       
       .result-area h3 {
-        color: #00ff88;
-        font-size: 1.5rem;
+        font-family: 'Mountains of Christmas', cursive;
+        color: #ffd700;
+        font-size: 1.8rem;
         margin-bottom: 15px;
-        text-shadow: 0 0 10px rgba(0,255,136,0.5);
-      }
-      
-      #result-message {
-        font-size: 1.3rem;
-        font-weight: bold;
-        color: #fff;
-        margin: 15px 0;
-        min-height: 2em;
-        text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        text-shadow: 0 0 15px rgba(255,215,0,0.5);
       }
       
       .result-area p {
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         margin: 10px 0;
+        color: #e0e0e0;
       }
       
-      .result-area span {
+      .result-area .big-win {
+        font-size: 2rem;
         color: #00ff88;
-        font-weight: bold;
-        font-size: 1.3rem;
+        font-weight: 700;
+        text-shadow: 0 0 20px rgba(0,255,136,0.8);
+        animation: pulse 1s ease-in-out infinite;
+      }
+      
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
       }
       
       .error-message {
-        color: #ff4757; 
-        background: rgba(255,71,87,0.15);
-        border: 1px solid rgba(255,71,87,0.3);
-        border-radius: 8px;
-        padding: 15px;
-        margin-top: 20px;
-        display: none;
+        color: #ff4757;
         text-align: center;
+        margin: 15px 0;
         font-weight: 600;
+        display: none;
+        padding: 15px;
+        background: rgba(255,71,87,0.2);
+        border-radius: 10px;
+        border: 2px solid rgba(255,71,87,0.5);
       }
       
-      #prize-legend {
-        padding: 30px;
-        background: rgba(0,0,0,0.3);
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-      }
-      
-      #prize-legend h3 {
-        text-align: center;
-        margin-bottom: 25px;
-        color: #ffffff;
-        font-size: 1.5rem;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        text-shadow: 0 0 10px rgba(255,255,255,0.3);
+      /* Prize legend */
+      .prize-legend {
+        margin-top: 20px;
       }
       
       .legend-item {
         display: flex;
         align-items: center;
-        margin: 15px 0;
+        gap: 15px;
         padding: 12px;
+        margin: 8px 0;
+        background: rgba(255,255,255,0.05);
         border-radius: 8px;
-        transition: all 0.3s ease;
-        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,215,0,0.2);
       }
       
-      .legend-item:hover {
-        background: rgba(255,255,255,0.08);
-        transform: translateX(5px);
+      .legend-icon {
+        font-size: 1.5rem;
+        width: 40px;
+        text-align: center;
       }
       
-      .color-box {
-        flex-shrink: 0;
-        width: 32px;
-        height: 32px;
-        margin-right: 20px;
-        border-radius: 6px;
-        border: 2px solid rgba(255,255,255,0.4);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      .legend-text {
+        flex: 1;
+        font-size: 1rem;
       }
       
-      .prize-description {
-        font-size: 1.1rem;
-        color: #ffffff;
-        font-weight: 500;
+      .legend-chance {
+        color: #ffd700;
+        font-weight: 700;
+        font-size: 0.9rem;
       }
       
-      .spin-flex {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 30px;
-      }
-      
-      @media (min-width: 1024px) {
-        .spin-flex {
-          grid-template-columns: 2fr 1fr;
-        }
-      }
-      
+      /* Responsive design */
       @media (max-width: 768px) {
-        .wheel-wrapper {
-          width: 300px;
-          height: 300px;
+        .gifts-container {
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
         }
         
         .header-title {
-          font-size: 1.4rem;
+          font-size: 1.5rem;
         }
         
-        #spinButton {
-          padding: 12px 32px;
-          font-size: 1.1rem;
+        .content-section h2 {
+          font-size: 1.8rem;
+        }
+        
+        .bet-buttons {
+          gap: 10px;
+        }
+        
+        .bet-btn {
+          padding: 10px 18px;
+          font-size: 1rem;
+        }
+        
+        .gift-box .gift-icon {
+          font-size: 1.8rem;
         }
       }
       
-      /* Particle effects */
-      .particles {
+      /* Confetti effect */
+      .confetti {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 1;
-      }
-      
-      .particle {
+        width: 10px;
+        height: 10px;
+        background: #ffd700;
         position: absolute;
-        background: rgba(0,255,136,0.6);
-        border-radius: 50%;
-        animation: float 6s ease-in-out infinite;
+        animation: confetti-fall 3s linear forwards;
+        z-index: 9999;
       }
       
-      @keyframes float {
-        0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
-        50% { transform: translateY(-30px) rotate(180deg); opacity: 0.6; }
+      @keyframes confetti-fall {
+        to {
+          transform: translateY(100vh) rotate(720deg);
+          opacity: 0;
+        }
       }
     </style>
 </head>
 <body>
-    <div class="particles" id="particles"></div>
+    <!-- Christmas background with snowflakes -->
+    <div class="christmas-bg" id="snowflakes"></div>
     
     <header class="dashboard-header">
-        <span class="header-title">🎰 Feeling Lucky!</span>
+        <span class="header-title">🎄 Holiday Fortune Cards 🎁</span>
         <a href="dashboard.html" class="btn-logout"><i class="fas fa-chevron-left"></i> Back to Dashboard</a>
     </header>
 
     <main class="dashboard-main">
-        <div class="spin-flex">
-            <section class="content-section">
-                <h2>🎡 Spin the Wheel!</h2>
-                <div class="balance-info">
-                    <p>Your UBT Balance: <strong id="ubtBalanceDisplay">Loading...</strong></p>
-                    <p style="font-size: 0.95rem; margin-top: 10px; opacity: 0.9;">Cost per Spin: <span id="spinCostDisplay">10</span> UBT</p> 
-                </div>
-
-                <div class="wheel-container">
-                    <div class="pointer">▼</div>
-                    <div class="wheel-wrapper">
-                        <img src="images/wheel_image.png" alt="Spinning Wheel" id="wheelImage" class="wheel-image-style">
-                    </div>
-                    <button id="spinButton">Spin Now!</button> 
-                </div>
-                
-                <div id="result-area" class="result-area">
-                    <h3>🎁 Result</h3>
-                    <p id="result-message">Spin the wheel to win prizes!</p>
-                    <p>Winnings: <span id="winningsAmount">0</span> UBT</p>
-                    <p>New Balance: <span id="newUbtBalance">N/A</span> UBT</p>
-                </div>
-                <p id="spinError" class="error-message"></p>
-            </section>
-
-            <div id="prize-legend" class="content-section">
-                <h3>🏆 Prize Legend</h3>
+        <section class="content-section">
+            <h2>🎅 Pick Your Holiday Gift! 🎅</h2>
+            
+            <div class="balance-info">
+                <p>Your UBT Balance: <strong id="ubtBalanceDisplay">Loading...</strong></p>
             </div>
-        </div>
+
+            <!-- Bet amount selector -->
+            <div class="bet-selector">
+                <h3>⛄ Choose Your Bet Amount ⛄</h3>
+                <div class="bet-buttons">
+                    <button class="bet-btn active" data-bet="10">10 UBT</button>
+                    <button class="bet-btn" data-bet="20">20 UBT</button>
+                    <button class="bet-btn" data-bet="30">30 UBT</button>
+                    <button class="bet-btn" data-bet="40">40 UBT</button>
+                    <button class="bet-btn" data-bet="50">50 UBT</button>
+                </div>
+                <p class="selected-bet">Selected Bet: <span id="selectedBetDisplay">10</span> UBT</p>
+            </div>
+
+            <button id="playButton" class="play-button">🎁 Start Game 🎁</button>
+
+            <!-- Gift boxes grid -->
+            <div class="gifts-container" id="giftsContainer">
+                <!-- 32 gift boxes will be generated by JavaScript -->
+            </div>
+            
+            <div id="result-area" class="result-area">
+                <h3>🎁 Your Prize</h3>
+                <p id="result-message">Choose your bet amount and click "Start Game" to begin!</p>
+                <p>Winnings: <span id="winningsAmount">0</span> UBT</p>
+                <p>New Balance: <span id="newUbtBalance">N/A</span> UBT</p>
+            </div>
+            <p id="gameError" class="error-message"></p>
+        </section>
+
+        <section class="content-section prize-legend">
+            <h3 style="font-family: 'Mountains of Christmas', cursive; color: #ffd700; text-align: center; font-size: 1.8rem; margin-bottom: 20px;">🏆 Prize Information 🏆</h3>
+            <div class="legend-item">
+                <div class="legend-icon">🤖</div>
+                <div class="legend-text">A.I. BOT #5 (Value $3000)</div>
+                <div class="legend-chance">3.125%</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon">💰</div>
+                <div class="legend-text">10x Your Bet</div>
+                <div class="legend-chance">12.5%</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon">💵</div>
+                <div class="legend-text">2x Your Bet</div>
+                <div class="legend-chance">18.75%</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon">💸</div>
+                <div class="legend-text">1x Your Bet (Break Even)</div>
+                <div class="legend-chance">25%</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon">🎄</div>
+                <div class="legend-text">Better Luck Next Time</div>
+                <div class="legend-chance">40.625%</div>
+            </div>
+        </section>
     </main>
 
     <script src="js/config.js"></script>
     <script>
-    // Generate floating particles
-    const particlesContainer = document.getElementById('particles');
-    for (let i = 0; i < 20; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.width = Math.random() * 8 + 4 + 'px';
-        particle.style.height = particle.style.width;
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        particle.style.animationDelay = Math.random() * 6 + 's';
-        particlesContainer.appendChild(particle);
+    // Generate snowflakes
+    const snowflakesContainer = document.getElementById('snowflakes');
+    for (let i = 0; i < 50; i++) {
+        const snowflake = document.createElement('div');
+        snowflake.className = 'snowflake';
+        snowflake.textContent = '❄';
+        snowflake.style.left = Math.random() * 100 + '%';
+        snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        snowflake.style.animationDelay = Math.random() * 5 + 's';
+        snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+        snowflakesContainer.appendChild(snowflake);
     }
     </script>
-    <script src="js/spinning_wheel.js"></script> 
+    <script src="js/christmas_game.js"></script> 
 </body>
 </html>

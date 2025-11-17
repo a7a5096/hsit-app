@@ -83,8 +83,14 @@ router.post('/spin', auth, async (req, res) => {
     let session;
 
     // 1. Validate betAmount
-    if (typeof betAmount !== 'number' || betAmount < 0.5 || betAmount > 10) {
-        return res.status(400).json({ success: false, message: 'Invalid bet amount. Must be between 0.5 and 10 UBT.' });
+    if (typeof betAmount !== 'number' || betAmount < 10 || betAmount > 50) {
+        return res.status(400).json({ success: false, message: 'Invalid bet amount. Must be between 10 and 50 UBT.' });
+    }
+    
+    // Ensure bet amount is one of the allowed values: 10, 20, 30, 40, 50
+    const allowedBets = [10, 20, 30, 40, 50];
+    if (!allowedBets.includes(betAmount)) {
+        return res.status(400).json({ success: false, message: 'Invalid bet amount. Must be 10, 20, 30, 40, or 50 UBT.' });
     }
 
     try {
