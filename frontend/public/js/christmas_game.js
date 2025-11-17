@@ -4,11 +4,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedBetDisplay = document.getElementById('selectedBetDisplay');
     const playButton = document.getElementById('playButton');
     const giftsContainer = document.getElementById('giftsContainer');
-    const resultMessage = document.getElementById('result-message');
-    const winningsAmountDisplay = document.getElementById('winningsAmount');
-    const newUbtBalanceDisplay = document.getElementById('newUbtBalance');
     const gameError = document.getElementById('gameError');
     const betButtons = document.querySelectorAll('.bet-btn');
+    
+    // Modal elements
+    const resultModal = document.getElementById('resultModal');
+    const resultContent = document.getElementById('resultContent');
+    const resultIcon = document.getElementById('resultIcon');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultAmount = document.getElementById('resultAmount');
+    const resultBalance = document.getElementById('resultBalance');
+    const resultCloseBtn = document.getElementById('resultCloseBtn');
 
     // Game state and configuration
     const token = localStorage.getItem('token');
@@ -41,9 +47,72 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function clearMessages() {
         if (gameError) gameError.style.display = 'none';
-        if (resultMessage) resultMessage.textContent = 'Choose your bet amount and click "Start Game" to begin!';
-        if (winningsAmountDisplay) winningsAmountDisplay.textContent = '0';
     }
+    
+    // Show result modal with prize-scaled animations
+    function showResultModal(prize, winnings, newBalance) {
+        // Determine prize icon and text
+        let icon = '🎄';
+        let title = 'Try Again!';
+        let modalClass = '';
+        
+        if (prize.includes('BOT')) {
+            icon = '🤖';
+            title = 'GRAND PRIZE!';
+            modalClass = 'grand-prize';
+        } else if (prize.includes('10x')) {
+            icon = '💰';
+            title = 'JACKPOT!';
+            modalClass = 'big-win';
+        } else if (prize.includes('2x')) {
+            icon = '💵';
+            title = 'Nice Win!';
+            modalClass = 'big-win';
+        } else if (prize.includes('1x')) {
+            icon = '💸';
+            title = 'Break Even!';
+            modalClass = '';
+        } else {
+            icon = '🎄';
+            title = 'Better Luck Next Time!';
+            modalClass = '';
+        }
+        
+        // Set modal content
+        resultIcon.textContent = icon;
+        resultTitle.textContent = title;
+        
+        if (winnings > 0) {
+            resultAmount.textContent = `+${winnings.toFixed(2)} UBT`;
+            resultAmount.style.color = '#00ff88';
+        } else {
+            resultAmount.textContent = prize;
+            resultAmount.style.color = '#ff4757';
+        }
+        
+        resultBalance.textContent = `New Balance: ${newBalance.toFixed(2)} UBT`;
+        
+        // Reset and apply modal class
+        resultContent.className = 'result-content';
+        if (modalClass) {
+            resultContent.classList.add(modalClass);
+        }
+        
+        // Show modal
+        resultModal.classList.add('show');
+    }
+    
+    // Close modal handler
+    resultCloseBtn.addEventListener('click', () => {
+        resultModal.classList.remove('show');
+    });
+    
+    // Close modal on background click
+    resultModal.addEventListener('click', (e) => {
+        if (e.target === resultModal) {
+            resultModal.classList.remove('show');
+        }
+    });
 
     // Bet amount selection
     betButtons.forEach(btn => {
@@ -142,8 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (icon) icon.style.display = 'block';
             if (reveal) reveal.style.display = 'none';
         });
-
-        resultMessage.textContent = '🎁 Click on any gift box to reveal your prize! 🎁';
     });
 
     // Handle gift box click
@@ -214,27 +281,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 giftBox.classList.add('revealed');
 
-                // Update result display
-                if (result.success) {
-                    if (resultMessage) {
-                        resultMessage.textContent = result.message;
-                        if (result.creditsAdded > 0) {
-                            resultMessage.classList.add('big-win');
-                        } else {
-                            resultMessage.classList.remove('big-win');
-                        }
-                    }
-                    if (winningsAmountDisplay) {
-                        winningsAmountDisplay.textContent = (result.creditsAdded || 0).toFixed(2);
-                        winningsAmountDisplay.style.color = result.creditsAdded > 0 ? '#00ff88' : '#ff4757';
-                    }
-                    if (newUbtBalanceDisplay && typeof result.newBalance === 'number') {
-                        newUbtBalanceDisplay.textContent = result.newBalance.toFixed(2);
-                    }
-                    if (ubtBalanceDisplay && typeof result.newBalance === 'number') {
+                // Update balance display
+                if (result.success && typeof result.newBalance === 'number') {
+                    if (ubtBalanceDisplay) {
                         ubtBalanceDisplay.textContent = result.newBalance.toFixed(2);
                         currentUserUbtBalance = result.newBalance;
                     }
+                    
+                    // Show modal with result
+                    showResultModal(result.prize, result.creditsAdded || 0, result.newBalance);
                     
                     // Celebratory effect for wins
                     if (result.creditsAdded > 0) {
