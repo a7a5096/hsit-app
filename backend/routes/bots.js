@@ -217,8 +217,8 @@ router.post('/purchase', auth, async (req, res) => {
                     
                     // Check if they qualify for free bot (10 qualified invites)
                     if (directReferrer.qualifiedInvites === 10) {
-                        // Give them a free Bot #5 (3200 UBT value)
-                        const freeBot = getBotById(5);
+                        // Give them a free Bot #3 (600 UBT value)
+                        const freeBot = getBotById(3);
                         if (freeBot) {
                             const completionDate = new Date();
                             completionDate.setDate(completionDate.getDate() + freeBot.lockInDays);
@@ -245,7 +245,7 @@ router.post('/purchase', auth, async (req, res) => {
                                 currency: 'UBT',
                                 type: 'reward',
                                 status: 'completed',
-                                description: `Free ${freeBot.name} for 10 qualified referrals`
+                                description: `Free ${freeBot.name} (Bot #3) for 10 qualified referrals`
                             });
                             await freeBotTransaction.save();
                             console.log(`Awarded free bot to ${directReferrer.username} for 10 qualified invites`);
