@@ -60,10 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Generate 32 gift boxes
+    // Generate 100 gift boxes
     function createGiftBoxes() {
         giftsContainer.innerHTML = '';
-        for (let i = 0; i < 32; i++) {
+        for (let i = 0; i < 100; i++) {
             const giftBox = document.createElement('div');
             giftBox.className = 'gift-box';
             giftBox.dataset.index = i;

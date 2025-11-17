@@ -7,41 +7,38 @@ import Transaction from '../models/Transaction.js'; // Assuming Transaction mode
 
 const router = express.Router();
 
-// Define prizes matching the ACTUAL wheel_image.png layout (32 segments, clockwise from top)
-const PRIZES = [
-    { name: "A.I. BOT #5 (Value $3000)", type: "bot", message: "Unbelievable! You won A.I. BOT #5!" }, // 0 - green/yellow WIDE
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 1 - black narrow
-    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" }, // 2 - red WIDE
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 3 - black narrow
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 4 - white narrow
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 5 - black narrow
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 6 - white narrow
-    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" }, // 7 - red WIDE
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 8 - black narrow
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 9 - blue WIDE
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 10 - white narrow
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 11 - blue WIDE
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 12 - black narrow
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 13 - white narrow
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 14 - black narrow
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 15 - blue WIDE
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 16 - white narrow
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 17 - black narrow
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 18 - white narrow
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 19 - blue WIDE
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 20 - black narrow
-    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" }, // 21 - red WIDE
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 22 - black narrow
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 23 - white narrow
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 24 - black narrow
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 25 - white narrow
-    { name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" }, // 26 - red WIDE
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 27 - black narrow
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 28 - blue WIDE
-    { name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" }, // 29 - white narrow
-    { name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" }, // 30 - blue WIDE
-    { name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" }, // 31 - black narrow
-];
+// Define prizes for 100 gift boxes with new probability distribution
+// Distribution: 1% Grand Prize, 9% 10x Win, 21% 2x Win, 35% 1x Win, 34% Lose
+const createPrizePool = () => {
+    const prizes = [];
+    
+    // 1 Grand Prize (1%)
+    prizes.push({ name: "A.I. BOT #5 (Value $3000)", type: "bot", message: "Unbelievable! You won A.I. BOT #5!" });
+    
+    // 9 10x Wins (9%)
+    for (let i = 0; i < 9; i++) {
+        prizes.push({ name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" });
+    }
+    
+    // 21 2x Wins (21%)
+    for (let i = 0; i < 21; i++) {
+        prizes.push({ name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" });
+    }
+    
+    // 35 1x Wins (35%)
+    for (let i = 0; i < 35; i++) {
+        prizes.push({ name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" });
+    }
+    
+    // 34 Loses (34%)
+    for (let i = 0; i < 34; i++) {
+        prizes.push({ name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" });
+    }
+    
+    return prizes;
+};
+
+const PRIZES = createPrizePool();
 
 // Helper function to select a random segment (prize)
 const selectPrize = () => {
