@@ -16,10 +16,10 @@ const PendingRegistrationSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  phoneNumber: {
+  referralCode: {
     type: String,
-    required: true,
-    trim: true
+    trim: true,
+    default: null
   },
   expiresAt: {
     type: Date,

@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUserUbtBalance = 0;
     const COST_PER_SPIN = 10;
     let isSpinning = false;
+    let totalRotation = 0; // Track cumulative rotation
 
     // This prize structure MUST match the backend's `wheel.js` and your wheel_image.png segments
     const PRIZES = [
@@ -58,26 +59,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if(spinError) {
             spinError.textContent = message;
             spinError.style.display = 'block';
+            setTimeout(() => {
+                spinError.style.display = 'none';
+            }, 5000);
         }
     }
     
     function clearMessages() {
         if (spinError) spinError.style.display = 'none';
-        if (resultMessage) resultMessage.textContent = '';
+        if (resultMessage) resultMessage.textContent = 'Spin the wheel to win prizes!';
         if (winningsAmountDisplay) winningsAmountDisplay.textContent = '0';
     }
     
     // --- Setup Functions ---
     function buildLegend() {
         if (!prizeLegend) return;
-        prizeLegend.innerHTML = '<h3>Prize Legend</h3>';
+        const legendContent = document.createElement('div');
         const uniquePrizes = [...new Map(PRIZES.map(item => [item.name, item])).values()];
         uniquePrizes.forEach(prize => {
             const legendItem = document.createElement('div');
             legendItem.className = 'legend-item';
             legendItem.innerHTML = `<span class="color-box" style="background-color: ${prize.color};"></span><span class="prize-description">${prize.name}</span>`;
-            prizeLegend.appendChild(legendItem);
+            legendContent.appendChild(legendItem);
         });
+        prizeLegend.appendChild(legendContent);
     }
 
     // --- Core Logic ---
@@ -123,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isSpinning = true;
         spinButton.disabled = true;
         spinButton.textContent = 'Spinning...';
+        wheelImage.classList.add('spinning');
 
         try {
             if (typeof API_URL === 'undefined') throw new Error('API_URL is not defined.');
@@ -146,22 +152,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Invalid prize received from server');
             }
 
-            const targetAngle = prizeIndex * SEGMENT_ANGLE;
-            const randomSpins = 5 + Math.floor(Math.random() * 3); // 5-7 full spins
-            const currentRotation = parseFloat(wheelImage.style.transform.replace(/[^0-9-.]/g, '')) || 0;
-            const finalRotation = currentRotation - (currentRotation % 360) + (randomSpins * 360) + targetAngle;
+            // Calculate rotation - the wheel spins clockwise, so we need to account for that
+            // We want the pointer at the top to land on the prize
+            const targetAngle = 360 - (prizeIndex * SEGMENT_ANGLE) - (SEGMENT_ANGLE / 2);
+            const randomSpins = 6 + Math.floor(Math.random() * 3); // 6-8 full spins for dramatic effect
+            const spinRotation = (randomSpins * 360) + targetAngle;
+            
+            // Add to cumulative rotation
+            totalRotation += spinRotation;
             
             if (wheelImage) {
-                wheelImage.style.transform = `rotate(${finalRotation}deg)`;
+                wheelImage.style.transition = 'transform 6s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+                wheelImage.style.transform = `rotate(${totalRotation}deg)`;
             }
 
+            // Show result after animation completes
             setTimeout(() => {
+                wheelImage.classList.remove('spinning');
                 isSpinning = false;
                 spinButton.disabled = false;
-                spinButton.textContent = 'Spin Now!';
+                spinButton.textContent = 'Spin Again!';
+                
                 if (result.success) {
-                    if (resultMessage) resultMessage.textContent = result.message;
-                    if (winningsAmountDisplay) winningsAmountDisplay.textContent = result.creditsAdded || 0;
+                    if (resultMessage) {
+                        resultMessage.textContent = result.message;
+                        resultMessage.style.color = result.creditsAdded > 0 ? '#00ff88' : '#ff4757';
+                    }
+                    if (winningsAmountDisplay) {
+                        winningsAmountDisplay.textContent = (result.creditsAdded || 0).toFixed(2);
+                        winningsAmountDisplay.style.color = result.creditsAdded > 0 ? '#00ff88' : '#ff4757';
+                    }
                     if (newUbtBalanceDisplay && typeof result.newBalance === 'number') {
                         newUbtBalanceDisplay.textContent = result.newBalance.toFixed(2);
                     }
@@ -169,17 +189,55 @@ document.addEventListener('DOMContentLoaded', () => {
                         ubtBalanceDisplay.textContent = result.newBalance.toFixed(2);
                         currentUserUbtBalance = result.newBalance;
                     }
+                    
+                    // Celebratory effect for wins
+                    if (result.creditsAdded > 0) {
+                        createConfetti();
+                    }
                 } else {
                     showSpinError(result.message);
                 }
-            }, 5100); // Match CSS transition duration + a small buffer
+            }, 6200); // Match CSS transition duration + buffer
 
         } catch (error) {
             console.error('Spin error:', error);
             showSpinError(error.message || 'An error occurred.');
+            wheelImage.classList.remove('spinning');
             isSpinning = false;
             spinButton.disabled = false;
             spinButton.textContent = 'Spin Now!';
+        }
+    }
+
+    // Create confetti effect for wins
+    function createConfetti() {
+        const colors = ['#00ff88', '#00b8ff', '#ffcc00', '#ff4757'];
+        for (let i = 0; i < 30; i++) {
+            setTimeout(() => {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'fixed';
+                confetti.style.width = '10px';
+                confetti.style.height = '10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * window.innerWidth + 'px';
+                confetti.style.top = '-10px';
+                confetti.style.borderRadius = '50%';
+                confetti.style.pointerEvents = 'none';
+                confetti.style.zIndex = '9999';
+                confetti.style.opacity = '1';
+                confetti.style.transition = 'all 2s ease-out';
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => {
+                    confetti.style.top = window.innerHeight + 'px';
+                    confetti.style.opacity = '0';
+                    confetti.style.transform = `rotate(${Math.random() * 720}deg)`;
+                }, 50);
+                
+                setTimeout(() => {
+                    confetti.remove();
+                }, 2100);
+            }, i * 50);
         }
     }
 
@@ -189,9 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("The wheel image element with id 'wheelImage' was not found!");
             return;
         }
-        wheelImage.style.transform = 'rotate(0deg)'; // Ensure initial state
+        wheelImage.style.transform = 'rotate(0deg)';
         if (spinCostDisplay) spinCostDisplay.textContent = COST_PER_SPIN;
-        buildLegend(); // Still useful to show prizes
+        buildLegend();
         fetchUserUbtBalance();
         if (spinButton) spinButton.addEventListener('click', handleSpin);
     }

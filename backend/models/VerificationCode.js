@@ -1,10 +1,11 @@
 import mongoose from 'mongoose';
 
 const VerificationCodeSchema = new mongoose.Schema({
-  phoneNumber: {
+  email: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    lowercase: true
   },
   code: {
     type: String,

@@ -58,21 +58,62 @@ const UserSchema = new mongoose.Schema({
       ubt: { type: Number, default: 0 },
       usdt: { type: Number, default: 0 }
   },
-  // ... other fields like invitedBy, referralCode, etc.
+  // Referral system fields
+  invitationCode: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  invitedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  qualifiedInvites: {
+    type: Number,
+    default: 0
+  },
+  ubtBonusEarned: {
+    type: Number,
+    default: 0
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  lastLogin: {
+    type: Date
+  },
   passwordResetToken: String,
   passwordResetExpires: Date
 }, {
   timestamps: true 
 });
 
-// Pre-save hook to hash password (should already be there)
+// Pre-save hook to hash password and generate invitation code
 UserSchema.pre('save', async function(next) {
   if (this.isModified('password')) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   }
+  
+  // Auto-generate invitation code if not present
+  if (this.isNew && !this.invitationCode) {
+    this.invitationCode = generateInvitationCode();
+  }
+  
   next();
 });
+
+// Helper function to generate unique invitation code
+function generateInvitationCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
 
 // Method to compare password (should already be there)
 UserSchema.methods.comparePassword = async function(candidatePassword) {

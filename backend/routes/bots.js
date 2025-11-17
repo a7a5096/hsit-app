@@ -205,6 +205,101 @@ router.post('/purchase', auth, async (req, res) => {
         
         await user.save();
         
+        // Handle referral bonuses
+        if (user.invitedBy) {
+            try {
+                // Give 10 UBT to direct referrer
+                const directReferrer = await User.findById(user.invitedBy);
+                if (directReferrer) {
+                    directReferrer.balances.ubt += 10;
+                    directReferrer.qualifiedInvites += 1;
+                    directReferrer.ubtBonusEarned += 10;
+                    
+                    // Check if they qualify for free bot (10 qualified invites)
+                    if (directReferrer.qualifiedInvites === 10) {
+                        // Give them a free Bot #5 (500 UBT value)
+                        const freeBot = getBotById(5);
+                        if (freeBot) {
+                            const completionDate = new Date();
+                            completionDate.setDate(completionDate.getDate() + freeBot.lockInDays);
+                            
+                            directReferrer.bots.push({
+                                botId: String(freeBot.id),
+                                name: freeBot.name,
+                                investmentAmount: 0, // Free bot
+                                purchasedAt: new Date(),
+                                status: 'active',
+                                completionDate: completionDate,
+                                totalPayout: freeBot.totalReturnAmount,
+                                payoutProcessed: false,
+                                lockInDays: freeBot.lockInDays
+                            });
+                            
+                            // Create transaction for free bot
+                            const freeBotTransaction = new Transaction({
+                                userId: directReferrer._id,
+                                txHash: `free_bot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                fromAddress: 'system',
+                                amount: 0,
+                                ubtAmount: 0,
+                                currency: 'UBT',
+                                type: 'reward',
+                                status: 'completed',
+                                description: `Free ${freeBot.name} for 10 qualified referrals`
+                            });
+                            await freeBotTransaction.save();
+                            console.log(`Awarded free bot to ${directReferrer.username} for 10 qualified invites`);
+                        }
+                    }
+                    
+                    await directReferrer.save();
+                    
+                    // Create referral bonus transaction
+                    const referralTransaction = new Transaction({
+                        userId: directReferrer._id,
+                        txHash: `referral_bonus_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        fromAddress: 'system',
+                        amount: 10,
+                        ubtAmount: 10,
+                        currency: 'UBT',
+                        type: 'reward',
+                        status: 'completed',
+                        description: `Referral bonus for ${user.username}'s bot purchase`
+                    });
+                    await referralTransaction.save();
+                    console.log(`Awarded 10 UBT referral bonus to ${directReferrer.username}`);
+                    
+                    // Give 15 UBT to second-level referrer if exists
+                    if (directReferrer.invitedBy) {
+                        const secondLevelReferrer = await User.findById(directReferrer.invitedBy);
+                        if (secondLevelReferrer) {
+                            secondLevelReferrer.balances.ubt += 15;
+                            secondLevelReferrer.ubtBonusEarned += 15;
+                            await secondLevelReferrer.save();
+                            
+                            // Create second-level referral bonus transaction
+                            const secondLevelTransaction = new Transaction({
+                                userId: secondLevelReferrer._id,
+                                txHash: `referral_bonus_l2_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                fromAddress: 'system',
+                                amount: 15,
+                                ubtAmount: 15,
+                                currency: 'UBT',
+                                type: 'reward',
+                                status: 'completed',
+                                description: `2nd level referral bonus for ${user.username}'s bot purchase`
+                            });
+                            await secondLevelTransaction.save();
+                            console.log(`Awarded 15 UBT second-level referral bonus to ${secondLevelReferrer.username}`);
+                        }
+                    }
+                }
+            } catch (referralError) {
+                console.error('Error processing referral bonuses:', referralError);
+                // Don't fail the purchase if referral bonus fails
+            }
+        }
+        
         // After successful purchase and saving user/transaction, decrease the global bonus countdown
         let newBonusCountdown = currentBonusCountdown; // Keep current if no decrease happens
         try {

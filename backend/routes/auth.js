@@ -1,7 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import twilio from 'twilio';
 import crypto from 'crypto';
 
 // Models
@@ -23,38 +22,44 @@ const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
 const UBT_INITIAL_EXCHANGE_RATE = process.env.UBT_INITIAL_EXCHANGE_RATE || 1;
 
 // Helper functions
-const sendVerificationCode = async (phoneNumber) => {
+const sendVerificationCode = async (email) => {
   try {
-    // Twilio integration
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
-
-    if (!accountSid || !authToken || !twilioPhone) {
-        console.error('Twilio credentials are not fully configured. Please check environment variables.');
-        return false;
-    }
-
-    const client = twilio(accountSid, authToken);
-
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-    await VerificationCode.deleteMany({ phoneNumber });
+    await VerificationCode.deleteMany({ email });
 
     const verificationCode = new VerificationCode({
-      phoneNumber,
+      email,
       code,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
     });
 
     await verificationCode.save();
 
-    await client.messages.create({
-      body: `Your HSIT verification code is: ${code}`,
-      from: twilioPhone,
-      to: phoneNumber
+    // Send email with verification code
+    const emailResult = await emailService.sendEmail({
+      to: email,
+      subject: 'HSIT - Email Verification Code',
+      text: `Your HSIT verification code is: ${code}. This code will expire in 10 minutes.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #00ff88;">HSIT Email Verification</h2>
+          <p>Your verification code is:</p>
+          <div style="background: #f4f4f4; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; margin: 20px 0;">
+            ${code}
+          </div>
+          <p style="color: #666;">This code will expire in 10 minutes.</p>
+          <p style="color: #666;">If you didn't request this code, please ignore this email.</p>
+        </div>
+      `
     });
-    console.log(`Verification SMS sent to ${phoneNumber}`);
+
+    if (!emailResult.success) {
+      console.error('Failed to send verification email:', emailResult.error);
+      return false;
+    }
+
+    console.log(`Verification email sent to ${email}`);
     return true;
   } catch (error) {
     console.error('Send verification code error:', error);
@@ -62,28 +67,28 @@ const sendVerificationCode = async (phoneNumber) => {
   }
 };
 
-const verifyCode = async (phoneNumber, code) => {
+const verifyCode = async (email, code) => {
   try {
-    const verificationCode = await VerificationCode.findOne({ phoneNumber });
+    const verificationCode = await VerificationCode.findOne({ email });
 
     if (!verificationCode) {
-      console.log(`Verification code not found for ${phoneNumber}`);
+      console.log(`Verification code not found for ${email}`);
       return { valid: false, message: 'Verification code not found' };
     }
 
     if (Date.now() > verificationCode.expiresAt) {
-      console.log(`Verification code expired for ${phoneNumber}`);
-      await VerificationCode.deleteOne({ phoneNumber });
+      console.log(`Verification code expired for ${email}`);
+      await VerificationCode.deleteOne({ email });
       return { valid: false, message: 'Verification code expired' };
     }
 
     if (verificationCode.code !== code) {
-      console.log(`Invalid verification code for ${phoneNumber}. Expected ${verificationCode.code}, got ${code}`);
+      console.log(`Invalid verification code for ${email}. Expected ${verificationCode.code}, got ${code}`);
       return { valid: false, message: 'Invalid verification code' };
     }
 
-    await VerificationCode.deleteOne({ phoneNumber });
-    console.log(`Verification code verified and deleted for ${phoneNumber}`);
+    await VerificationCode.deleteOne({ email });
+    console.log(`Verification code verified and deleted for ${email}`);
     return { valid: true };
   } catch (error) {
     console.error('Verify code error:', error);
@@ -98,26 +103,25 @@ router.get('/', async (req, res) => {
     const token = req.header('x-auth-token');
 
     if (!token) {
-      console.log("GET /api/auth - No token provided.");
+      console.error("GET /api/auth - No token provided.");
       return res.status(401).json({
         success: false,
-        message: 'No authentication token, authorization denied'
+        message: 'No token, authorization denied'
       });
     }
 
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      console.log("GET /api/auth - Token decoded:", decoded);
-
       const user = await User.findById(decoded.id).select('-password');
 
       if (!user) {
-        console.log(`GET /api/auth - User not found for ID: ${decoded.id}`);
+        console.error(`GET /api/auth - User not found for decoded ID: ${decoded.id}`);
         return res.status(404).json({
           success: false,
           message: 'User not found'
         });
       }
+
       console.log(`GET /api/auth - User found: ${user.email}`);
 
       // Ensure balances object exists and convert Decimal128 values to numbers
@@ -140,7 +144,6 @@ router.get('/', async (req, res) => {
           id: user._id,
           username: user.username,
           email: user.email,
-          phoneNumber: user.phoneNumber,
           walletAddresses: user.walletAddresses,
           isVerified: user.isVerified,
           lastLogin: user.lastLogin,
@@ -216,7 +219,6 @@ router.post('/', async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        phoneNumber: user.phoneNumber,
         walletAddresses: user.walletAddresses,
         isVerified: user.isVerified,
         balances: user.balances
@@ -236,23 +238,41 @@ router.post('/register', async (req, res) => {
   console.log("POST /api/auth/register - Direct registration attempt started.");
   console.log("Request Body:", JSON.stringify(req.body, null, 2));
   try {
-    const { username, email, password, phoneNumber } = req.body;
-    if (!username || !email || !password || !phoneNumber) {
+    const { username, email, password, referralCode } = req.body;
+    if (!username || !email || !password) {
         console.error("POST /api/auth/register - Missing required fields.");
-        return res.status(400).json({ success: false, message: 'All fields (username, email, password, phoneNumber) are required' });
+        return res.status(400).json({ success: false, message: 'Username, email, and password are required' });
     }
     
-    const existingUser = await User.findOne({ $or: [{ email }, { username }, { phoneNumber }] });
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
         let message = 'User already exists.';
         if (existingUser.email === email) message = 'Email already in use.';
         else if (existingUser.username === username) message = 'Username already taken.';
-        else if (existingUser.phoneNumber === phoneNumber) message = 'Phone number already registered.';
         console.error(`POST /api/auth/register - Registration failed: ${message}`);
         return res.status(400).json({ success: false, message });
     }
 
-    const user = new User(req.body);
+    // Handle referral code if provided
+    let invitedBy = null;
+    if (referralCode) {
+      const inviter = await User.findOne({ invitationCode: referralCode });
+      if (inviter) {
+        invitedBy = inviter._id;
+        console.log(`POST /api/auth/register - User referred by: ${inviter.username}`);
+      } else {
+        console.log(`POST /api/auth/register - Invalid referral code provided: ${referralCode}`);
+      }
+    }
+
+    const user = new User({
+      username,
+      email,
+      password,
+      invitedBy,
+      isVerified: false
+    });
+    
     await user.save();
     console.log(`POST /api/auth/register - User created successfully: ${user.email} (ID: ${user._id})`);
 
@@ -274,7 +294,7 @@ router.post('/register', async (req, res) => {
         success: true, 
         token,
         user: userResponse, 
-        message: 'User created successfully' 
+        message: 'User created successfully. Please verify your email.' 
     });
   } catch (error) {
     console.error('POST /api/auth/register - Error during direct registration:', error);
@@ -290,9 +310,9 @@ router.post('/register/initial', async (req, res) => {
   console.log("POST /api/auth/register/initial - Initial registration: sending verification code.");
   console.log("Request Body:", JSON.stringify(req.body, null, 2));
   try {
-    const { username, email, password, phoneNumber } = req.body;
+    const { username, email, password, referralCode } = req.body;
 
-    if (!username || !email || !password || !phoneNumber) {
+    if (!username || !email || !password) {
       console.error("POST /api/auth/register/initial - Missing required fields.");
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
@@ -300,8 +320,7 @@ router.post('/register/initial', async (req, res) => {
     const existingUser = await User.findOne({
       $or: [
         { email: String(email).toLowerCase() },
-        { username },
-        { phoneNumber }
+        { username }
       ]
     });
 
@@ -309,24 +328,23 @@ router.post('/register/initial', async (req, res) => {
       let message = 'User already exists.';
       if (existingUser.email === String(email).toLowerCase()) message = 'Email already in use';
       else if (existingUser.username === username) message = 'Username already taken';
-      else if (existingUser.phoneNumber === phoneNumber) message = 'Phone number already registered';
       console.error(`POST /api/auth/register/initial - Registration failed: ${message}`);
       return res.status(400).json({ success: false, message });
     }
     
-    const existingPending = await PendingRegistration.findOne({ phoneNumber });
+    const existingPending = await PendingRegistration.findOne({ email: String(email).toLowerCase() });
     if (existingPending) {
-        console.log(`POST /api/auth/register/initial - Existing pending registration found for ${phoneNumber}. It will be overwritten.`);
-        await PendingRegistration.deleteMany({ phoneNumber });
+        console.log(`POST /api/auth/register/initial - Existing pending registration found for ${email}. It will be overwritten.`);
+        await PendingRegistration.deleteMany({ email: String(email).toLowerCase() });
     }
 
-    const smsSent = await sendVerificationCode(phoneNumber);
+    const emailSent = await sendVerificationCode(String(email).toLowerCase());
 
-    if (!smsSent) {
-      console.error(`POST /api/auth/register/initial - Failed to send verification code to ${phoneNumber}.`);
+    if (!emailSent) {
+      console.error(`POST /api/auth/register/initial - Failed to send verification code to ${email}.`);
       return res.status(500).json({ success: false, message: 'Failed to send verification code' });
     }
-    console.log(`POST /api/auth/register/initial - SMS sent to ${phoneNumber}.`);
+    console.log(`POST /api/auth/register/initial - Email sent to ${email}.`);
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -335,17 +353,17 @@ router.post('/register/initial', async (req, res) => {
       username,
       email: String(email).toLowerCase(),
       password: hashedPassword,
-      phoneNumber,
+      referralCode: referralCode || null,
       expiresAt: new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
     });
 
     await pendingRegistration.save();
-    console.log(`POST /api/auth/register/initial - Pending registration saved for ${phoneNumber}.`);
+    console.log(`POST /api/auth/register/initial - Pending registration saved for ${email}.`);
 
     res.json({
       success: true,
-      message: 'Verification code sent. Please check your phone.',
-      phoneNumber
+      message: 'Verification code sent. Please check your email.',
+      email: String(email).toLowerCase()
     });
   } catch (error) {
     console.error('POST /api/auth/register/initial - Error during initial registration:', error);
@@ -358,39 +376,49 @@ router.post('/register/complete', async (req, res) => {
   console.log("POST /api/auth/register/complete - Completing registration with verification code.");
   console.log("Request Body:", JSON.stringify(req.body, null, 2));
   try {
-    const { phoneNumber, code } = req.body;
+    const { email, code } = req.body;
 
-    if (!phoneNumber || !code) {
-      console.error("POST /api/auth/register/complete - Missing phone number or code.");
-      return res.status(400).json({ success: false, message: 'Phone number and verification code are required' });
+    if (!email || !code) {
+      console.error("POST /api/auth/register/complete - Missing email or code.");
+      return res.status(400).json({ success: false, message: 'Email and verification code are required' });
     }
 
-    const verification = await verifyCode(phoneNumber, code);
+    const verification = await verifyCode(String(email).toLowerCase(), code);
 
     if (!verification.valid) {
-      console.error(`POST /api/auth/register/complete - Code verification failed for ${phoneNumber}: ${verification.message}`);
+      console.error(`POST /api/auth/register/complete - Code verification failed for ${email}: ${verification.message}`);
       return res.status(400).json({ success: false, message: verification.message });
     }
-    console.log(`POST /api/auth/register/complete - Code verified for ${phoneNumber}.`);
+    console.log(`POST /api/auth/register/complete - Code verified for ${email}.`);
 
-    const pendingRegistration = await PendingRegistration.findOne({ phoneNumber });
+    const pendingRegistration = await PendingRegistration.findOne({ email: String(email).toLowerCase() });
 
     if (!pendingRegistration) {
-      console.error(`POST /api/auth/register/complete - Pending registration not found for ${phoneNumber}.`);
+      console.error(`POST /api/auth/register/complete - Pending registration not found for ${email}.`);
       return res.status(400).json({ success: false, message: 'Registration session expired or not found. Please start over.' });
     }
 
     if (Date.now() > pendingRegistration.expiresAt) {
-      console.error(`POST /api/auth/register/complete - Pending registration session expired for ${phoneNumber}.`);
-      await PendingRegistration.deleteOne({ phoneNumber });
+      console.error(`POST /api/auth/register/complete - Pending registration session expired for ${email}.`);
+      await PendingRegistration.deleteOne({ email: String(email).toLowerCase() });
       return res.status(400).json({ success: false, message: 'Registration session expired. Please start over.' });
+    }
+
+    // Handle referral code
+    let invitedBy = null;
+    if (pendingRegistration.referralCode) {
+      const inviter = await User.findOne({ invitationCode: pendingRegistration.referralCode });
+      if (inviter) {
+        invitedBy = inviter._id;
+        console.log(`POST /api/auth/register/complete - User referred by: ${inviter.username}`);
+      }
     }
 
     const newUser = new User({
       username: pendingRegistration.username,
       email: pendingRegistration.email,
       password: pendingRegistration.password,
-      phoneNumber: pendingRegistration.phoneNumber,
+      invitedBy,
       isVerified: true,
       balances: {
         btc: 0,
@@ -398,46 +426,40 @@ router.post('/register/complete', async (req, res) => {
         usdt: 0,
         ubt: 100
       },
-      lastLogin: Date.now()
+      walletAddresses: {
+        btc: '',
+        eth: '',
+        usdt: ''
+      }
     });
 
     await newUser.save();
-    console.log(`POST /api/auth/register/complete - New user created: ${newUser.email} (ID: ${newUser._id})`);
+    console.log(`POST /api/auth/register/complete - User created: ${newUser.email} (ID: ${newUser._id})`);
 
-    try {
-      const addresses = await addressAssignmentService.assignAddressesToUser(newUser._id);
-      if (addresses) {
-        newUser.walletAddresses = {
-          bitcoin: addresses.BTC,
-          ethereum: addresses.ETH,
-          ubt: addresses.USDT
-        };
-        await newUser.save();
-        console.log(`POST /api/auth/register/complete - Wallet addresses assigned and saved for user ${newUser._id}.`);
-      } else {
-        console.warn(`POST /api/auth/register/complete - No addresses returned by addressAssignmentService for user ${newUser._id}.`);
-      }
-    } catch (assignError) {
-      console.error(`POST /api/auth/register/complete - Error assigning addresses to user ${newUser._id}:`, assignError);
-    }
+    // Assign addresses
+    addressAssignmentService.assignAddressesToUser(newUser._id)
+      .then(addresses => {
+        console.log(`POST /api/auth/register/complete - Assigned addresses to new user ${newUser._id}:`, addresses);
+      })
+      .catch(error => {
+        console.error(`POST /api/auth/register/complete - Failed to assign addresses to new user ${newUser._id}:`, error.message);
+      });
 
-    await PendingRegistration.deleteOne({ phoneNumber });
-    console.log(`POST /api/auth/register/complete - Pending registration deleted for ${phoneNumber}.`);
+    await PendingRegistration.deleteOne({ email: String(email).toLowerCase() });
+    console.log(`POST /api/auth/register/complete - Pending registration deleted for ${email}.`);
 
     const tokenPayload = { id: newUser._id, username: newUser.username };
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: JWT_EXPIRE });
-    console.log(`POST /api/auth/register/complete - JWT token generated for new user: ${newUser.email}`);
 
     const userResponse = { ...newUser.toObject() };
     delete userResponse.password;
 
-
     res.status(201).json({
       success: true,
       token,
-      user: userResponse
+      user: userResponse,
+      message: 'Registration completed successfully'
     });
-    console.log(`POST /api/auth/register/complete - Registration complete. Response sent for user: ${newUser.email}`);
 
   } catch (error) {
     console.error('POST /api/auth/register/complete - Error during registration completion:', error);
@@ -445,85 +467,9 @@ router.post('/register/complete', async (req, res) => {
   }
 });
 
-// Verify phone number for existing user
-router.post('/verify-phone', async (req, res) => {
-  console.log("POST /api/auth/verify-phone - Phone verification attempt.");
-  console.log("Request Body:", JSON.stringify(req.body, null, 2));
-  try {
-    const { userId, code } = req.body;
-
-    if (!userId || !code) {
-        console.error("POST /api/auth/verify-phone - Missing userId or code.");
-        return res.status(400).json({ success: false, message: 'User ID and verification code are required.' });
-    }
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      console.error(`POST /api/auth/verify-phone - User not found for ID: ${userId}`);
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    if (!user.phoneNumber) {
-        console.error(`POST /api/auth/verify-phone - User ${userId} does not have a phone number on record.`);
-        return res.status(400).json({ success: false, message: 'No phone number on record for this user.' });
-    }
-
-    const verification = await verifyCode(user.phoneNumber, code);
-    if (!verification.valid) {
-      console.error(`POST /api/auth/verify-phone - Code verification failed for user ${userId} (${user.phoneNumber}): ${verification.message}`);
-      return res.status(400).json({ success: false, message: verification.message });
-    }
-    console.log(`POST /api/auth/verify-phone - Code verified for user ${userId} (${user.phoneNumber}).`);
-
-    user.isVerified = true;
-    await user.save();
-    console.log(`POST /api/auth/verify-phone - User ${userId} verification status updated to true.`);
-
-    const userResponse = { ...user.toObject() };
-    delete userResponse.password;
-
-    res.json({
-      success: true,
-      message: 'Phone number verified successfully',
-      user: userResponse
-    });
-  } catch (error) {
-    console.error('POST /api/auth/verify-phone - Error during phone verification:', error);
-    res.status(500).json({ success: false, message: 'Server error during phone verification' });
-  }
-});
-
-// Send verification code to a phone number
-router.post('/send-verification', async (req, res) => {
-  console.log("POST /api/auth/send-verification - Request to send/resend verification code.");
-  console.log("Request Body:", JSON.stringify(req.body, null, 2));
-  try {
-    const { phoneNumber } = req.body;
-
-    if (!phoneNumber) {
-      console.error("POST /api/auth/send-verification - Phone number is required.");
-      return res.status(400).json({ success: false, message: 'Phone number is required' });
-    }
-
-    const sent = await sendVerificationCode(phoneNumber);
-
-    if (sent) {
-      console.log(`POST /api/auth/send-verification - Verification code sent successfully to ${phoneNumber}.`);
-      res.json({ success: true, message: 'Verification code sent successfully. Please check your phone.' });
-    } else {
-      console.error(`POST /api/auth/send-verification - Failed to send verification code to ${phoneNumber}.`);
-      res.status(500).json({ success: false, message: 'Failed to send verification code. Please try again later.' });
-    }
-  } catch (error) {
-    console.error('POST /api/auth/send-verification - Error sending verification code:', error);
-    res.status(500).json({ success: false, message: 'Server error while sending verification code' });
-  }
-});
-
-// @route   POST api/auth/request-password-reset
-// @desc    Request password reset
-// @access  Public
-router.post('/request-password-reset', async (req, res) => {
+// Resend verification code
+router.post('/register/resend', async (req, res) => {
+  console.log("POST /api/auth/register/resend - Resending verification code.");
   try {
     const { email } = req.body;
 
@@ -531,91 +477,26 @@ router.post('/request-password-reset', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      // Return success even if user not found for security
-      return res.json({ 
-        success: true, 
-        message: 'If an account with that email exists, a password reset link has been sent.' 
-      });
+    const pendingRegistration = await PendingRegistration.findOne({ email: String(email).toLowerCase() });
+
+    if (!pendingRegistration) {
+      return res.status(400).json({ success: false, message: 'No pending registration found for this email' });
     }
 
-    // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetExpires = Date.now() + 3600000; // 1 hour
+    const emailSent = await sendVerificationCode(String(email).toLowerCase());
 
-    // Save reset token to user
-    user.passwordResetToken = resetToken;
-    user.passwordResetExpires = resetExpires;
-    await user.save();
-
-    // Create reset URL
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset_password.html?token=${resetToken}`;
-
-    // Send reset email
-    const emailSent = await emailService.sendEmail({
-      to: user.email,
-      subject: 'Password Reset Request',
-      text: `You are receiving this email because you (or someone else) has requested a password reset.\n\n
-      Please click on the following link to reset your password:\n\n
-      ${resetUrl}\n\n
-      If you did not request this, please ignore this email and your password will remain unchanged.\n\n
-      This link will expire in 1 hour.`,
-      html: `
-        <p>You are receiving this email because you (or someone else) has requested a password reset.</p>
-        <p>Please click on the following link to reset your password:</p>
-        <p><a href="${resetUrl}">Reset Password</a></p>
-        <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
-        <p>This link will expire in 1 hour.</p>
-      `
-    });
-
-    if (!emailSent.success) {
-      throw new Error('Failed to send reset email');
+    if (!emailSent) {
+      return res.status(500).json({ success: false, message: 'Failed to send verification code' });
     }
 
-    res.json({ 
-      success: true, 
-      message: 'If an account with that email exists, a password reset link has been sent.' 
+    res.json({
+      success: true,
+      message: 'Verification code resent successfully'
     });
+
   } catch (error) {
-    console.error('Password reset request error:', error);
-    res.status(500).json({ success: false, message: 'Server error while processing password reset request' });
-  }
-});
-
-// @route   POST api/auth/reset-password
-// @desc    Reset password with token
-// @access  Public
-router.post('/reset-password', async (req, res) => {
-  try {
-    const { token, password } = req.body;
-
-    if (!token || !password) {
-      return res.status(400).json({ success: false, message: 'Token and new password are required' });
-    }
-
-    // Find user with valid reset token
-    const user = await User.findOne({
-      passwordResetToken: token,
-      passwordResetExpires: { $gt: Date.now() }
-    });
-
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
-    }
-
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save();
-
-    res.json({ success: true, message: 'Password has been reset successfully' });
-  } catch (error) {
-    console.error('Password reset error:', error);
-    res.status(500).json({ success: false, message: 'Server error while resetting password' });
+    console.error('POST /api/auth/register/resend - Error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
