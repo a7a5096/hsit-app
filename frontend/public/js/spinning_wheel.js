@@ -152,10 +152,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Invalid prize received from server');
             }
 
-            // Calculate rotation - the wheel spins clockwise, so we need to account for that
-            // We want the pointer at the top to land on the prize
-            const targetAngle = 360 - (prizeIndex * SEGMENT_ANGLE) - (SEGMENT_ANGLE / 2);
-            const randomSpins = 6 + Math.floor(Math.random() * 3); // 6-8 full spins for dramatic effect
+            // Calculate rotation to land on the correct prize
+            // The wheel has 32 segments, each is 11.25 degrees (360/32)
+            // Segments are numbered 0-31, starting from the top and going clockwise
+            // We need to rotate the wheel so the prize lands at the pointer (top center)
+            // The pointer points to the CENTER of a segment
+            
+            // Calculate the angle to rotate TO (where the prize should end up)
+            // Since segment 0 starts at top, we rotate counter-clockwise by prizeIndex segments
+            const targetAngle = -(prizeIndex * SEGMENT_ANGLE);
+            
+            // Add multiple full rotations for visual effect (6-8 full spins)
+            const randomSpins = 6 + Math.floor(Math.random() * 3);
             const spinRotation = (randomSpins * 360) + targetAngle;
             
             // Add to cumulative rotation
