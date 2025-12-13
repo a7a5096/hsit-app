@@ -1,10 +1,10 @@
 import mongoose from 'mongoose';
-import CryptoAddress from '../models/CryptoAddress.js';
+import DepositKey from '../models/DepositKey.js';
 import UserAddress from '../models/UserAddress.js';
 import User from '../models/User.js';
 
 /**
- * Service for managing crypto address assignments
+ * Service for managing crypto address assignments using DepositKey (public/private key pairs)
  */
 class AddressAssignmentService {
   /**
@@ -24,41 +24,44 @@ class AddressAssignmentService {
         throw new Error('User not found for address assignment.');
       }
 
+      // Check if user already has assigned addresses in UserAddress
       if (userAddressDoc && 
           userAddressDoc.addresses.BTC?.address && 
           userAddressDoc.addresses.ETH?.address && 
           userAddressDoc.addresses.USDT?.address &&
           userAddressDoc.addresses.ETH.address === userAddressDoc.addresses.USDT.address) {
         
-        // Ensure primary CryptoAddress entries (BTC, ETH) are correctly marked.
-        // USDT uses ETH address, so no separate marking for USDT in CryptoAddress pool needed beyond ETH.
-        await this.ensureDistinctAddressesAreMarkedAsAssigned(
+        // Ensure keys are marked as assigned in DepositKey collection
+        await this.ensureKeysAreMarkedAsAssigned(
           userAddressDoc.addresses.BTC.address,
-          userAddressDoc.addresses.ETH.address, // ETH address string
+          userAddressDoc.addresses.ETH.address, // ETH address
           userId,
           session
         );
-        // Ensure User model is synced correctly with ETH address for USDT/UBT field
+        
+        // Sync User model
         await this.syncUserModelAddresses(
           userId,
           userAddressDoc.addresses.BTC.address,
           userAddressDoc.addresses.ETH.address,
-          userAddressDoc.addresses.ETH.address, // Pass ETH address as the USDT address
+          userAddressDoc.addresses.ETH.address, // USDT uses ETH address
           session
         );
+
         await session.commitTransaction();
         session.endSession();
         return {
           BTC: userAddressDoc.addresses.BTC.address,
           ETH: userAddressDoc.addresses.ETH.address,
-          USDT: userAddressDoc.addresses.ETH.address, // USDT is ETH address
+          USDT: userAddressDoc.addresses.ETH.address,
         };
       }
 
+      // Check if user has addresses in User model (legacy check)
       if (user.walletAddresses && user.walletAddresses.bitcoin && user.walletAddresses.ethereum) {
         let btc = user.walletAddresses.bitcoin;
         let eth = user.walletAddresses.ethereum;
-        let usdtForSync = eth; // USDT is now ETH address
+        let usdtForSync = eth; 
 
         user.walletAddresses.ubt = eth; 
 
@@ -70,16 +73,18 @@ class AddressAssignmentService {
         return { BTC: btc, ETH: eth, USDT: usdtForSync };
       }
 
-      console.log(`Assigning new pooled addresses for user ${userId}`);
-      const btcAddressPoolDoc = await this.findAndReserveAddress('BTC', userId, session);
-      const ethAddressPoolDoc = await this.findAndReserveAddress('ETH', userId, session);
+      console.log(`Assigning new keys for user ${userId}`);
       
-      if (!btcAddressPoolDoc || !ethAddressPoolDoc) {
-        throw new Error('Not enough BTC or ETH addresses available in the pool for assignment.');
+      // Reserve keys from DepositKey pool
+      const btcKeyDoc = await this.findAndReserveKey('BTC', userId, session);
+      const ethKeyDoc = await this.findAndReserveKey('ETH', userId, session);
+      
+      if (!btcKeyDoc || !ethKeyDoc) {
+        throw new Error('Not enough BTC or ETH keys available in the DepositKey pool.');
       }
 
-      const newBtcAddress = btcAddressPoolDoc.address;
-      const newEthAddress = ethAddressPoolDoc.address;
+      const newBtcAddress = btcKeyDoc.publicAddress;
+      const newEthAddress = ethKeyDoc.publicAddress;
       const newUsdtAddress = newEthAddress; 
 
       userAddressDoc = await UserAddress.findOneAndUpdate(
@@ -103,8 +108,6 @@ class AddressAssignmentService {
       };
       await user.save({ session });
       
-      // findAndReserveAddress already marks BTC and ETH. No separate marking for USDT in CryptoAddress pool needed.
-      
       await session.commitTransaction();
       session.endSession();
       
@@ -124,31 +127,28 @@ class AddressAssignmentService {
   }
   
   /**
-   * Ensures only the distinct pooled addresses (BTC, ETH) are marked/upserted in CryptoAddress.
-   * USDT reuses the ETH address and does not need a separate CryptoAddress entry if address is globally unique.
+   * Ensures the assigned keys are marked in DepositKey collection.
    */
-  async ensureDistinctAddressesAreMarkedAsAssigned(btcAddress, ethAddress, userId, session) {
+  async ensureKeysAreMarkedAsAssigned(btcAddress, ethAddress, userId, session) {
     const operations = [];
     if (btcAddress) {
-      operations.push(CryptoAddress.findOneAndUpdate(
-        { address: btcAddress, currency: 'BTC' },
-        { $set: { isAssigned: true, assignedTo: userId, assignedAt: new Date(), isActive: true } },
+      operations.push(DepositKey.findOneAndUpdate(
+        { publicAddress: btcAddress, currency: 'BTC' },
+        { $set: { isAssigned: true, assignedTo: userId, assignedAt: new Date() } },
         { upsert: true, new: true, session }
       ));
     }
     if (ethAddress) {
-      operations.push(CryptoAddress.findOneAndUpdate(
-        { address: ethAddress, currency: 'ETH' },
-        { $set: { isAssigned: true, assignedTo: userId, assignedAt: new Date(), isActive: true } },
+      operations.push(DepositKey.findOneAndUpdate(
+        { publicAddress: ethAddress, currency: 'ETH' },
+        { $set: { isAssigned: true, assignedTo: userId, assignedAt: new Date() } },
         { upsert: true, new: true, session }
       ));
     }
-    // No operation for USDT here as it shares the ETH address, and its CryptoAddress entry is the ETH one.
     await Promise.all(operations);
   }
   
   async syncUserModelAddresses(userId, btcAddress, ethAddress, usdtAddressForUserUbtField, session) {
-    // usdtAddressForUserUbtField is the ETH address string.
     await User.findByIdAndUpdate(
       userId,
       {
@@ -162,16 +162,16 @@ class AddressAssignmentService {
     );
   }
   
-  async findAndReserveAddress(currency, userId, session) {
-    const addressDoc = await CryptoAddress.findOneAndUpdate(
-      { currency, isAssigned: false, isActive: true },
+  async findAndReserveKey(currency, userId, session) {
+    const keyDoc = await DepositKey.findOneAndUpdate(
+      { currency, isAssigned: false },
       { $set: { isAssigned: true, assignedTo: userId, assignedAt: new Date() } },
       { new: true, session, sort: { createdAt: 1 } }
     );
-    if (!addressDoc) {
-        console.warn(`POOL EMPTY: No available addresses in pool for currency: ${currency}`);
+    if (!keyDoc) {
+        console.warn(`POOL EMPTY: No available keys in DepositKey pool for currency: ${currency}`);
     }
-    return addressDoc; 
+    return keyDoc; 
   }
   
   async getUserAddresses(userId) {
@@ -203,13 +203,11 @@ class AddressAssignmentService {
                 console.log(`Syncing user ${userId}: ubt field in User model will be updated to ETH address for USDT.`);
                 const session = await mongoose.startSession();
                 await session.withTransaction(async () => {
-                    // Update User model first
-                    await User.updateOne( // Use updateOne for targeted field update
+                    await User.updateOne(
                         { _id: userId }, 
                         { $set: { 'walletAddresses.ubt': eth } }, 
                         { session }
                     );
-                    // Then sync UserAddress collection, which internally calls ensureDistinctAddressesAreMarkedAsAssigned
                     await this.syncUserAddressCollection(userId, btc, eth, usdt, session);
                 });
                 session.endSession();
@@ -227,7 +225,6 @@ class AddressAssignmentService {
   }
   
   async syncUserAddressCollection(userId, btcAddress, ethAddress, usdtAddress, session) {
-    // usdtAddress parameter here is the ETH address string.
     await UserAddress.findOneAndUpdate(
       { userId },
       {
@@ -242,12 +239,9 @@ class AddressAssignmentService {
       { upsert: true, new: true, session }
     );
     
-    // Only ensure the distinct pooled addresses (BTC, ETH) are marked.
-    // The knowledge that ETH address is also USDT address is handled at User/UserAddress level.
-    await this.ensureDistinctAddressesAreMarkedAsAssigned(
+    await this.ensureKeysAreMarkedAsAssigned(
       btcAddress,
       ethAddress,
-      // No usdtAddress string needed here as we don't mark a separate USDT entity in CryptoAddress pool
       userId,
       session
     );
@@ -257,10 +251,9 @@ class AddressAssignmentService {
     const user = await User.findById(userId).select('+walletAddresses');
     if (!user || !user.walletAddresses) return false;
 
-    // ETH address now serves as USDT address (stored in ubt field)
     if (user.walletAddresses.bitcoin === address || 
-        user.walletAddresses.ethereum === address || // Check against ETH
-        user.walletAddresses.ubt === address) { // Check against ubt (which is ETH for USDT)
+        user.walletAddresses.ethereum === address || 
+        user.walletAddresses.ubt === address) { 
         return true;
     }
     
@@ -268,8 +261,8 @@ class AddressAssignmentService {
     if (userAddressDoc) {
       return (
         userAddressDoc.addresses.BTC?.address === address ||
-        userAddressDoc.addresses.ETH?.address === address || // Check against ETH
-        userAddressDoc.addresses.USDT?.address === address  // Check against USDT (which is ETH)
+        userAddressDoc.addresses.ETH?.address === address || 
+        userAddressDoc.addresses.USDT?.address === address
       );
     }
     return false;
