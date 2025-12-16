@@ -1,6 +1,7 @@
 .App-nav {
-  background-color: #2c3e50;
+  background-color: #163526;
   padding: 1rem 0;
+  border-bottom: 2px solid #f6c453;
 }
 
 .App-nav ul {
@@ -16,14 +17,15 @@
 }
 
 .App-nav a {
-  color: white;
+  color: #f8f5ec;
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.3s;
+  transition: color 0.3s, transform 0.2s;
 }
 
 .App-nav a:hover {
-  color: #3498db;
+  color: #f6c453;
+  transform: translateY(-1px);
 }
 
 .App-main {
@@ -40,12 +42,12 @@
 .App-home h1 {
   font-size: 2.5rem;
   margin-bottom: 1rem;
-  color: #2c3e50;
+  color: #e63946;
 }
 
 .App-home p {
   font-size: 1.2rem;
-  color: #7f8c8d;
+  color: #315c46;
   margin-bottom: 2rem;
 }
 
@@ -55,7 +57,7 @@
 
 .cta-button {
   display: inline-block;
-  background-color: #3498db;
+  background-color: #e63946;
   color: white;
   padding: 0.75rem 1.5rem;
   border-radius: 4px;
@@ -65,5 +67,5 @@
 }
 
 .cta-button:hover {
-  background-color: #2980b9;
+  background-color: #ba1d2c;
 }
