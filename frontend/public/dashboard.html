@@ -8,22 +8,64 @@
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-      /* Futuristic Dashboard Theme */
-      body.dashboard-page.futuristic-dashboard { font-family: 'Orbitron', sans-serif; background: linear-gradient(135deg, #0b0b23, #1a1a40); color: #e0e0e0; transition: background 0.5s ease; }
-      body.dashboard-page.futuristic-dashboard .dashboard-header { background: linear-gradient(90deg, #5c009c, #a100c2); padding: 2px 15px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.5); position: relative; }
-      body.dashboard-page.futuristic-dashboard .header-title { font-size: 1.4rem; color: #ffffff; text-shadow: 0 0 2px rgba(255,255,255,0.7); }
-      body.dashboard-page.futuristic-dashboard .btn-logout { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(6px); color: #fff; transition: box-shadow 0.3s; padding: 4px 11px !important; }
-      body.dashboard-page.futuristic-dashboard .btn-logout:hover { box-shadow: 0 0 10px rgba(255,255,255,0.7); }
+      /* Festive Dashboard Theme */
+      body.dashboard-page.futuristic-dashboard {
+        font-family: 'Orbitron', sans-serif;
+        background: linear-gradient(135deg, #0f2e1d 0%, #21573a 45%, #8b1e3f 100%);
+        color: #f5f0e6;
+        transition: background 0.5s ease;
+      }
+      body.dashboard-page.futuristic-dashboard .dashboard-header {
+        background: linear-gradient(90deg, #b3001b, #d94b1a, #f2a93b);
+        padding: 2px 15px !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.45);
+        position: relative;
+      }
+      body.dashboard-page.futuristic-dashboard .header-title {
+        font-size: 1.4rem;
+        color: #fff8dc;
+        text-shadow: 0 0 6px rgba(255,215,128,0.7);
+      }
+      body.dashboard-page.futuristic-dashboard .btn-logout {
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,215,128,0.5);
+        backdrop-filter: blur(6px);
+        color: #fff8dc;
+        transition: box-shadow 0.3s, transform 0.2s;
+        padding: 4px 11px !important;
+      }
+      body.dashboard-page.futuristic-dashboard .btn-logout:hover {
+        box-shadow: 0 0 12px rgba(255,215,128,0.8);
+        transform: translateY(-1px);
+      }
       body.dashboard-page.futuristic-dashboard .dashboard-main { padding: 15px 12px !important; }
-      body.dashboard-page.futuristic-dashboard .banner { position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.7); margin-bottom: 22.5px !important; }
+      body.dashboard-page.futuristic-dashboard .banner { position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.5); margin-bottom: 22.5px !important; }
       body.dashboard-page.futuristic-dashboard .banner img.banner-image { display: block; width: 100%; }
       body.dashboard-page.futuristic-dashboard .operations-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px !important; }
-      body.dashboard-page.futuristic-dashboard .operation-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); border-radius: 8px; padding: 12px 6px !important; text-align: center; transition: transform 0.2s, box-shadow 0.3s; }
-      body.dashboard-page.futuristic-dashboard .operation-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(127,0,255,0.5); }
-      body.dashboard-page.futuristic-dashboard .operation-card .icon img { filter: brightness(1.2) drop-shadow(0 0 6px rgba(255,255,255,0.5)); width: 40px; height: 40px; margin-bottom: 8px; }
+      body.dashboard-page.futuristic-dashboard .operation-card {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 214, 102, 0.35);
+        backdrop-filter: blur(8px);
+        border-radius: 8px;
+        padding: 12px 6px !important;
+        text-align: center;
+        transition: transform 0.2s, box-shadow 0.3s;
+      }
+      body.dashboard-page.futuristic-dashboard .operation-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(255, 196, 64, 0.55);
+      }
+      body.dashboard-page.futuristic-dashboard .operation-card .icon img { filter: brightness(1.15) drop-shadow(0 0 6px rgba(255,215,128,0.45)); width: 40px; height: 40px; margin-bottom: 8px; }
       body.dashboard-page.futuristic-dashboard .service-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 15px !important; margin-top: 15px !important; }
-      body.dashboard-page.futuristic-dashboard .service-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); border-radius: 8px; padding: 15px !important; transition: box-shadow 0.3s; }
-      body.dashboard-page.futuristic-dashboard .service-card:hover { box-shadow: 0 8px 20px rgba(0,210,255,0.5); }
+      body.dashboard-page.futuristic-dashboard .service-card {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 214, 102, 0.35);
+        backdrop-filter: blur(8px);
+        border-radius: 8px;
+        padding: 15px !important;
+        transition: box-shadow 0.3s, transform 0.2s;
+      }
+      body.dashboard-page.futuristic-dashboard .service-card:hover { box-shadow: 0 8px 20px rgba(219, 66, 26, 0.4); transform: translateY(-3px); }
       @media (max-width: 600px) {
         body.dashboard-page.futuristic-dashboard .operations-grid { grid-template-columns: 1fr 1fr; }
         body.dashboard-page.futuristic-dashboard .service-grid { grid-template-columns: 1fr; }
@@ -40,7 +82,7 @@
       }
       body.dashboard-page.futuristic-dashboard .scroll-indicator i {
         font-size: 2rem;
-        color: #ffffff;
+        color: #ffd166;
         animation: bounce 2s infinite;
       }
       /* Reduced padding by 25% for Dashboard page elements */
@@ -177,13 +219,13 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: linear-gradient(90deg, #1a1a2e, #16213e, #1a1a2e);
-            color: #fff;
+            background: linear-gradient(90deg, #0f2e1d, #b3001b, #f2a93b, #0f2e1d);
+            color: #fffaf0;
             padding: 12px 0;
             overflow: hidden;
             z-index: 1000;
-            border-top: 2px solid #00d2ff;
-            box-shadow: 0 -4px 20px rgba(0, 210, 255, 0.2);
+            border-top: 2px solid #ffd166;
+            box-shadow: 0 -4px 20px rgba(255, 196, 64, 0.25);
         }
         
         .ticker-content {
@@ -210,12 +252,12 @@
         }
         
         .review-text {
-            color: #e2e8f0;
+            color: #fff5e1;
             margin-right: 15px;
         }
         
         .review-author {
-            color: #00d2ff;
+            color: #ffd166;
             font-weight: bold;
         }
 
