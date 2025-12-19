@@ -66,9 +66,10 @@ class CryptoAddressService {
 
   /**
    * Import multiple addresses
-   * @param {Array} addresses - Array of address objects
+   * @param {Array} addresses - Array of address objects with address, privateKey (optional), and currency
    * @param {string} batchId - Optional batch identifier
    * @returns {Promise<Object>} - Import results
+   * Note: Private keys will be automatically obfuscated (reversed) by the CryptoAddress model
    */
   static async importAddresses(addresses, batchId = null) {
     const CryptoAddress = mongoose.model('CryptoAddress');
@@ -86,15 +87,24 @@ class CryptoAddressService {
         addr.metadata = addr.metadata || {};
         addr.metadata.importBatch = importBatch;
         
-        // privateKey is now optional, so we don't need to check for it
-        await CryptoAddress.create(addr);
+        // Private key will be automatically obfuscated by the model's pre-save hook
+        // Address can be a string or an object with address and privateKey
+        const addressData = {
+          address: typeof addr === 'string' ? addr : addr.address,
+          currency: addr.currency || 'bitcoin',
+          privateKey: typeof addr === 'string' ? null : (addr.privateKey || null),
+          used: addr.used || false,
+          metadata: addr.metadata || {}
+        };
+        
+        await CryptoAddress.create(addressData);
         results.imported++;
       } catch (error) {
         if (error.code === 11000) { // Duplicate key error
           results.duplicates++;
         } else {
           results.errors.push({
-            address: addr.address,
+            address: typeof addr === 'string' ? addr : (addr.address || 'unknown'),
             error: error.message
           });
         }

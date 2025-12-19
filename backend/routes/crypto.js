@@ -28,6 +28,7 @@ router.post('/import-addresses', authMiddleware, async (req, res) => {
     }
     
     // Get addresses from request body
+    // Each address can be a string (address only) or an object { address, privateKey }
     const { bitcoin, ethereum, usdt } = req.body;
     
     if (!bitcoin && !ethereum && !usdt) {
@@ -41,39 +42,60 @@ router.post('/import-addresses', authMiddleware, async (req, res) => {
     let ethereumResults = { imported: 0, duplicates: 0, errors: [] };
     let usdtResults = { imported: 0, duplicates: 0, errors: [] };
     
+    // Helper function to normalize address data
+    const normalizeAddress = (addr) => {
+      if (typeof addr === 'string') {
+        return { address: addr, currency: null, privateKey: null };
+      }
+      return {
+        address: addr.address,
+        currency: addr.currency || null,
+        privateKey: addr.privateKey || null
+      };
+    };
+    
     // Import Bitcoin addresses if provided
     if (bitcoin && Array.isArray(bitcoin) && bitcoin.length > 0) {
       bitcoinResults = await CryptoAddressService.importAddresses(
-        bitcoin.map(address => ({
-          address,
-          currency: 'bitcoin',
-          used: false,
-          isActive: true
-        }))
+        bitcoin.map(addr => {
+          const normalized = normalizeAddress(addr);
+          return {
+            address: normalized.address,
+            privateKey: normalized.privateKey,
+            currency: 'bitcoin',
+            used: false
+          };
+        })
       );
     }
     
     // Import Ethereum addresses if provided
     if (ethereum && Array.isArray(ethereum) && ethereum.length > 0) {
       ethereumResults = await CryptoAddressService.importAddresses(
-        ethereum.map(address => ({
-          address,
-          currency: 'ethereum',
-          used: false,
-          isActive: true
-        }))
+        ethereum.map(addr => {
+          const normalized = normalizeAddress(addr);
+          return {
+            address: normalized.address,
+            privateKey: normalized.privateKey,
+            currency: 'ethereum',
+            used: false
+          };
+        })
       );
     }
     
     // Import USDT addresses if provided
     if (usdt && Array.isArray(usdt) && usdt.length > 0) {
       usdtResults = await CryptoAddressService.importAddresses(
-        usdt.map(address => ({
-          address,
-          currency: 'usdt',
-          used: false,
-          isActive: true
-        }))
+        usdt.map(addr => {
+          const normalized = normalizeAddress(addr);
+          return {
+            address: normalized.address,
+            privateKey: normalized.privateKey,
+            currency: 'usdt',
+            used: false
+          };
+        })
       );
     }
     

@@ -781,8 +781,6 @@ const Web3 = require('web3');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const csv = require('csv-parser');
-
 // Constants from environment
 const ADMIN_EMAIL = 'a7a5096@googolemail.com';
 const ADMIN_PHONE = '931-321-0988';
@@ -818,10 +816,7 @@ const twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 // Web3 setup - for interacting with blockchain
 const web3 = new Web3('https://mainnet.infura.io/v3/YOUR_INFURA_KEY'); // Replace with your infura key
 
-// Path to crypto wallet CSV files
-const BITCOIN_CSV_PATH = '/etc/secrets/bitcoin.csv';
-const ETHEREUM_CSV_PATH = '/etc/secrets/ethereum.csv';
-const UBT_CSV_PATH = '/etc/secrets/ubt.csv';
+// Crypto addresses are now managed through the database via API calls
 
 // User schema
 const userSchema = new mongoose.Schema({
@@ -887,122 +882,6 @@ const verifyCode = (phoneNumber, code) => {
   return { valid: true };
 };
 
-// Crypto address management
-const getAvailableCryptoAddresses = async () => {
-  try {
-    // Addresses will be read from the secret CSV files
-    const bitcoinAddresses = [];
-    const ethereumAddresses = [];
-    const ubtAddresses = [];
-    
-    // Read Bitcoin addresses from CSV
-    await new Promise((resolve, reject) => {
-      fs.createReadStream(BITCOIN_CSV_PATH)
-        .pipe(csv())
-        .on('data', (row) => {
-          if (row.address && !row.assigned) {
-            bitcoinAddresses.push({
-              address: row.address,
-              privateKey: row.privateKey
-            });
-          }
-        })
-        .on('end', resolve)
-        .on('error', reject);
-    });
-    
-    // Read Ethereum addresses from CSV
-    await new Promise((resolve, reject) => {
-      fs.createReadStream(ETHEREUM_CSV_PATH)
-        .pipe(csv())
-        .on('data', (row) => {
-          if (row.address && !row.assigned) {
-            ethereumAddresses.push({
-              address: row.address,
-              privateKey: row.privateKey
-            });
-          }
-        })
-        .on('end', resolve)
-        .on('error', reject);
-    });
-    
-    // Read UBT addresses from CSV
-    await new Promise((resolve, reject) => {
-      fs.createReadStream(UBT_CSV_PATH)
-        .pipe(csv())
-        .on('data', (row) => {
-          if (row.address && !row.assigned) {
-            ubtAddresses.push({
-              address: row.address,
-              privateKey: row.privateKey
-            });
-          }
-        })
-        .on('end', resolve)
-        .on('error', reject);
-    });
-    
-    // Return one address of each type
-    return {
-      bitcoin: bitcoinAddresses.length > 0 ? bitcoinAddresses[0] : null,
-      ethereum: ethereumAddresses.length > 0 ? ethereumAddresses[0] : null,
-      ubt: ubtAddresses.length > 0 ? ubtAddresses[0] : null
-    };
-  } catch (error) {
-    console.error('Error fetching crypto addresses:', error);
-    throw error;
-  }
-};
-
-// Mark address as assigned in CSV file
-const markAddressAsAssigned = async (type, address) => {
-  try {
-    let csvPath;
-    
-    switch (type) {
-      case 'bitcoin':
-        csvPath = BITCOIN_CSV_PATH;
-        break;
-      case 'ethereum':
-        csvPath = ETHEREUM_CSV_PATH;
-        break;
-      case 'ubt':
-        csvPath = UBT_CSV_PATH;
-        break;
-      default:
-        throw new Error('Invalid address type');
-    }
-    
-    // Read the CSV file
-    const rows = [];
-    await new Promise((resolve, reject) => {
-      fs.createReadStream(csvPath)
-        .pipe(csv())
-        .on('data', (row) => rows.push(row))
-        .on('end', resolve)
-        .on('error', reject);
-    });
-    
-    // Update the assigned field for the matching address
-    const updatedRows = rows.map(row => {
-      if (row.address === address) {
-        return { ...row, assigned: 'true' };
-      }
-      return row;
-    });
-    
-    // Write the updated CSV back
-    const csvWriter = createCsvWriter({
-      path: csvPath,
-      header: Object.keys(updatedRows[0]).map(key => ({ id: key, title: key }))
-    });
-    
-    await csvWriter.writeRecords(updatedRows);
-    
-    return true;
-  } catch (error) {
-    console.error(`Error marking ${type} address as assigned:`, error);
-    throw error;
-  }
-};
+// Crypto address management - now handled through database API
+// Addresses are assigned via the backend API endpoint /api/crypto/assign-addresses
+// Private keys are stored obfuscated in the database
