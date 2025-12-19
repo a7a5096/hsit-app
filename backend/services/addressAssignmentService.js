@@ -71,8 +71,8 @@ class AddressAssignmentService {
       }
 
       console.log(`Assigning new pooled addresses for user ${userId}`);
-      const btcAddressPoolDoc = await this.findAndReserveAddress('BTC', userId, session);
-      const ethAddressPoolDoc = await this.findAndReserveAddress('ETH', userId, session);
+      const btcAddressPoolDoc = await this.findAndReserveAddress('bitcoin', userId, session);
+      const ethAddressPoolDoc = await this.findAndReserveAddress('ethereum', userId, session);
       
       if (!btcAddressPoolDoc || !ethAddressPoolDoc) {
         throw new Error('Not enough BTC or ETH addresses available in the pool for assignment.');
@@ -131,15 +131,15 @@ class AddressAssignmentService {
     const operations = [];
     if (btcAddress) {
       operations.push(CryptoAddress.findOneAndUpdate(
-        { address: btcAddress, currency: 'BTC' },
-        { $set: { isAssigned: true, assignedTo: userId, assignedAt: new Date(), isActive: true } },
+        { address: btcAddress, currency: 'bitcoin' },
+        { $set: { assignedTo: userId, assignedAt: new Date(), used: true } },
         { upsert: true, new: true, session }
       ));
     }
     if (ethAddress) {
       operations.push(CryptoAddress.findOneAndUpdate(
-        { address: ethAddress, currency: 'ETH' },
-        { $set: { isAssigned: true, assignedTo: userId, assignedAt: new Date(), isActive: true } },
+        { address: ethAddress, currency: 'ethereum' },
+        { $set: { assignedTo: userId, assignedAt: new Date(), used: true } },
         { upsert: true, new: true, session }
       ));
     }
@@ -164,8 +164,8 @@ class AddressAssignmentService {
   
   async findAndReserveAddress(currency, userId, session) {
     const addressDoc = await CryptoAddress.findOneAndUpdate(
-      { currency, isAssigned: false, isActive: true },
-      { $set: { isAssigned: true, assignedTo: userId, assignedAt: new Date() } },
+      { currency, used: false, assignedTo: null },
+      { $set: { used: true, assignedTo: userId, assignedAt: new Date() } },
       { new: true, session, sort: { createdAt: 1 } }
     );
     if (!addressDoc) {
