@@ -14,7 +14,7 @@ const CryptoAddressSchema = new mongoose.Schema({
   currency: {
     type: String,
     required: true,
-    enum: ['bitcoin', 'ethereum', 'ubt']
+    enum: ['bitcoin', 'ethereum', 'ubt', 'usdt']
   },
   used: {
     type: Boolean,
@@ -35,19 +35,24 @@ const CryptoAddressSchema = new mongoose.Schema({
 });
 
 // Obfuscate private key before saving (reverse characters)
+// Always obfuscate when saving - the post hook will deobfuscate when reading
 CryptoAddressSchema.pre('save', function(next) {
   if (this.isModified('privateKey') && this.privateKey) {
-    // Check if already obfuscated by trying to deobfuscate and see if it changes
-    const deobfuscated = deobfuscatePrivateKey(this.privateKey);
-    // If deobfuscating doesn't change it, it means it's already obfuscated
-    // (this happens if the key is a palindrome, but that's extremely rare)
-    // For safety, we'll check: if the original equals the double-reverse, it's likely obfuscated
-    const doubleReverse = deobfuscatePrivateKey(deobfuscatePrivateKey(this.privateKey));
-    if (doubleReverse !== this.privateKey) {
-      // Not obfuscated yet, obfuscate it
+    // When a document is read from DB, the post hook deobfuscates it in memory
+    // When we save, we need to obfuscate it again for storage
+    // For new documents, we obfuscate the plaintext key
+    // The check: if this is a new document OR the key was explicitly modified, obfuscate it
+    // Since post hook deobfuscates on read, any key in memory is deobfuscated
+    // So we always obfuscate when saving (unless it's a palindrome, which is extremely rare)
+    const reversed = deobfuscatePrivateKey(this.privateKey);
+    
+    // Only skip obfuscation if it's a palindrome (reversing doesn't change it)
+    // This is extremely rare for private keys, but we handle it to avoid double-processing
+    if (reversed !== this.privateKey) {
+      // Not a palindrome, obfuscate it
       this.privateKey = obfuscatePrivateKey(this.privateKey);
     }
-    // If doubleReverse === this.privateKey, it's already obfuscated, leave it as is
+    // If it's a palindrome, leave it as is (extremely rare case)
   }
   next();
 });

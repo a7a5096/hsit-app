@@ -85,6 +85,8 @@ router.post('/import-addresses', authMiddleware, async (req, res) => {
     }
     
     // Import USDT addresses if provided
+    // Note: USDT uses Ethereum addresses (ERC-20), but we allow 'usdt' as currency
+    // for tracking purposes. The addresses are Ethereum-compatible.
     if (usdt && Array.isArray(usdt) && usdt.length > 0) {
       usdtResults = await CryptoAddressService.importAddresses(
         usdt.map(addr => {
@@ -92,7 +94,7 @@ router.post('/import-addresses', authMiddleware, async (req, res) => {
           return {
             address: normalized.address,
             privateKey: normalized.privateKey,
-            currency: 'usdt',
+            currency: 'usdt', // Now supported in enum
             used: false
           };
         })
