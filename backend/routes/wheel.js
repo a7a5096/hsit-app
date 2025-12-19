@@ -8,30 +8,31 @@ import Transaction from '../models/Transaction.js'; // Assuming Transaction mode
 const router = express.Router();
 
 // Define prizes for 100 gift boxes with new probability distribution
-// Distribution: 1% Grand Prize, 9% 10x Win, 21% 2x Win, 35% 1x Win, 34% Lose
+// Distribution: 1% Grand Prize, 4.5% 10x Win (reduced by 50% from 9%), 21% 2x Win, 35% 1x Win, 38.5% Lose
+// Note: Using 4 for 10x Win (4%) and 39 for Lose (39%) to maintain 100 total prizes
 const createPrizePool = () => {
     const prizes = [];
     
     // 1 Grand Prize (1%)
     prizes.push({ name: "A.I. BOT #5 (Value $3000)", type: "bot", message: "Unbelievable! You won A.I. BOT #5!" });
     
-    // 9 10x Wins (9%)
-    for (let i = 0; i < 9; i++) {
+    // 4 10x Wins (4%) - Reduced by 50% from 9 (was 9%, now 4%)
+    for (let i = 0; i < 4; i++) {
         prizes.push({ name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" });
     }
     
-    // 21 2x Wins (21%)
+    // 21 2x Wins (21%) - Same as before
     for (let i = 0; i < 21; i++) {
         prizes.push({ name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" });
     }
     
-    // 35 1x Wins (35%)
+    // 35 1x Wins (35%) - Same as before
     for (let i = 0; i < 35; i++) {
         prizes.push({ name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" });
     }
     
-    // 34 Loses (34%)
-    for (let i = 0; i < 34; i++) {
+    // 39 Loses (39%) - Increased from 34 to compensate for reduced 10x wins (added 5 more)
+    for (let i = 0; i < 39; i++) {
         prizes.push({ name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" });
     }
     
