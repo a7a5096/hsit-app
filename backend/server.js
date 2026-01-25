@@ -1,5 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
 import corsMiddleware from './middleware/cors.js';
 
@@ -28,12 +30,48 @@ import botCompletionRoutes from './routes/botCompletion.js';
 // Initialize Express app
 const app = express();
 
-// --- Middleware ---
+// --- Security Middleware ---
+// Helmet helps secure Express apps by setting various HTTP headers
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", "data:", "https:"],
+        },
+    },
+    crossOriginEmbedderPolicy: false, // Disable if causing issues with external resources
+}));
+
+// Rate limiting to prevent brute-force attacks
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: { success: false, message: 'Too many requests, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Stricter rate limiting for authentication routes
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limit each IP to 10 login attempts per windowMs
+    message: { success: false, message: 'Too many login attempts, please try again after 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Apply general rate limiting to all requests
+app.use(generalLimiter);
+
+// --- Other Middleware ---
 app.use(corsMiddleware()); // Handles CORS
-app.use(express.json());   // Body parser for JSON requests
+app.use(express.json({ limit: '10kb' })); // Body parser with size limit to prevent large payload attacks
 
 // --- API Routes ---
-app.use('/api/auth', authRoutes);
+// Apply stricter rate limiting to auth routes
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/bots', botsRoutes);
@@ -132,12 +170,7 @@ app.get('/', (req, res) => {
 
 // --- Application Settings Initialization ---
 async function initializeAppSettings() {
-    // try {
-    //     await Setting.getBonusCountdown(); // FIXME: Commenting out as Setting model is missing
-    //     console.log("Global bonus countdown setting checked/initialized successfully.");
-    // } catch (error) {
-    //     console.error("Failed to initialize global bonus countdown setting:", error);
-    // }
+    // Application settings initialization can be added here
 }
 
 // --- Database Connection and Server Start ---
@@ -146,7 +179,7 @@ const startServer = async () => {
         await connectDB(); 
         await initializeAppSettings(); 
 
-        const PORT = process.env.PORT || 10000; // Use 10000 based on your logs
+        const PORT = process.env.PORT || 10000;
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });

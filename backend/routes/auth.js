@@ -16,8 +16,12 @@ import emailService from '../services/emailService.js';
 
 const router = express.Router();
 
-// Environment variables
-const JWT_SECRET = process.env.JWT_SECRET || 'hsit_jwt_secret_key_2025';
+// Environment variables - SECURITY: JWT_SECRET must be set in environment
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('FATAL ERROR: JWT_SECRET environment variable is not defined.');
+  process.exit(1);
+}
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
 const UBT_INITIAL_EXCHANGE_RATE = process.env.UBT_INITIAL_EXCHANGE_RATE || 1;
 

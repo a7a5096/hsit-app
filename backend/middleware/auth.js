@@ -4,7 +4,14 @@ import dotenv from "dotenv";
 dotenv.config(); // Ensure environment variables are loaded
 
 // JWT Secret for token verification - must be a Uint8Array for jose
-const JWT_SECRET_STRING = process.env.JWT_SECRET || "hsit-secret-key";
+// SECURITY: Require JWT_SECRET to be set in environment variables
+const JWT_SECRET_STRING = process.env.JWT_SECRET;
+
+if (!JWT_SECRET_STRING) {
+  console.error("FATAL ERROR: JWT_SECRET environment variable is not defined.");
+  process.exit(1);
+}
+
 const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
 
 /**
@@ -26,7 +33,7 @@ const authMiddleware = async (req, res, next) => {
   try {
     const { payload } = await jose.jwtVerify(token, JWT_SECRET);
     
-    // FIXED: Handle both token formats to ensure compatibility
+    // Handle both token formats to ensure compatibility
     // If payload contains 'id' directly (from jsonwebtoken), use that
     // If payload contains 'user' object (from jose), use that
     if (payload.id) {
@@ -43,15 +50,15 @@ const authMiddleware = async (req, res, next) => {
     
     next();
   } catch (err) {
-    console.error("Auth Middleware - Token verification failed:", err.message); // Log the error
+    console.error("Auth Middleware - Token verification failed:", err.message);
     if (err.code === "ERR_JWT_EXPIRED") {
         return res.status(401).json({ msg: "Token is expired" });
     } else if (err.code === "ERR_JWS_INVALID" || err.code === "ERR_JWS_SIGNATURE_VERIFICATION_FAILED" || err.code === "ERR_JWT_CLAIM_VALIDATION_FAILED") {
         return res.status(401).json({ msg: "Token is not valid" });
     }
-    // For other errors, send a generic 500 or a more specific 401 if appropriate
+    // For other errors, send a generic 401
     res.status(401).json({ msg: "Token is not valid" }); 
   }
 };
 
-export default authMiddleware; // Changed to ES6 export to match routes/auth.js style
+export default authMiddleware;

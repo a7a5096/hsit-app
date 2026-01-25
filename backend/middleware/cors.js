@@ -1,38 +1,55 @@
 import cors from 'cors';
 
 /**
- * Enhanced CORS middleware with proper error handling for WebKit browsers
- * This middleware addresses the "Load failed" error in WebKit-based browsers
- * by ensuring proper CORS headers and preflight handling
+ * Enhanced CORS middleware with proper security configuration
+ * Only allows requests from trusted origins
  */
 const corsMiddleware = () => {
+  // List of allowed origins - include both production and development URLs
+  const allowedOrigins = [
+    'https://hsitapp.link',
+    'https://www.hsitapp.link',
+    'https://hsit-app.vercel.app',
+    'https://hsit-app.onrender.com'
+  ];
+
+  // Add localhost origins only in development
+  if (process.env.NODE_ENV !== 'production') {
+    allowedOrigins.push('http://localhost:3000');
+    allowedOrigins.push('http://localhost:5000');
+    allowedOrigins.push('http://127.0.0.1:3000');
+    allowedOrigins.push('http://127.0.0.1:5000');
+  }
+
   const corsOptions = {
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl requests)
+      // Allow requests with no origin (like mobile apps, curl requests, same-origin)
       if (!origin) {
         return callback(null, true);
       }
       
-      // List of allowed origins - include both production and development URLs
-      const allowedOrigins = [
-        'https://hsitapp.link',
-        'https://www.hsitapp.link',
-        'http://localhost:3000',
-        'http://localhost:5000',
-        'https://hsit-app.vercel.app'
-      ];
-      
-      // Check if the origin is allowed
-      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      // Check if the origin is in the allowed list
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(null, true); // Allow all origins in current implementation
+        console.warn(`CORS: Blocked request from unauthorized origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
       }
     },
     credentials: true,
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
-    allowedHeaders: "Content-Type, Authorization, X-Requested-With, Accept, x-auth-token, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Cache-Control",
-    exposedHeaders: "Content-Type, Authorization, Access-Control-Allow-Origin, Access-Control-Allow-Credentials",
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'x-auth-token',
+      'Origin',
+      'Access-Control-Request-Method',
+      'Access-Control-Request-Headers',
+      'Cache-Control'
+    ],
+    exposedHeaders: ['Content-Type', 'Authorization'],
     maxAge: 86400, // 24 hours
     preflightContinue: false,
     optionsSuccessStatus: 204
