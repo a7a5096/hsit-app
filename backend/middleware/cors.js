@@ -10,7 +10,9 @@ const corsMiddleware = () => {
     'https://hsitapp.link',
     'https://www.hsitapp.link',
     'https://hsit-app.vercel.app',
-    'https://hsit-app.onrender.com'
+    'https://hsit-app.onrender.com',
+    'https://botcitadel.com',
+    'https://www.botcitadel.com'
   ];
 
   // Add localhost origins only in development
