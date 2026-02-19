@@ -52,7 +52,7 @@ router.get('/', async (req, res) => {
 });
 
 // @route   GET api/bots/purchased
-// @desc    Get all bots purchased by the authenticated user
+// @desc    Get all bots purchased by the authenticated user with server-calculated earnings
 // @access  Private
 router.get('/purchased', auth, async (req, res) => {
     try {
@@ -63,18 +63,98 @@ router.get('/purchased', auth, async (req, res) => {
         if (!user.bots || user.bots.length === 0) {
             return res.json({ success: true, bots: [] });
         }
-        // Join user.bots with master bots list for full details
+        
+        const now = new Date();
+        
+        // Join user.bots with master bots list and compute all values server-side
         const purchasedBots = user.bots.map(userBot => {
-            const bot = bots.find(b => String(b.id) === String(userBot.botId));
-            if (!bot) return null;
+            const masterBot = bots.find(b => String(b.id) === String(userBot.botId));
+            if (!masterBot) return null;
+            
+            // Use database values with master bot fallbacks
+            const purchaseDate = userBot.purchasedAt ? new Date(userBot.purchasedAt) : new Date();
+            const investment = typeof userBot.investmentAmount === 'number' ? userBot.investmentAmount : masterBot.price;
+            const lockInDays = userBot.lockInDays || masterBot.lockInDays;
+            const dailyCredit = masterBot.dailyCredit;
+            const totalReturnAmount = masterBot.totalReturnAmount;
+            const totalProfit = masterBot.totalProfit;
+            
+            // Calculate completion date from database or derive it
+            const completionDate = userBot.completionDate 
+                ? new Date(userBot.completionDate) 
+                : new Date(purchaseDate.getTime() + lockInDays * 24 * 60 * 60 * 1000);
+            
+            // Calculate days active (capped at lockInDays)
+            const msActive = Math.max(0, now - purchaseDate);
+            const daysActive = Math.min(Math.floor(msActive / (1000 * 60 * 60 * 24)), lockInDays);
+            
+            // Calculate remaining days
+            const remainingDays = Math.max(0, lockInDays - daysActive);
+            
+            // Determine status from database or calculate
+            let status;
+            if (userBot.status === 'completed' || userBot.payoutProcessed) {
+                status = 'completed';
+            } else if (remainingDays <= 0) {
+                status = 'completed';
+            } else {
+                status = 'active';
+            }
+            
+            // Server-calculated earnings: dailyCredit * daysActive, capped at totalProfit
+            const earned = Math.min(daysActive * dailyCredit, totalProfit);
+            
+            // Expected future earnings
+            const expectedFutureEarnings = Math.max(0, totalProfit - earned);
+            
             return {
-                ...bot,
-                purchaseDate: userBot.purchasedAt,
-                investmentAmount: userBot.investmentAmount,
-                status: userBot.status
+                botId: masterBot.id,
+                name: masterBot.name,
+                purchaseDate: purchaseDate.toISOString(),
+                investmentAmount: investment,
+                lockInDays: lockInDays,
+                dailyCredit: dailyCredit,
+                totalReturnAmount: totalReturnAmount,
+                totalProfit: totalProfit,
+                completionDate: completionDate.toISOString(),
+                daysActive: daysActive,
+                remainingDays: remainingDays,
+                status: status,
+                earned: earned,
+                expectedFutureEarnings: expectedFutureEarnings,
+                payoutProcessed: userBot.payoutProcessed || false
             };
         }).filter(Boolean);
-        res.json({ success: true, bots: purchasedBots });
+        
+        // Calculate summary totals server-side
+        let totalInvestment = 0;
+        let totalEarned = 0;
+        let totalExpectedFuture = 0;
+        let activeBots = 0;
+        let completedBots = 0;
+        
+        purchasedBots.forEach(bot => {
+            totalInvestment += bot.investmentAmount;
+            totalEarned += bot.earned;
+            totalExpectedFuture += bot.expectedFutureEarnings;
+            if (bot.status === 'active') activeBots++;
+            else completedBots++;
+        });
+        
+        res.json({ 
+            success: true, 
+            bots: purchasedBots,
+            summary: {
+                totalInvestment,
+                totalEarned,
+                totalExpectedFuture,
+                totalExpectedProfit: totalEarned + totalExpectedFuture,
+                activeBots,
+                completedBots,
+                currentROI: totalInvestment > 0 ? ((totalEarned / totalInvestment) * 100) : 0,
+                expectedROI: totalInvestment > 0 ? (((totalEarned + totalExpectedFuture) / totalInvestment) * 100) : 0
+            }
+        });
     } catch (err) {
         console.error('Error fetching purchased bots:', err);
         res.status(500).json({ success: false, msg: 'Server error while fetching purchased bots.' });
