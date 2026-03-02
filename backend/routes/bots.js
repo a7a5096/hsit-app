@@ -25,6 +25,12 @@ function getBotById(id) {
     return bots.find(bot => String(bot.id) === String(id));
 }
 
+function getBotByName(name) {
+    if (!name) return null;
+    const normalized = String(name).trim().toLowerCase();
+    return bots.find(bot => String(bot.name).trim().toLowerCase() === normalized) || null;
+}
+
 // @route   GET api/bots
 // @desc    Get all available bots with bonus information
 // @access  Public
@@ -60,15 +66,47 @@ router.get('/purchased', auth, async (req, res) => {
         if (!user) {
             return res.status(404).json({ success: false, msg: 'User not found' });
         }
-        if (!user.bots || user.bots.length === 0) {
+        const hasNewBots = Array.isArray(user.bots) && user.bots.length > 0;
+        const hasLegacyBots = Array.isArray(user.botsPurchased) && user.botsPurchased.length > 0;
+
+        if (!hasNewBots && !hasLegacyBots) {
             return res.json({ success: true, bots: [] });
         }
         
         const now = new Date();
+
+        // Build a normalized list of user-owned bot entries from both new and legacy fields.
+        const normalizedUserBots = [];
+        if (hasNewBots) {
+            normalizedUserBots.push(...user.bots);
+        }
+        if (hasLegacyBots) {
+            const alreadyIncluded = new Set(
+                normalizedUserBots
+                    .map(b => b?.botId)
+                    .filter(Boolean)
+                    .map(id => String(id))
+            );
+
+            user.botsPurchased.forEach(legacyBotId => {
+                const legacyId = String(legacyBotId);
+                if (!alreadyIncluded.has(legacyId)) {
+                    normalizedUserBots.push({
+                        botId: legacyId,
+                        purchasedAt: user.createdAt,
+                        status: 'active',
+                        payoutProcessed: false
+                    });
+                }
+            });
+        }
         
         // Join user.bots with master bots list and compute all values server-side
-        const purchasedBots = user.bots.map(userBot => {
-            const masterBot = bots.find(b => String(b.id) === String(userBot.botId));
+        const purchasedBots = normalizedUserBots.map(userBot => {
+            const masterBot =
+                getBotById(userBot.botId) ||
+                getBotById(userBot.id) ||
+                getBotByName(userBot.name);
             if (!masterBot) return null;
             
             // Use database values with master bot fallbacks

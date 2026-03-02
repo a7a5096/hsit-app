@@ -42,9 +42,14 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  // ADD THIS bots FIELD TO YOUR SCHEMA
+  // Bots owned by user (current structure)
   bots: {
     type: [OwnedBotSchema],
+    default: []
+  },
+  // Legacy bot ownership field kept for backward compatibility
+  botsPurchased: {
+    type: [String],
     default: []
   },
   walletAddresses: {
