@@ -1,23 +1,42 @@
 // frontend/public/js/auth.js
-console.log("auth.js: Script loaded"); 
+console.log("auth.js: Script loaded at", new Date().toISOString()); 
 
 document.addEventListener("DOMContentLoaded", function() {
     console.log("auth.js: DOMContentLoaded event fired"); 
 
+    // Check if API_URL is defined
     if (typeof API_URL === 'undefined') {
         console.error("auth.js: API_URL is not defined! Falling back to default URL.");
-        window.API_URL = 'https://hsit-backend.onrender.com'; // Fallback URL
+        window.API_URL = 'https://hsit-backend.onrender.com';
+    } else {
+        console.log("auth.js: API_URL is defined as:", API_URL);
     }
 
     var loginForm = document.getElementById("loginForm");
+    console.log("auth.js: Looking for loginForm, found:", loginForm);
+    
     if (loginForm) {
-        console.log("auth.js: loginForm found"); 
+        console.log("auth.js: loginForm found, attaching submit handler"); 
+        
+        // Remove any existing listeners first (in case of double-load)
+        loginForm.removeEventListener("submit", handleLogin);
         loginForm.addEventListener("submit", handleLogin);
+        
+        // Also add click handler to the submit button as backup
+        var submitBtn = loginForm.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            console.log("auth.js: Submit button found, adding click handler as backup");
+            submitBtn.addEventListener("click", function(e) {
+                console.log("auth.js: Submit button clicked");
+            });
+        }
+        
         console.log("auth.js: Event listener attached to loginForm"); 
     } else {
         const currentPage = window.location.pathname.split("/").pop();
+        console.log("auth.js: Current page is:", currentPage);
         if (currentPage === "index.html" || currentPage === "") { 
-            console.warn("auth.js: loginForm not found on login page (index.html)!"); 
+            console.error("auth.js: CRITICAL - loginForm not found on login page!"); 
         }
     }
 
@@ -30,12 +49,33 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 function handleLogin(event) {
-    console.log("auth.js: handleLogin function called"); 
-    event.preventDefault();
+    console.log("auth.js: handleLogin function called at", new Date().toISOString()); 
+    
+    // Prevent default form submission
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        console.log("auth.js: Default form submission prevented");
+    }
 
     var statusMessage = document.getElementById("statusMessage");
-    var emailValue = document.getElementById("email").value.trim();
-    var passwordValue = document.getElementById("password").value;
+    var emailEl = document.getElementById("email");
+    var passwordEl = document.getElementById("password");
+    
+    console.log("auth.js: Email element:", emailEl);
+    console.log("auth.js: Password element:", passwordEl);
+    
+    if (!emailEl || !passwordEl) {
+        console.error("auth.js: Email or password input not found!");
+        alert("Error: Form inputs not found. Please refresh the page.");
+        return;
+    }
+    
+    var emailValue = emailEl.value.trim();
+    var passwordValue = passwordEl.value;
+    
+    console.log("auth.js: Email value:", emailValue);
+    console.log("auth.js: Password provided:", passwordValue ? "yes" : "no");
 
     if (statusMessage) {
         statusMessage.textContent = "";
@@ -48,6 +88,7 @@ function handleLogin(event) {
     }
 
     showStatus("Signing in...", "info");
+    console.log("auth.js: Making fetch request to:", `${API_URL}/api/auth`);
 
     fetch(`${API_URL}/api/auth`, {
         method: 'POST',
@@ -61,16 +102,20 @@ function handleLogin(event) {
         })
     })
     .then(response => {
+        console.log("auth.js: Received response, status:", response.status);
         if (!response.ok) {
             return response.json().then(errorData => {
+                console.error("auth.js: Login failed with error data:", errorData);
                 throw new Error(errorData.message || `Login failed (Status: ${response.status})`);
-            }).catch(() => { // Catch if response.json() itself fails
+            }).catch((parseError) => {
+                console.error("auth.js: Could not parse error response:", parseError);
                 throw new Error(`Login failed (Status: ${response.status}, unable to parse error)`);
             });
         }
         return response.json();
     })
     .then(data => {
+        console.log("auth.js: Login response data:", data);
         if (data.token && data.user) {
             localStorage.setItem("token", data.token);
             localStorage.setItem("userData", JSON.stringify(data.user));
@@ -88,7 +133,10 @@ function handleLogin(event) {
         }
     })
     .catch(error => {
-        console.error("auth.js: Login error:", error.message); 
+        console.error("auth.js: Login error:", error); 
+        console.error("auth.js: Error name:", error.name);
+        console.error("auth.js: Error message:", error.message);
+        
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
             showStatus("Network error: Could not connect. Please check your internet.", "error");
         } else {
@@ -96,6 +144,11 @@ function handleLogin(event) {
         }
     });
 }
+
+// Global error handler to catch any uncaught errors
+window.addEventListener('error', function(event) {
+    console.error("auth.js: Global error caught:", event.error);
+});
 
 function handleSignup(event) {
     console.log("auth.js: handleSignup function called"); 
