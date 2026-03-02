@@ -38,18 +38,25 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function fetchPurchasedBots() {
+    const container = document.querySelector('.purchased-bots-container');
+    
     try {
         const token = localStorage.getItem('token');
         if (!token) {
             console.error('No token found');
+            showBotsError(container, 'Please log in to view your bots.');
             return;
         }
 
+        console.log('Fetching purchased bots from:', `${API_URL}/api/bots/purchased`);
+        
         const response = await fetch(`${API_URL}/api/bots/purchased`, {
             headers: {
                 'x-auth-token': token
             }
         });
+
+        console.log('Response status:', response.status);
 
         if (!response.ok) {
             if (response.status === 401) {
@@ -61,26 +68,50 @@ async function fetchPurchasedBots() {
         }
 
         const data = await response.json();
+        console.log('API response:', data);
+        
         if (data.success) {
             displayPurchasedBots(data.bots, data.summary);
         } else {
             console.error('Failed to fetch bots:', data.message);
+            showBotsError(container, data.message || 'Failed to load bots.');
         }
     } catch (error) {
         console.error('Error fetching purchased bots:', error);
+        showBotsError(container, 'Error loading bots. Please try refreshing the page.');
+    }
+}
+
+function showBotsError(container, message) {
+    if (container) {
+        container.innerHTML = `
+            <div class="error-message" style="text-align: center; padding: 2rem; color: #ef4444;">
+                <p>${message}</p>
+                <button onclick="fetchPurchasedBots()" class="btn btn-secondary" style="margin-top: 1rem;">Retry</button>
+            </div>
+        `;
     }
 }
 
 function displayPurchasedBots(bots, summary) {
     const container = document.querySelector('.purchased-bots-container');
-    const emptyMessage = container.querySelector('.empty-bots-message');
     
-    if (!bots || bots.length === 0) {
-        emptyMessage.style.display = 'block';
+    if (!container) {
+        console.error('Bot container not found!');
         return;
     }
-
-    emptyMessage.style.display = 'none';
+    
+    if (!bots || bots.length === 0) {
+        container.innerHTML = `
+            <div class="empty-bots-message">
+                <p>You haven't purchased any bots yet.</p>
+                <a href="ai_products.html" class="btn btn-primary">Browse Bots</a>
+            </div>
+        `;
+        return;
+    }
+    
+    console.log('Displaying', bots.length, 'bots');
 
     // Create table for bot details using server-provided data
     const table = document.createElement('table');
@@ -118,43 +149,55 @@ function displayPurchasedBots(bots, summary) {
     });
 
     // Create detailed summary section using server-provided summary
+    // Use default values if summary is missing
+    const s = summary || {
+        totalInvestment: 0,
+        totalEarned: 0,
+        totalExpectedFuture: 0,
+        totalExpectedProfit: 0,
+        activeBots: 0,
+        completedBots: 0,
+        currentROI: 0,
+        expectedROI: 0
+    };
+    
     const summarySection = document.createElement('div');
     summarySection.className = 'bot-detailed-summary';
     summarySection.innerHTML = `
         <h3>Investment Summary</h3>
         <div class="summary-stats">
             <div class="summary-stat">
-                <span class="stat-value">$${summary.totalInvestment.toFixed(2)}</span>
+                <span class="stat-value">$${s.totalInvestment.toFixed(2)}</span>
                 <span class="stat-label">Total Investment</span>
             </div>
             <div class="summary-stat">
-                <span class="stat-value">$${summary.totalEarned.toFixed(2)}</span>
+                <span class="stat-value">$${s.totalEarned.toFixed(2)}</span>
                 <span class="stat-label">Payments Received</span>
             </div>
             <div class="summary-stat">
-                <span class="stat-value">$${summary.totalExpectedFuture.toFixed(2)}</span>
+                <span class="stat-value">$${s.totalExpectedFuture.toFixed(2)}</span>
                 <span class="stat-label">Expected Future Payments</span>
             </div>
             <div class="summary-stat">
-                <span class="stat-value">$${summary.totalExpectedProfit.toFixed(2)}</span>
+                <span class="stat-value">$${s.totalExpectedProfit.toFixed(2)}</span>
                 <span class="stat-label">Total Expected Profit</span>
             </div>
         </div>
         <div class="summary-stats">
             <div class="summary-stat">
-                <span class="stat-value">${summary.activeBots}</span>
+                <span class="stat-value">${s.activeBots}</span>
                 <span class="stat-label">Active Bots</span>
             </div>
             <div class="summary-stat">
-                <span class="stat-value">${summary.completedBots}</span>
+                <span class="stat-value">${s.completedBots}</span>
                 <span class="stat-label">Completed Bots</span>
             </div>
             <div class="summary-stat">
-                <span class="stat-value">${summary.currentROI.toFixed(1)}%</span>
+                <span class="stat-value">${s.currentROI.toFixed(1)}%</span>
                 <span class="stat-label">ROI (Current)</span>
             </div>
             <div class="summary-stat">
-                <span class="stat-value">${summary.expectedROI.toFixed(1)}%</span>
+                <span class="stat-value">${s.expectedROI.toFixed(1)}%</span>
                 <span class="stat-label">ROI (Expected)</span>
             </div>
         </div>
