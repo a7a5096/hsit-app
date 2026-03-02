@@ -253,32 +253,28 @@ router.post('/purchase', auth, async (req, res) => {
     
         user.balances.ubt -= bot.price;
     
-        // Add bot to user's bots array (new structure)
+        // Add every purchase as a distinct entry (repeat purchases are allowed)
         if (!user.bots) user.bots = [];
-        const alreadyOwned = user.bots.some(b => String(b.botId) === String(botId));
-        if (!alreadyOwned) {
-            const completionDate = new Date();
-            completionDate.setDate(completionDate.getDate() + bot.lockInDays);
-            
-            user.bots.push({
-                botId: String(bot.id),
-                name: bot.name,
-                investmentAmount: bot.price,
-                purchasedAt: new Date(),
-                status: 'active',
-                completionDate: completionDate,
-                totalPayout: bot.totalReturnAmount,
-                payoutProcessed: false,
-                lockInDays: bot.lockInDays
-            });
-        }
-        // Also update botsPurchased for backward compatibility
+        const completionDate = new Date();
+        completionDate.setDate(completionDate.getDate() + bot.lockInDays);
+        
+        user.bots.push({
+            botId: String(bot.id),
+            name: bot.name,
+            investmentAmount: bot.price,
+            purchasedAt: new Date(),
+            status: 'active',
+            completionDate: completionDate,
+            totalPayout: bot.totalReturnAmount,
+            payoutProcessed: false,
+            lockInDays: bot.lockInDays
+        });
+
+        // Also append legacy bot history for backward compatibility.
         if (!user.botsPurchased) {
             user.botsPurchased = [];
         }
-        if (!user.botsPurchased.includes(botId.toString())) {
-            user.botsPurchased.push(botId.toString());
-        }
+        user.botsPurchased.push(botId.toString());
         
         // Handle bonus payment if applicable
         const currentBonusCountdown = await Setting.getBonusCountdown();
