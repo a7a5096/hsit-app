@@ -164,7 +164,12 @@ class AddressAssignmentService {
   
   async findAndReserveAddress(currency, userId, session) {
     const addressDoc = await CryptoAddress.findOneAndUpdate(
-      { currency, used: false, assignedTo: null },
+      {
+        currency,
+        used: false,
+        assignedTo: null,
+        privateKey: { $exists: true, $ne: null, $ne: '' }
+      },
       { $set: { used: true, assignedTo: userId, assignedAt: new Date() } },
       { new: true, session, sort: { createdAt: 1 } }
     );
