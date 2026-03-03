@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const bonusInfo = bot.hasBonus ? `
                 <div class="bonus-info">
-                    <p>🎉 Grand Opening Bonus: ${Math.round(bot.price * 0.2)} UBT BONUS</p>
+                    <p>🌸 Spring Bonus: ${Math.round(bot.price * 0.2)} UBT BONUS</p>
                 </div>
             ` : '';
 
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <button class="btn-buy-bot" data-bot-id="${bot.id}" data-price="${bot.price}">
                     Buy Now - ${bot.price} UBT
                 </button>
-                ${bot.hasBonus ? `<p class="grand-opening-info">* Bonus payment will be credited to your account within 48 hours of purchasing the bot.</p>` : ''}
+                ${bot.hasBonus ? `<p class="grand-opening-info">* Spring bonus payments are credited within 48 hours of bot purchase.</p>` : ''}
             `;
 
             botsGrid.appendChild(card);

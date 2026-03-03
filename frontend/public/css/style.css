@@ -13,7 +13,7 @@ body {
 }
 
 a {
-    color: #a678de; /* Purple accent */
+    color: #6bcf7f; /* Spring green accent */
     text-decoration: none;
 }
 
@@ -39,12 +39,12 @@ img {
 }
 
 .btn-primary {
-    background-color: #a678de; /* Purple */
+    background-color: #4fbf6b; /* Spring green */
     color: #ffffff;
 }
 
 .btn-primary:hover {
-    background-color: #8a5fbc;
+    background-color: #3fa85a;
     text-decoration: none;
 }
 
@@ -61,7 +61,7 @@ img {
 
 
 .btn-buy {
-    background: linear-gradient(90deg, #8e44ad, #c0392b); /* Gradient example */
+    background: linear-gradient(90deg, #6bcf7f, #f3b35d); /* Spring gradient */
     color: #fff;
     padding: 8px 15px;
     margin-top: 10px;
@@ -230,7 +230,7 @@ img {
     font-size: 1.5rem; /* Placeholder */
     margin-bottom: 8px;
     /* Use actual icons here (SVG, FontAwesome, etc.) */
-    color: #a678de;
+    color: #6bcf7f;
 }
 
 .operation-card span {
@@ -307,7 +307,7 @@ img {
 
 .service-card.side-service .icon {
      font-size: 1.3rem; /* Placeholder */
-     color: #a678de;
+     color: #6bcf7f;
 }
 /* General Page Layout Styles */
 .page-layout {
@@ -332,7 +332,7 @@ img {
 }
 
 .back-button {
-    color: #a678de;
+    color: #6bcf7f;
     font-size: 1rem;
     text-decoration: none;
 }
@@ -371,7 +371,7 @@ img {
 }
 .coin-selection input[type="radio"] {
     margin-right: 8px;
-    accent-color: #a678de; /* Style radio button color */
+    accent-color: #6bcf7f; /* Style radio button color */
 }
 
 .deposit-info .warning-text {
@@ -535,7 +535,7 @@ img {
 }
 
 .ai-header .back-btn {
-    color: #a678de; /* Use accent color */
+    color: #6bcf7f; /* Use spring accent color */
     font-size: 1rem;
     font-weight: bold;
     text-decoration: none;
@@ -666,14 +666,14 @@ img {
 
 /* Grand Opening Offer Specific Styling */
 .grand-opening-card {
-    border: 2px solid #ffcc00; /* Gold border for offer */
-    background: linear-gradient(135deg, #3a3a3a, #1a1a1a); /* Slightly different background */
-    box-shadow: 0 0 20px rgba(255, 204, 0, 0.4); /* Glowing effect */
+    border: 2px solid #9edb86; /* Spring green border for offer */
+    background: linear-gradient(135deg, #314334, #1d2b1f);
+    box-shadow: 0 0 20px rgba(158, 219, 134, 0.35);
 }
 
 .grand-opening-banner {
-    background-color: #ffcc00; /* Gold banner background */
-    color: #333;
+    background-color: #6bcf7f; /* Spring green banner background */
+    color: #19311f;
     padding: 8px;
     font-weight: bold;
     font-size: 15px;
@@ -686,12 +686,12 @@ img {
 
 .grand-opening-text {
     text-transform: uppercase;
-    color: #c70039; /* Red for emphasis */
+    color: #1f6f45; /* Deep spring green */
     font-size: 16px;
 }
 
 .days-left-countdown {
-    background-color: #c70039; /* Red background for countdown */
+    background-color: #f3b35d; /* Warm spring highlight for countdown */
     color: #fff;
     padding: 4px 8px;
     border-radius: 4px;
@@ -768,7 +768,7 @@ img {
 }
 
 .standard-header .back-btn {
-    color: #a678de; /* Accent color */
+    color: #6bcf7f; /* Accent color */
     font-size: 1rem;
     font-weight: bold;
     text-decoration: none;
@@ -892,7 +892,7 @@ img {
 /* --- Asset Center Page Styles --- */
 .total-balance-card {
     text-align: center;
-    background: linear-gradient(135deg, #a678de, #8e44ad); /* Purple gradient */
+    background: linear-gradient(135deg, #6bcf7f, #4ea893); /* Spring gradient */
     color: #fff;
 }
 .total-balance-card h2 {
@@ -937,7 +937,7 @@ img {
 /* Style UBT differently if desired */
 .balance-item.ubt-balance .asset-name {
     font-weight: bold;
-    color: #8e44ad; /* Example color */
+    color: #3f9d6b;
 }
 
 
@@ -1162,7 +1162,7 @@ img {
 
 .forgot-password-link {
     font-size: 0.9rem;
-    color: #a678de; /* Or your desired link color */
+    color: #6bcf7f; /* Spring accent */
     text-decoration: none;
 }
 .forgot-password-link:hover {
