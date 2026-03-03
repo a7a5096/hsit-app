@@ -30,6 +30,9 @@ import botCompletionRoutes from './routes/botCompletion.js';
 // Initialize Express app
 const app = express();
 
+// Render/proxy deployments: trust X-Forwarded-For so rate limits key by real client IP.
+app.set('trust proxy', 1);
+
 // --- Security Middleware ---
 // Helmet helps secure Express apps by setting various HTTP headers
 app.use(helmet({
@@ -56,10 +59,11 @@ const generalLimiter = rateLimit({
 // Stricter rate limiting for authentication routes
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // Limit each IP to 10 login attempts per windowMs
+    max: 20, // Limit each IP to 20 failed login attempts per windowMs
     message: { success: false, message: 'Too many login attempts, please try again after 15 minutes.' },
     standardHeaders: true,
     legacyHeaders: false,
+    skipSuccessfulRequests: true
 });
 
 // Apply general rate limiting to all requests
