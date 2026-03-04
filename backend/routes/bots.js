@@ -1,35 +1,12 @@
 import express from 'express';
-import auth from '../middleware/auth.js'; // Assuming this is your authentication middleware
+import auth from '../middleware/auth.js';
 import User from '../models/User.js';
 import Transaction from '../models/Transaction.js';
-import Setting from '../models/Setting.js'; // Import the Setting model
+import Setting from '../models/Setting.js';
+import { bots, getBotById, getBotByName, getSpringBonusAmount } from '../config/botDefinitions.js';
+import { processUserPayouts } from '../services/payoutService.js';
 
 const router = express.Router();
-
-// Updated bots array to match frontend
-const bots = [
-  { id: 1, name: "Starter UBT Bot", price: 100, lockInDays: 2, dailyCredit: 1, hasBonus: false, bonusCreditAmount: 0.0, bonusCreditInterval: null, specialFeature: "Ideal for new investors to understand bot operations.", totalReturnAmount: 102, totalProfit: 2, profitRatio: 0.02 },
-  { id: 2, name: "UBT Bot #2", price: 200, lockInDays: 4, dailyCredit: 3, hasBonus: false, bonusCreditAmount: 0.0, bonusCreditInterval: null, specialFeature: "Accelerated profit generation and daily insights.", totalReturnAmount: 212, totalProfit: 12, profitRatio: 0.06 },
-  { id: 3, name: "UBT Bot #3", price: 600, lockInDays: 8, dailyCredit: 6, hasBonus: true, bonusCreditAmount: 20, bonusCreditInterval: "every 120 days", specialFeature: "Enhanced returns for dedicated investors.", totalReturnAmount: 648, totalProfit: 48, profitRatio: 0.08 },
-  { id: 4, name: "UBT Bot #4", price: 1300, lockInDays: 16, dailyCredit: 10, hasBonus: false, bonusCreditAmount: 0.0, bonusCreditInterval: null, specialFeature: "Accelerated profit generation and daily insights.", totalReturnAmount: 1460, totalProfit: 160, profitRatio: 0.123 },
-  { id: 5, name: "UBT Bot #5", price: 3200, lockInDays: 32, dailyCredit: 15, hasBonus: false, bonusCreditAmount: 0.0, bonusCreditInterval: null, specialFeature: "Enhanced returns for dedicated investors.", totalReturnAmount: 3680, totalProfit: 480, profitRatio: 0.15 },
-  { id: 6, name: "UBT Bot #6", price: 7500, lockInDays: 64, dailyCredit: 21, hasBonus: true, bonusCreditAmount: 60, bonusCreditInterval: "every 120 days", specialFeature: "Accelerated profit generation and daily insights.", totalReturnAmount: 8844, totalProfit: 1344, profitRatio: 0.179 },
-  { id: 7, name: "UBT Bot #7", price: 17800, lockInDays: 128, dailyCredit: 28, hasBonus: false, bonusCreditAmount: 0.0, bonusCreditInterval: null, specialFeature: "Enhanced returns for dedicated investors.", totalReturnAmount: 21384, totalProfit: 3584, profitRatio: 0.201 },
-  { id: 8, name: "UBT Bot #8", price: 42200, lockInDays: 256, dailyCredit: 36, hasBonus: false, bonusCreditAmount: 0.0, bonusCreditInterval: null, specialFeature: "Accelerated profit generation and daily insights.", totalReturnAmount: 51424, totalProfit: 9224, profitRatio: 0.219 },
-  { id: 9, name: "UBT Bot #9", price: 100000, lockInDays: 512, dailyCredit: 45, hasBonus: true, bonusCreditAmount: 200, bonusCreditInterval: "every 120 days", specialFeature: "Enhanced returns for dedicated investors.", totalReturnAmount: 123040, totalProfit: 23040, profitRatio: 0.23 },
-  { id: 10, name: "VIP Elite UBT Bot", price: 100000, lockInDays: 1024, dailyCredit: 55, hasBonus: true, bonusCreditAmount: 400, bonusCreditInterval: "every 90 days", specialFeature: "Dedicated VIP investment consultant for priority support and optimal returns.", totalReturnAmount: 156320, totalProfit: 56320, profitRatio: 0.563 }
-];
-
-// Helper function to get bot by ID
-function getBotById(id) {
-    return bots.find(bot => String(bot.id) === String(id));
-}
-
-function getBotByName(name) {
-    if (!name) return null;
-    const normalized = String(name).trim().toLowerCase();
-    return bots.find(bot => String(bot.name).trim().toLowerCase() === normalized) || null;
-}
 
 // @route   GET api/bots
 // @desc    Get all available bots with bonus information
@@ -41,7 +18,7 @@ router.get('/', async (req, res) => {
 
         const botsWithBonusInfo = bots.map(bot => ({
             ...bot,
-            // A bot has an active bonus if it's eligible AND the countdown is > 0
+            springBonusAmount: getSpringBonusAmount(bot),
             hasActiveBonus: bot.hasBonus && bonusCountdownPercent > 0
         }));
 
@@ -62,6 +39,9 @@ router.get('/', async (req, res) => {
 // @access  Private
 router.get('/purchased', auth, async (req, res) => {
     try {
+        // Process any pending payouts first so balances and tracking fields are current
+        await processUserPayouts(req.user.id);
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ success: false, msg: 'User not found' });
@@ -75,7 +55,6 @@ router.get('/purchased', auth, async (req, res) => {
         
         const now = new Date();
 
-        // Build a normalized list of user-owned bot entries from both new and legacy fields.
         const normalizedUserBots = [];
         if (hasNewBots) {
             normalizedUserBots.push(...user.bots);
@@ -101,7 +80,6 @@ router.get('/purchased', auth, async (req, res) => {
             });
         }
         
-        // Join user.bots with master bots list and compute all values server-side
         const purchasedBots = normalizedUserBots.map(userBot => {
             const masterBot =
                 getBotById(userBot.botId) ||
@@ -109,7 +87,6 @@ router.get('/purchased', auth, async (req, res) => {
                 getBotByName(userBot.name);
             if (!masterBot) return null;
             
-            // Use database values with master bot fallbacks
             const purchaseDate = userBot.purchasedAt ? new Date(userBot.purchasedAt) : new Date();
             const investment = typeof userBot.investmentAmount === 'number' ? userBot.investmentAmount : masterBot.price;
             const lockInDays = userBot.lockInDays || masterBot.lockInDays;
@@ -117,19 +94,14 @@ router.get('/purchased', auth, async (req, res) => {
             const totalReturnAmount = masterBot.totalReturnAmount;
             const totalProfit = masterBot.totalProfit;
             
-            // Calculate completion date from database or derive it
             const completionDate = userBot.completionDate 
                 ? new Date(userBot.completionDate) 
                 : new Date(purchaseDate.getTime() + lockInDays * 24 * 60 * 60 * 1000);
             
-            // Calculate days active (capped at lockInDays)
             const msActive = Math.max(0, now - purchaseDate);
             const daysActive = Math.min(Math.floor(msActive / (1000 * 60 * 60 * 24)), lockInDays);
-            
-            // Calculate remaining days
             const remainingDays = Math.max(0, lockInDays - daysActive);
             
-            // Determine status from database or calculate
             let status;
             if (userBot.status === 'completed' || userBot.payoutProcessed) {
                 status = 'completed';
@@ -139,10 +111,9 @@ router.get('/purchased', auth, async (req, res) => {
                 status = 'active';
             }
             
-            // Server-calculated earnings: dailyCredit * daysActive, capped at totalProfit
-            const earned = Math.min(daysActive * dailyCredit, totalProfit);
-            
-            // Expected future earnings
+            // Use actual processed daily credits (already credited to balance)
+            const dailyCreditsProcessed = userBot.dailyCreditsProcessed || 0;
+            const earned = dailyCreditsProcessed * dailyCredit;
             const expectedFutureEarnings = Math.max(0, totalProfit - earned);
             
             return {
@@ -160,11 +131,12 @@ router.get('/purchased', auth, async (req, res) => {
                 status: status,
                 earned: earned,
                 expectedFutureEarnings: expectedFutureEarnings,
-                payoutProcessed: userBot.payoutProcessed || false
+                payoutProcessed: userBot.payoutProcessed || false,
+                purchaseBonusAwarded: userBot.purchaseBonusAwarded || 0,
+                bonusCreditsProcessed: userBot.bonusCreditsProcessed || 0
             };
         }).filter(Boolean);
         
-        // Calculate summary totals server-side
         let totalInvestment = 0;
         let totalEarned = 0;
         let totalExpectedFuture = 0;
@@ -228,6 +200,9 @@ router.post('/purchase', auth, async (req, res) => {
             console.log('Bot not found:', botId);
             return res.status(404).json({ success: false, msg: 'Bot not found' });
         }
+
+        // Process any pending payouts so the user's balance is up to date
+        await processUserPayouts(req.user.id);
     
         const user = await User.findById(req.user.id);
         if (!user) {
@@ -235,10 +210,9 @@ router.post('/purchase', auth, async (req, res) => {
             return res.status(404).json({ success: false, msg: 'User not found' });
         }
     
-        // Ensure user.balances.ubt exists and is a number
         if (typeof user.balances?.ubt !== 'number') {
             console.log('Initializing UBT balance for user:', req.user.id);
-            user.balances.ubt = 0; // Initialize if undefined or not a number
+            user.balances.ubt = 0;
         }
 
         console.log('User balance check:', { 
@@ -253,11 +227,20 @@ router.post('/purchase', auth, async (req, res) => {
     
         user.balances.ubt -= bot.price;
     
-        // Add every purchase as a distinct entry (repeat purchases are allowed)
         if (!user.bots) user.bots = [];
         const completionDate = new Date();
         completionDate.setDate(completionDate.getDate() + bot.lockInDays);
         
+        // Calculate the Spring Bonus (20% of price for bonus-eligible bots)
+        const springBonus = getSpringBonusAmount(bot);
+        let bonusAwarded = 0;
+
+        if (springBonus > 0) {
+            bonusAwarded = springBonus;
+            user.balances.ubt += bonusAwarded;
+            console.log(`Awarded ${bonusAwarded} UBT Spring Bonus for ${bot.name} to user ${user.username}`);
+        }
+
         user.bots.push({
             botId: String(bot.id),
             name: bot.name,
@@ -267,89 +250,88 @@ router.post('/purchase', auth, async (req, res) => {
             completionDate: completionDate,
             totalPayout: bot.totalReturnAmount,
             payoutProcessed: false,
-            lockInDays: bot.lockInDays
+            lockInDays: bot.lockInDays,
+            dailyCreditsProcessed: 0,
+            bonusCreditsProcessed: 0,
+            purchaseBonusAwarded: bonusAwarded
         });
 
-        // Also append legacy bot history for backward compatibility.
         if (!user.botsPurchased) {
             user.botsPurchased = [];
         }
         user.botsPurchased.push(botId.toString());
         
-        // Handle bonus payment if applicable
-        const currentBonusCountdown = await Setting.getBonusCountdown();
-        let bonusAwarded = 0;
-        if (bot.hasBonus && currentBonusCountdown > 0) {
-            bonusAwarded = bot.bonusCreditAmount || 0;
-            user.balances.ubt += bonusAwarded; // Add bonus to UBT balance
-            console.log(`Awarded ${bonusAwarded} UBT bonus for ${bot.name} to user ${user.username}`);
-        }
-
-        const transactionDescription = `Purchased ${bot.name} bot` + (bonusAwarded > 0 ? ` (Bonus: ${bonusAwarded} UBT)` : '');
+        const transactionDescription = `Purchased ${bot.name} bot` + (bonusAwarded > 0 ? ` (Spring Bonus: ${bonusAwarded} UBT)` : '');
         const transaction = new Transaction({
             userId: req.user.id,
             txHash: `bot_purchase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             fromAddress: user.walletAddresses?.ubt || 'system',
-            amount: -bot.price, // Cost is negative
-            ubtAmount: bot.price, // Amount of UBT spent
+            amount: -bot.price,
+            ubtAmount: bot.price,
             currency: 'UBT',
             status: 'completed',
-            type: 'wager', // Use a valid enum value
+            type: 'wager',
             description: transactionDescription,
-            // relatedAddress: `bot_${bot.id}` // Optional, if you want to keep a reference
         });
         await transaction.save();
 
-        // If a bonus was awarded, create a separate transaction for clarity
         if (bonusAwarded > 0) {
             const bonusTransaction = new Transaction({
                 userId: req.user.id,
-                txHash: `bonus_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                fromAddress: user.walletAddresses?.ubt || 'system',
+                txHash: `spring_bonus_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                fromAddress: 'system',
                 amount: bonusAwarded,
                 ubtAmount: bonusAwarded,
                 currency: 'UBT',
-                type: 'wager', // Changed from 'bonus_award' to 'wager'
+                type: 'reward',
                 status: 'completed',
-                description: `Bonus for purchasing ${bot.name}`,
-                relatedAsset: `bot_${bot.id}`
+                description: `Spring Bonus for purchasing ${bot.name}`
             });
             await bonusTransaction.save();
         }
         
         await user.save();
+
+        // After successful purchase, decrease the global bonus countdown
+        const currentBonusCountdown = await Setting.getBonusCountdown();
+        let newBonusCountdown = currentBonusCountdown;
+        try {
+            newBonusCountdown = await Setting.decreaseBonusCountdown(5);
+            console.log(`Global bonus countdown updated to: ${newBonusCountdown}%`);
+        } catch (countdownError) {
+            console.error("Error updating bonus countdown:", countdownError);
+        }
         
         // Handle referral bonuses
         if (user.invitedBy) {
             try {
-                // Give 10 UBT to direct referrer
                 const directReferrer = await User.findById(user.invitedBy);
                 if (directReferrer) {
                     directReferrer.balances.ubt += 10;
                     directReferrer.qualifiedInvites += 1;
                     directReferrer.ubtBonusEarned += 10;
                     
-                    // Check if they qualify for free bot (10 qualified invites)
                     if (directReferrer.qualifiedInvites === 10) {
-                        // Give them a free Bot #3 (600 UBT value)
                         const freeBot = getBotById(3);
                         if (freeBot) {
-                            const completionDate = new Date();
-                            completionDate.setDate(completionDate.getDate() + freeBot.lockInDays);
+                            const freeBotCompletion = new Date();
+                            freeBotCompletion.setDate(freeBotCompletion.getDate() + freeBot.lockInDays);
                             
                             directReferrer.bots.push({
                                 botId: String(freeBot.id),
                                 name: freeBot.name,
-                                investmentAmount: 0, // Free bot
+                                investmentAmount: 0,
                                 purchasedAt: new Date(),
                                 status: 'active',
-                                completionDate: completionDate,
+                                completionDate: freeBotCompletion,
                                 totalPayout: freeBot.totalReturnAmount,
                                 payoutProcessed: false,
-                                lockInDays: freeBot.lockInDays
+                                lockInDays: freeBot.lockInDays,
+                                dailyCreditsProcessed: 0,
+                                bonusCreditsProcessed: 0,
+                                purchaseBonusAwarded: 0
                             });
                             
-                            // Create transaction for free bot
                             const freeBotTransaction = new Transaction({
                                 userId: directReferrer._id,
                                 txHash: `free_bot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -368,7 +350,6 @@ router.post('/purchase', auth, async (req, res) => {
                     
                     await directReferrer.save();
                     
-                    // Create referral bonus transaction
                     const referralTransaction = new Transaction({
                         userId: directReferrer._id,
                         txHash: `referral_bonus_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -383,7 +364,6 @@ router.post('/purchase', auth, async (req, res) => {
                     await referralTransaction.save();
                     console.log(`Awarded 10 UBT referral bonus to ${directReferrer.username}`);
                     
-                    // Give 15 UBT to second-level referrer if exists
                     if (directReferrer.invitedBy) {
                         const secondLevelReferrer = await User.findById(directReferrer.invitedBy);
                         if (secondLevelReferrer) {
@@ -391,7 +371,6 @@ router.post('/purchase', auth, async (req, res) => {
                             secondLevelReferrer.ubtBonusEarned += 15;
                             await secondLevelReferrer.save();
                             
-                            // Create second-level referral bonus transaction
                             const secondLevelTransaction = new Transaction({
                                 userId: secondLevelReferrer._id,
                                 txHash: `referral_bonus_l2_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -410,27 +389,15 @@ router.post('/purchase', auth, async (req, res) => {
                 }
             } catch (referralError) {
                 console.error('Error processing referral bonuses:', referralError);
-                // Don't fail the purchase if referral bonus fails
             }
-        }
-        
-        // After successful purchase and saving user/transaction, decrease the global bonus countdown
-        let newBonusCountdown = currentBonusCountdown; // Keep current if no decrease happens
-        try {
-            newBonusCountdown = await Setting.decreaseBonusCountdown(5); // Decrease by 5%
-            console.log(`Global bonus countdown updated to: ${newBonusCountdown}%`);
-        } catch (countdownError) {
-            console.error("Error updating bonus countdown:", countdownError);
-            // Continue without failing the purchase
         }
     
         res.json({
             success: true,
-            msg: 'Bot purchased successfully' + (bonusAwarded > 0 ? ` You received a bonus of ${bonusAwarded} UBT!` : ''),
-            botId: bot.id, // Use bot.id for consistency
-            // transactionId: transaction._id, // Return transaction ID
+            msg: 'Bot purchased successfully' + (bonusAwarded > 0 ? ` You received a Spring Bonus of ${bonusAwarded} UBT!` : ''),
+            botId: bot.id,
             newBalance: user.balances.ubt,
-            globalBonusCountdownPercent: newBonusCountdown // Send updated countdown
+            globalBonusCountdownPercent: newBonusCountdown
         });
     } catch (err) {
         console.error("Error during bot purchase:",err.message);

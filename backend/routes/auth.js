@@ -13,7 +13,7 @@ import PendingRegistration from '../models/PendingRegistration.js';
 import addressAssignmentService from '../services/addressAssignmentService.js';
 import AddressService from '../services/AddressService.js';
 import emailService from '../services/emailService.js';
-import BotCompletionService from '../services/botCompletionService.js';
+import { processUserPayouts } from '../services/payoutService.js';
 
 const router = express.Router();
 
@@ -129,32 +129,12 @@ router.get('/', async (req, res) => {
 
       console.log(`GET /api/auth - User found: ${user.email}`);
 
-      // Automatically process any completed bots for this user
+      // Process all pending payouts (daily credits, bonuses, bot completions)
       try {
-        const now = new Date();
-        let botsUpdated = false;
-        
-        if (user.bots && Array.isArray(user.bots)) {
-          for (const bot of user.bots) {
-            if (bot.status === 'active' && 
-                bot.completionDate && 
-                bot.completionDate <= now && 
-                !bot.payoutProcessed) {
-              
-              console.log(`Auto-completing bot ${bot.name} for user ${user.email}`);
-              await BotCompletionService.processBotCompletion(user, bot);
-              botsUpdated = true;
-            }
-          }
-        }
-        
-        // If bots were updated, we need to refresh the user object to get new balances
-        if (botsUpdated) {
-          user = await User.findById(decoded.id).select('-password');
-        }
-      } catch (botError) {
-        console.error('Error during auto bot completion:', botError);
-        // Continue even if bot completion fails to ensure user can still access their data
+        await processUserPayouts(decoded.id);
+        user = await User.findById(decoded.id).select('-password');
+      } catch (payoutError) {
+        console.error('Error during payout processing:', payoutError);
       }
 
       // Ensure balances object exists and convert Decimal128 values to numbers
@@ -237,32 +217,12 @@ router.post('/', async (req, res) => {
     
     console.log(`POST /api/auth - Password validation successful for user: ${user.email}.`);
 
-    // Automatically process any completed bots for this user
+    // Process all pending payouts (daily credits, bonuses, bot completions)
     try {
-      const now = new Date();
-      let botsUpdated = false;
-      
-      if (user.bots && Array.isArray(user.bots)) {
-        for (const bot of user.bots) {
-          if (bot.status === 'active' && 
-              bot.completionDate && 
-              bot.completionDate <= now && 
-              !bot.payoutProcessed) {
-            
-            console.log(`Auto-completing bot ${bot.name} for user ${user.email}`);
-            await BotCompletionService.processBotCompletion(user, bot);
-            botsUpdated = true;
-          }
-        }
-      }
-      
-      // If bots were updated, we need to refresh the user object to get new balances
-      if (botsUpdated) {
-        user = await User.findById(user._id);
-      }
-    } catch (botError) {
-      console.error('Error during auto bot completion:', botError);
-      // Continue even if bot completion fails to ensure user can still access their data
+      await processUserPayouts(user._id);
+      user = await User.findById(user._id);
+    } catch (payoutError) {
+      console.error('Error during payout processing:', payoutError);
     }
 
     user.lastLogin = Date.now();

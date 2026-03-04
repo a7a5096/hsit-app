@@ -3,15 +3,18 @@ import bcrypt from 'bcryptjs';
 
 // A sub-schema to define the structure of bots owned by a user.
 const OwnedBotSchema = new mongoose.Schema({
-  botId: { type: String, required: true }, // The unique ID of the bot product, e.g., "aiBalancer05"
+  botId: { type: String, required: true },
   name: { type: String, required: true },
   investmentAmount: { type: Number, required: true },
   purchasedAt: { type: Date, default: Date.now },
   status: { type: String, default: 'active' },
-  completionDate: { type: Date }, // When the bot cycle completes
-  totalPayout: { type: Number }, // Total amount to be paid out on completion
-  payoutProcessed: { type: Boolean, default: false }, // Whether payout has been processed
-  lockInDays: { type: Number } // Store lock-in period for completion calculation
+  completionDate: { type: Date },
+  totalPayout: { type: Number },
+  payoutProcessed: { type: Boolean, default: false },
+  lockInDays: { type: Number },
+  dailyCreditsProcessed: { type: Number, default: 0 },
+  bonusCreditsProcessed: { type: Number, default: 0 },
+  purchaseBonusAwarded: { type: Number, default: 0 }
 }, { _id: false });
 
 

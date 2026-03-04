@@ -105,9 +105,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
 
+            const bonusAmount = bot.springBonusAmount || Math.round(bot.price * 0.2);
             const bonusInfo = bot.hasBonus ? `
                 <div class="bonus-info">
-                    <p>🌸 Spring Bonus: ${Math.round(bot.price * 0.2)} UBT BONUS</p>
+                    <p>🌸 Spring Bonus: ${bonusAmount} UBT BONUS</p>
                 </div>
             ` : '';
 
