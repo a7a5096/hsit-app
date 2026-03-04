@@ -7,16 +7,16 @@ import Transaction from '../models/Transaction.js';
 const router = express.Router();
 
 // Prize pool of 100 entries.
-// "Lose" returns half the wager (0.5x).
+// "Lose" returns ~1/3 of the wager (0.34x).
 // At max bet (50 UBT), the 10x slot becomes a Grand Prize (free bot).
 //
-//   88 × 0.5 = 44      (Lose half)
-//    5 × 2   = 10      (2x)
-//    4 × 3   = 12      (3x)
-//    2 × 5   = 10      (5x)
-//    1 × 10  = 10      (10x, or Grand Prize bot at max bet)
-//                ----
-//   Total = 86 / 100 = 0.86 EV  →  house keeps ~14%
+//   88 × 0.34 = 29.92  (Lose — keep a third)
+//    5 × 2    = 10     (2x)
+//    4 × 3    = 12     (3x)
+//    2 × 5    = 10     (5x)
+//    1 × 10   = 10     (10x, or Grand Prize bot at max bet)
+//                 ----
+//   Total = 71.92 / 100 ≈ 0.72 EV  →  house keeps ~28%
 const MAX_BET = 50;
 
 const createPrizePool = () => {
@@ -61,13 +61,13 @@ const createPrizePool = () => {
         });
     }
 
-    // 88 × Lose Half (88%) – player gets back half their wager
+    // 88 × Lose (88%) – player keeps about a third of their wager
     for (let i = 0; i < 88; i++) {
         prizes.push({
-            name: "Lose Half",
+            name: "Lose",
             type: "multiplier",
-            multiplier: 0.5,
-            message: "You lost half your wager."
+            multiplier: 0.34,
+            message: "You kept a small portion of your wager."
         });
     }
 
