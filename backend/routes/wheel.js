@@ -7,16 +7,16 @@ import Transaction from '../models/Transaction.js';
 const router = express.Router();
 
 // Prize pool of 100 entries.
-// Player expected value per unit wagered ≈ 0.38  →  house keeps ≈ 62%.
+// Player expected value per unit wagered = 0.43  →  house keeps 57%.
 //
-//   78 × 0  = 0       (Lose)
-//   10 × 1  = 10      (1x – get bet back)
-//    7 × 2  = 14      (2x)
-//    3 × 3  = 9       (3x)
+//   67 × 0  = 0       (Lose)
+//   25 × 1  = 25      (1x – breakeven)
+//    5 × 2  = 10      (2x)
+//    1 × 3  = 3       (3x)
 //    1 × 5  = 5       (5x)
 //    1 × 0  = 0       (Grand Prize – bot, not UBT payout)
 //                ----
-//   Total = 38 / 100 = 0.38 EV
+//   Total = 43 / 100 = 0.43 EV
 const createPrizePool = () => {
     const prizes = [];
 
@@ -36,18 +36,16 @@ const createPrizePool = () => {
         message: "Big win! You won 5x your bet!"
     });
 
-    // 3 × 3x Win (3%)
-    for (let i = 0; i < 3; i++) {
-        prizes.push({
-            name: "3x Win",
-            type: "multiplier",
-            multiplier: 3,
-            message: "Nice! You won 3x your bet!"
-        });
-    }
+    // 1 × 3x Win (1%)
+    prizes.push({
+        name: "3x Win",
+        type: "multiplier",
+        multiplier: 3,
+        message: "Nice! You won 3x your bet!"
+    });
 
-    // 7 × 2x Win (7%)
-    for (let i = 0; i < 7; i++) {
+    // 5 × 2x Win (5%)
+    for (let i = 0; i < 5; i++) {
         prizes.push({
             name: "2x Win",
             type: "multiplier",
@@ -56,8 +54,8 @@ const createPrizePool = () => {
         });
     }
 
-    // 10 × 1x Win (10%) – breakeven
-    for (let i = 0; i < 10; i++) {
+    // 25 × 1x Win (25%) – breakeven
+    for (let i = 0; i < 25; i++) {
         prizes.push({
             name: "1x Win",
             type: "multiplier",
@@ -66,8 +64,8 @@ const createPrizePool = () => {
         });
     }
 
-    // 78 × Lose (78%)
-    for (let i = 0; i < 78; i++) {
+    // 67 × Lose (67%)
+    for (let i = 0; i < 67; i++) {
         prizes.push({
             name: "No Prize",
             type: "multiplier",
