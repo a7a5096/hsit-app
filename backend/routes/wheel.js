@@ -7,42 +7,49 @@ import Transaction from '../models/Transaction.js';
 const router = express.Router();
 
 // Prize pool of 100 entries.
-// Player expected value per unit wagered = 0.43  →  house keeps 57%.
+// "Lose" returns half the wager (0.5x).
+// At max bet (50 UBT), the 10x slot becomes a Grand Prize (free bot).
 //
-//   67 × 0  = 0       (Lose)
-//   25 × 1  = 25      (1x – breakeven)
-//    5 × 2  = 10      (2x)
-//    1 × 3  = 3       (3x)
-//    1 × 5  = 5       (5x)
-//    1 × 0  = 0       (Grand Prize – bot, not UBT payout)
+//   88 × 0.5 = 44      (Lose half)
+//    5 × 2   = 10      (2x)
+//    4 × 3   = 12      (3x)
+//    2 × 5   = 10      (5x)
+//    1 × 10  = 10      (10x, or Grand Prize bot at max bet)
 //                ----
-//   Total = 43 / 100 = 0.43 EV
+//   Total = 86 / 100 = 0.86 EV  →  house keeps ~14%
+const MAX_BET = 50;
+
 const createPrizePool = () => {
     const prizes = [];
 
-    // 1 Grand Prize (1%) – awards a bot, no direct UBT return
+    // 1 × 10x / Grand Prize (1%)
+    // At max bet this becomes a bot award; otherwise 10x UBT
     prizes.push({
-        name: "A.I. BOT #3 (Value 600 UBT)",
-        type: "bot",
-        multiplier: 0,
-        message: "Incredible! You won A.I. BOT #3!"
+        name: "10x Win",
+        type: "jackpot",
+        multiplier: 10,
+        message: "JACKPOT! You won 10x your bet!"
     });
 
-    // 1 × 5x Win (1%)
-    prizes.push({
-        name: "5x Win",
-        type: "multiplier",
-        multiplier: 5,
-        message: "Big win! You won 5x your bet!"
-    });
+    // 2 × 5x Win (2%)
+    for (let i = 0; i < 2; i++) {
+        prizes.push({
+            name: "5x Win",
+            type: "multiplier",
+            multiplier: 5,
+            message: "Big win! You won 5x your bet!"
+        });
+    }
 
-    // 1 × 3x Win (1%)
-    prizes.push({
-        name: "3x Win",
-        type: "multiplier",
-        multiplier: 3,
-        message: "Nice! You won 3x your bet!"
-    });
+    // 4 × 3x Win (4%)
+    for (let i = 0; i < 4; i++) {
+        prizes.push({
+            name: "3x Win",
+            type: "multiplier",
+            multiplier: 3,
+            message: "Nice! You won 3x your bet!"
+        });
+    }
 
     // 5 × 2x Win (5%)
     for (let i = 0; i < 5; i++) {
@@ -50,27 +57,17 @@ const createPrizePool = () => {
             name: "2x Win",
             type: "multiplier",
             multiplier: 2,
-            message: "Great! You won 2x your bet!"
+            message: "Great! You doubled your bet!"
         });
     }
 
-    // 25 × 1x Win (25%) – breakeven
-    for (let i = 0; i < 25; i++) {
+    // 88 × Lose Half (88%) – player gets back half their wager
+    for (let i = 0; i < 88; i++) {
         prizes.push({
-            name: "1x Win",
+            name: "Lose Half",
             type: "multiplier",
-            multiplier: 1,
-            message: "You got your bet back!"
-        });
-    }
-
-    // 67 × Lose (67%)
-    for (let i = 0; i < 67; i++) {
-        prizes.push({
-            name: "No Prize",
-            type: "multiplier",
-            multiplier: 0,
-            message: "Better luck next time!"
+            multiplier: 0.5,
+            message: "You lost half your wager."
         });
     }
 
@@ -85,18 +82,14 @@ const selectPrize = () => {
 };
 
 // @route   GET api/wheel/balance
-// @desc    Get user's UBT balance
-// @access  Private
 router.get('/balance', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
-
         if (!user.balances) user.balances = { ubt: 0 };
         user.balances.ubt = user.balances.ubt || 0;
-
         res.json({ success: true, balance: user.balances.ubt });
     } catch (err) {
         console.error('Error fetching balance:', err.message);
@@ -105,8 +98,6 @@ router.get('/balance', auth, async (req, res) => {
 });
 
 // @route   POST api/wheel/spin
-// @desc    Process a spin on the lucky wheel
-// @access  Private
 router.post('/spin', auth, async (req, res) => {
     const { betAmount } = req.body;
     let session;
@@ -140,18 +131,22 @@ router.post('/spin', auth, async (req, res) => {
             return res.status(400).json({ success: false, message: 'Insufficient UBT balance to place this bet.' });
         }
 
+        // Deduct the full wager up front
         user.balances.ubt -= betAmount;
+
         let creditsAdded = 0;
         let wasBotWon = false;
 
         const prize = selectPrize();
+        let prizeName = prize.name;
         let prizeMessage = prize.message;
 
-        if (prize.type === 'multiplier' && prize.multiplier > 0) {
-            creditsAdded = betAmount * prize.multiplier;
-            user.balances.ubt += creditsAdded;
-        } else if (prize.type === 'bot') {
+        // Jackpot slot: at max bet it awards a Grand Prize bot instead of 10x UBT
+        if (prize.type === 'jackpot' && betAmount === MAX_BET) {
             wasBotWon = true;
+            prizeName = "Grand Prize - A.I. BOT #3";
+            prizeMessage = "GRAND PRIZE! You won a free A.I. BOT #3 (600 UBT value)!";
+
             if (!user.bots) user.bots = [];
             const completionDate = new Date();
             completionDate.setDate(completionDate.getDate() + 8);
@@ -169,10 +164,16 @@ router.post('/spin', auth, async (req, res) => {
                 bonusCreditsProcessed: 0,
                 purchaseBonusAwarded: 0
             });
+        } else {
+            // All other outcomes (including jackpot at non-max bet) pay the multiplier
+            const multiplier = prize.type === 'jackpot' ? prize.multiplier : prize.multiplier;
+            creditsAdded = Math.round(betAmount * multiplier * 100) / 100;
+            user.balances.ubt += creditsAdded;
         }
 
         const finalBalance = user.balances.ubt;
 
+        // Wager transaction
         const spinTransaction = new Transaction({
             userId: user._id,
             txHash: `wheel_spin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -182,10 +183,11 @@ router.post('/spin', auth, async (req, res) => {
             ubtAmount: betAmount,
             status: 'completed',
             type: 'wager',
-            description: `Wheel spin - ${prize.name}`
+            description: `Wheel spin - ${prizeName}`
         });
         await spinTransaction.save({ session });
 
+        // Prize / return transaction (even lose-half returns something)
         if (creditsAdded > 0 || wasBotWon) {
             const prizeTransaction = new Transaction({
                 userId: user._id,
@@ -196,7 +198,7 @@ router.post('/spin', auth, async (req, res) => {
                 ubtAmount: creditsAdded,
                 status: 'completed',
                 type: 'reward',
-                description: `Wheel prize - ${prize.name}`
+                description: `Wheel prize - ${prizeName}`
             });
             await prizeTransaction.save({ session });
         }
@@ -208,8 +210,8 @@ router.post('/spin', auth, async (req, res) => {
         res.json({
             success: true,
             message: `Spin successful! ${prizeMessage}`,
-            prize: prize.name,
-            creditsAdded: creditsAdded,
+            prize: prizeName,
+            creditsAdded,
             newBalance: finalBalance
         });
 
