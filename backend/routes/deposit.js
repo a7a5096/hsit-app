@@ -34,7 +34,6 @@ router.get('/addresses', authMiddleware, async (req, res) => {
     res.json({
       success: true,
       // Ensure consistent naming with frontend expectations if they differ from service's return
-      btcAddress: addresses.BTC,
       ethAddress: addresses.ETH,
       usdtAddress: addresses.USDT 
     });

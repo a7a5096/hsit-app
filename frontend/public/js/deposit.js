@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Coin details
   const coinDetailsBase = {
-    BTC: { name: 'Bitcoin (BTC)', min: '0.001 BTC'},
     ETH: { name: 'Ethereum (ETH)', min: '0.01 ETH'},
     USDT: { name: 'Tether (USDT - ERC20)', min: '10 USDT'}
   };
@@ -67,9 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     let currentAddress = null;
-    if (selectedValue === 'BTC') {
-      currentAddress = window.userAddresses.btc_address;
-    } else if (selectedValue === 'ETH') {
+    if (selectedValue === 'ETH') {
       currentAddress = window.userAddresses.eth_address;
     } else if (selectedValue === 'USDT') {
       currentAddress = window.userAddresses.usdt_address;
