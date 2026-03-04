@@ -38,70 +38,9 @@
         box-shadow: 0 0 12px rgba(255,215,128,0.8);
         transform: translateY(-1px);
       }
-      body.dashboard-page.futuristic-dashboard .dashboard-main {
-        padding: 15px 12px !important;
-        padding-top: 265px !important;
-        position: relative;
-      }
-      /* Banner as true background element — sits behind all content */
-      body.dashboard-page.futuristic-dashboard .banner {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100vw;
-        height: 250px;
-        max-height: 250px !important;
-        z-index: 0;
-        margin-bottom: 0 !important;
-        border-radius: 0 !important;
-        overflow: hidden;
-        box-shadow: 0 12px 48px rgba(0,0,0,0.65) !important;
-        pointer-events: none;
-      }
-      /* AI-fill layer: blurred + stretched copy of the GIF fills the extended top/bottom areas */
-      body.dashboard-page.futuristic-dashboard .banner::before {
-        content: '';
-        position: absolute;
-        inset: -12px;
-        background-image: url('banner.gif');
-        background-size: 100% 100%;
-        filter: blur(7px) brightness(0.72) saturate(1.6);
-        z-index: 1;
-      }
-      /* Crisp original GIF strip centered vertically within the tall container */
-      body.dashboard-page.futuristic-dashboard .banner img.banner-image {
-        position: absolute;
-        top: 50%;
-        left: 0;
-        width: 100%;
-        height: auto;
-        transform: translateY(-50%);
-        z-index: 2;
-        display: block;
-      }
-      /* Gradient overlay: blends top & bottom edges into the page background */
-      body.dashboard-page.futuristic-dashboard .banner::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-          to bottom,
-          rgba(8, 6, 18, 0.78) 0%,
-          rgba(8, 6, 18, 0.22) 20%,
-          transparent 38%,
-          transparent 62%,
-          rgba(10, 38, 22, 0.22) 80%,
-          rgba(10, 38, 22, 0.78) 100%
-        );
-        z-index: 3;
-      }
-      /* Content sections sit above the background banner */
-      body.dashboard-page.futuristic-dashboard .dashboard-section,
-      body.dashboard-page.futuristic-dashboard #statusMessage {
-        position: relative;
-        z-index: 1;
-      }
+      body.dashboard-page.futuristic-dashboard .dashboard-main { padding: 15px 12px !important; }
+      body.dashboard-page.futuristic-dashboard .banner { position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.5); margin-bottom: 22.5px !important; }
+      body.dashboard-page.futuristic-dashboard .banner img.banner-image { display: block; width: 100%; }
       body.dashboard-page.futuristic-dashboard .operations-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px !important; }
       body.dashboard-page.futuristic-dashboard .operation-card {
         background: rgba(255, 255, 255, 0.08);
@@ -130,8 +69,6 @@
       @media (max-width: 600px) {
         body.dashboard-page.futuristic-dashboard .operations-grid { grid-template-columns: 1fr 1fr; }
         body.dashboard-page.futuristic-dashboard .service-grid { grid-template-columns: 1fr; }
-        body.dashboard-page.futuristic-dashboard .banner { height: 180px; max-height: 180px !important; }
-        body.dashboard-page.futuristic-dashboard .dashboard-main { padding-top: 195px !important; }
       }
       @keyframes bounce {
         0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
