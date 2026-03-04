@@ -1,47 +1,86 @@
-// backend/routes/wheel.js
 import express from 'express';
 import mongoose from 'mongoose';
-import auth from '../middleware/auth.js'; // Assuming auth middleware path
-import User from '../models/User.js';     // Assuming User model path
-import Transaction from '../models/Transaction.js'; // Assuming Transaction model path
+import auth from '../middleware/auth.js';
+import User from '../models/User.js';
+import Transaction from '../models/Transaction.js';
 
 const router = express.Router();
 
-// Define prizes for 100 gift boxes with new probability distribution
-// Distribution: 1% Grand Prize, 4.5% 10x Win (reduced by 50% from 9%), 21% 2x Win, 35% 1x Win, 38.5% Lose
-// Note: Using 4 for 10x Win (4%) and 39 for Lose (39%) to maintain 100 total prizes
+// Prize pool of 100 entries.
+// Player expected value per unit wagered ≈ 0.38  →  house keeps ≈ 62%.
+//
+//   78 × 0  = 0       (Lose)
+//   10 × 1  = 10      (1x – get bet back)
+//    7 × 2  = 14      (2x)
+//    3 × 3  = 9       (3x)
+//    1 × 5  = 5       (5x)
+//    1 × 0  = 0       (Grand Prize – bot, not UBT payout)
+//                ----
+//   Total = 38 / 100 = 0.38 EV
 const createPrizePool = () => {
     const prizes = [];
-    
-    // 1 Grand Prize (1%)
-    prizes.push({ name: "A.I. BOT #5 (Value $3000)", type: "bot", message: "Unbelievable! You won A.I. BOT #5!" });
-    
-    // 4 10x Wins (4%) - Reduced by 50% from 9 (was 9%, now 4%)
-    for (let i = 0; i < 4; i++) {
-        prizes.push({ name: "10x Win", type: "multiplier", multiplier: 10, message: "Jackpot! You won 10x your bet!" });
+
+    // 1 Grand Prize (1%) – awards a bot, no direct UBT return
+    prizes.push({
+        name: "A.I. BOT #3 (Value 600 UBT)",
+        type: "bot",
+        multiplier: 0,
+        message: "Incredible! You won A.I. BOT #3!"
+    });
+
+    // 1 × 5x Win (1%)
+    prizes.push({
+        name: "5x Win",
+        type: "multiplier",
+        multiplier: 5,
+        message: "Big win! You won 5x your bet!"
+    });
+
+    // 3 × 3x Win (3%)
+    for (let i = 0; i < 3; i++) {
+        prizes.push({
+            name: "3x Win",
+            type: "multiplier",
+            multiplier: 3,
+            message: "Nice! You won 3x your bet!"
+        });
     }
-    
-    // 21 2x Wins (21%) - Same as before
-    for (let i = 0; i < 21; i++) {
-        prizes.push({ name: "2x Win", type: "multiplier", multiplier: 2, message: "Great! You won 2x your bet!" });
+
+    // 7 × 2x Win (7%)
+    for (let i = 0; i < 7; i++) {
+        prizes.push({
+            name: "2x Win",
+            type: "multiplier",
+            multiplier: 2,
+            message: "Great! You won 2x your bet!"
+        });
     }
-    
-    // 35 1x Wins (35%) - Same as before
-    for (let i = 0; i < 35; i++) {
-        prizes.push({ name: "1x Win", type: "multiplier", multiplier: 1, message: "You won 1x your bet!" });
+
+    // 10 × 1x Win (10%) – breakeven
+    for (let i = 0; i < 10; i++) {
+        prizes.push({
+            name: "1x Win",
+            type: "multiplier",
+            multiplier: 1,
+            message: "You got your bet back!"
+        });
     }
-    
-    // 39 Loses (39%) - Increased from 34 to compensate for reduced 10x wins (added 5 more)
-    for (let i = 0; i < 39; i++) {
-        prizes.push({ name: "Lose", type: "multiplier", multiplier: 0, message: "Sorry, no prize this time!" });
+
+    // 78 × Lose (78%)
+    for (let i = 0; i < 78; i++) {
+        prizes.push({
+            name: "No Prize",
+            type: "multiplier",
+            multiplier: 0,
+            message: "Better luck next time!"
+        });
     }
-    
+
     return prizes;
 };
 
 const PRIZES = createPrizePool();
 
-// Helper function to select a random segment (prize)
 const selectPrize = () => {
     const index = Math.floor(Math.random() * PRIZES.length);
     return PRIZES[index];
@@ -57,16 +96,10 @@ router.get('/balance', auth, async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        // Initialize balance if it doesn't exist
-        if (!user.balances) {
-            user.balances = { ubt: 0 };
-        }
+        if (!user.balances) user.balances = { ubt: 0 };
         user.balances.ubt = user.balances.ubt || 0;
 
-        res.json({
-            success: true,
-            balance: user.balances.ubt
-        });
+        res.json({ success: true, balance: user.balances.ubt });
     } catch (err) {
         console.error('Error fetching balance:', err.message);
         res.status(500).json({ success: false, message: 'Server error while fetching balance.' });
@@ -80,12 +113,10 @@ router.post('/spin', auth, async (req, res) => {
     const { betAmount } = req.body;
     let session;
 
-    // 1. Validate betAmount
     if (typeof betAmount !== 'number' || betAmount < 10 || betAmount > 50) {
         return res.status(400).json({ success: false, message: 'Invalid bet amount. Must be between 10 and 50 UBT.' });
     }
-    
-    // Ensure bet amount is one of the allowed values: 10, 20, 30, 40, 50
+
     const allowedBets = [10, 20, 30, 40, 50];
     if (!allowedBets.includes(betAmount)) {
         return res.status(400).json({ success: false, message: 'Invalid bet amount. Must be 10, 20, 30, 40, or 50 UBT.' });
@@ -102,55 +133,52 @@ router.post('/spin', auth, async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        // Initialize balances if they don't exist
-        if (!user.balances) {
-            user.balances = { ubt: 0 };
-        }
+        if (!user.balances) user.balances = { ubt: 0 };
         user.balances.ubt = user.balances.ubt || 0;
 
-        const initialBalance = user.balances.ubt;
-
-        // 2. Check if user has sufficient UBT balance
         if (user.balances.ubt < betAmount) {
             await session.abortTransaction();
             session.endSession();
             return res.status(400).json({ success: false, message: 'Insufficient UBT balance to place this bet.' });
         }
 
-        // 3. Deduct bet amount
         user.balances.ubt -= betAmount;
         let creditsAdded = 0;
         let wasBotWon = false;
-        let newBotStarted = false;
 
-        // 4. Determine prize
         const prize = selectPrize();
         let prizeMessage = prize.message;
 
-        // 5. Award prize and update balance
         if (prize.type === 'multiplier' && prize.multiplier > 0) {
             creditsAdded = betAmount * prize.multiplier;
             user.balances.ubt += creditsAdded;
         } else if (prize.type === 'bot') {
             wasBotWon = true;
-            newBotStarted = true;
-            // Add bot to user's account if you have a bots array
             if (!user.bots) user.bots = [];
+            const completionDate = new Date();
+            completionDate.setDate(completionDate.getDate() + 8);
             user.bots.push({
-                name: 'AI Bot',
+                botId: '3',
+                name: 'UBT Bot #3',
+                investmentAmount: 0,
                 status: 'active',
-                startDate: new Date(),
-                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+                purchasedAt: new Date(),
+                completionDate: completionDate,
+                totalPayout: 648,
+                payoutProcessed: false,
+                lockInDays: 8,
+                dailyCreditsProcessed: 0,
+                bonusCreditsProcessed: 0,
+                purchaseBonusAwarded: 0
             });
         }
 
         const finalBalance = user.balances.ubt;
 
-        // Create transaction record for the spin
         const spinTransaction = new Transaction({
             userId: user._id,
             txHash: `wheel_spin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            fromAddress: user.walletAddresses.ubt || 'system',
+            fromAddress: user.walletAddresses?.ubt || 'system',
             amount: betAmount,
             currency: 'UBT',
             ubtAmount: betAmount,
@@ -158,26 +186,24 @@ router.post('/spin', auth, async (req, res) => {
             type: 'wager',
             description: `Wheel spin - ${prize.name}`
         });
-
         await spinTransaction.save({ session });
 
-        // Create transaction record for the prize
-        const prizeTransaction = new Transaction({
-            userId: user._id,
-            txHash: `wheel_prize_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            fromAddress: 'system',
-            amount: creditsAdded,
-            currency: 'UBT',
-            ubtAmount: creditsAdded,
-            status: 'completed',
-            type: 'reward',
-            description: `Wheel prize - ${prize.name}`
-        });
-
-        await prizeTransaction.save({ session });
+        if (creditsAdded > 0 || wasBotWon) {
+            const prizeTransaction = new Transaction({
+                userId: user._id,
+                txHash: `wheel_prize_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                fromAddress: 'system',
+                amount: creditsAdded,
+                currency: 'UBT',
+                ubtAmount: creditsAdded,
+                status: 'completed',
+                type: 'reward',
+                description: `Wheel prize - ${prize.name}`
+            });
+            await prizeTransaction.save({ session });
+        }
 
         await user.save({ session });
-
         await session.commitTransaction();
         session.endSession();
 
