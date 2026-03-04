@@ -7,16 +7,22 @@ import Transaction from '../models/Transaction.js';
 const router = express.Router();
 
 // Prize pool of 100 entries.
-// "Lose" returns ~1/3 of the wager (0.34x).
+// Lose tiers mirror win tiers (reciprocal multipliers & reciprocal odds).
 // At max bet (50 UBT), the 10x slot becomes a Grand Prize (free bot).
 //
-//   88 × 0.34 = 29.92  (Lose — keep a third)
-//    5 × 2    = 10     (2x)
-//    4 × 3    = 12     (3x)
-//    2 × 5    = 10     (5x)
-//    1 × 10   = 10     (10x, or Grand Prize bot at max bet)
-//                 ----
-//   Total = 71.92 / 100 ≈ 0.72 EV  →  house keeps ~28%
+// LOSE (88 slots, weighted by denominator: 10+5+3+2 = 20):
+//   44 × 1/10  = 4.40    (keep 10% — most common)
+//   22 × 1/5   = 4.40    (keep 20%)
+//   13 × 1/3   = 4.33    (keep 33%)
+//    9 × 1/2   = 4.50    (keep 50% — least common)
+//
+// WIN (12 slots):
+//    5 × 2     = 10
+//    4 × 3     = 12
+//    2 × 5     = 10
+//    1 × 10    = 10      (or Grand Prize bot at max bet)
+//                  ----
+//   Total ≈ 59.63 / 100 = 0.596 EV  →  house keeps ~40%
 const MAX_BET = 50;
 
 const createPrizePool = () => {
@@ -61,13 +67,43 @@ const createPrizePool = () => {
         });
     }
 
-    // 88 × Lose (88%) – player keeps about a third of their wager
-    for (let i = 0; i < 88; i++) {
+    // 44 × Lose — keep 1/10 (44%)
+    for (let i = 0; i < 44; i++) {
         prizes.push({
             name: "Lose",
             type: "multiplier",
-            multiplier: 0.34,
-            message: "You kept a small portion of your wager."
+            multiplier: 0.1,
+            message: "You kept 10% of your wager."
+        });
+    }
+
+    // 22 × Lose — keep 1/5 (22%)
+    for (let i = 0; i < 22; i++) {
+        prizes.push({
+            name: "Small Return",
+            type: "multiplier",
+            multiplier: 0.2,
+            message: "You kept 20% of your wager."
+        });
+    }
+
+    // 13 × Lose — keep 1/3 (13%)
+    for (let i = 0; i < 13; i++) {
+        prizes.push({
+            name: "Partial Return",
+            type: "multiplier",
+            multiplier: 1/3,
+            message: "You kept a third of your wager."
+        });
+    }
+
+    // 9 × Lose — keep 1/2 (9%)
+    for (let i = 0; i < 9; i++) {
+        prizes.push({
+            name: "Half Back",
+            type: "multiplier",
+            multiplier: 0.5,
+            message: "You kept half your wager."
         });
     }
 
