@@ -45,6 +45,18 @@ document.addEventListener("DOMContentLoaded", function() {
         console.log("auth.js: signupForm found"); 
         signupForm.addEventListener("submit", handleSignup);
         console.log("auth.js: Event listener attached to signupForm"); 
+
+        // Pre-fill referral code from URL ?invite= parameter
+        try {
+            var urlParams = new URLSearchParams(window.location.search);
+            var inviteParam = urlParams.get('invite');
+            if (inviteParam) {
+                var inviteField = document.getElementById('invitation-code');
+                if (inviteField) inviteField.value = inviteParam;
+            }
+        } catch (e) {
+            console.error("auth.js: Error parsing URL params for invite code:", e);
+        }
     }
 });
 
@@ -189,9 +201,9 @@ function handleSignup(event) {
         body: JSON.stringify({
             username: usernameValue,
             email: emailValue,
-            phoneNumber: phoneValue, // Ensure backend expects phoneNumber
+            phoneNumber: phoneValue,
             password: passwordValue,
-            invitationCode: invitationCodeValue || null
+            referralCode: invitationCodeValue || null
         })
     })
     .then(response => {

@@ -259,7 +259,8 @@ router.post('/register', async (req, res) => {
   console.log("POST /api/auth/register - Direct registration attempt started.");
   console.log("Request Body:", JSON.stringify(req.body, null, 2));
   try {
-    const { username, email, password, referralCode } = req.body;
+    const { username, email, password } = req.body;
+    const referralCode = req.body.referralCode || req.body.invitationCode || null;
     if (!username || !email || !password) {
         console.error("POST /api/auth/register - Missing required fields.");
         return res.status(400).json({ success: false, message: 'Username, email, and password are required' });
@@ -274,15 +275,21 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ success: false, message });
     }
 
-    // Handle referral code if provided
+    // Handle referral code — look up by username first, then by invitationCode
     let invitedBy = null;
     if (referralCode) {
-      const inviter = await User.findOne({ invitationCode: referralCode });
+      const trimmed = referralCode.trim();
+      const inviter = await User.findOne({
+        $or: [
+          { username: { $regex: new RegExp('^' + trimmed + '$', 'i') } },
+          { invitationCode: trimmed }
+        ]
+      });
       if (inviter) {
         invitedBy = inviter._id;
         console.log(`POST /api/auth/register - User referred by: ${inviter.username}`);
       } else {
-        console.log(`POST /api/auth/register - Invalid referral code provided: ${referralCode}`);
+        console.log(`POST /api/auth/register - Invalid referral code provided: ${trimmed}`);
       }
     }
 
@@ -331,7 +338,8 @@ router.post('/register/initial', async (req, res) => {
   console.log("POST /api/auth/register/initial - Initial registration: sending verification code.");
   console.log("Request Body:", JSON.stringify(req.body, null, 2));
   try {
-    const { username, email, password, referralCode } = req.body;
+    const { username, email, password } = req.body;
+    const referralCode = req.body.referralCode || req.body.invitationCode || null;
 
     if (!username || !email || !password) {
       console.error("POST /api/auth/register/initial - Missing required fields.");
@@ -425,10 +433,16 @@ router.post('/register/complete', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Registration session expired. Please start over.' });
     }
 
-    // Handle referral code
+    // Handle referral code — look up by username first, then by invitationCode
     let invitedBy = null;
     if (pendingRegistration.referralCode) {
-      const inviter = await User.findOne({ invitationCode: pendingRegistration.referralCode });
+      const trimmed = pendingRegistration.referralCode.trim();
+      const inviter = await User.findOne({
+        $or: [
+          { username: { $regex: new RegExp('^' + trimmed + '$', 'i') } },
+          { invitationCode: trimmed }
+        ]
+      });
       if (inviter) {
         invitedBy = inviter._id;
         console.log(`POST /api/auth/register/complete - User referred by: ${inviter.username}`);
